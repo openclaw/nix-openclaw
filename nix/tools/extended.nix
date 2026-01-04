@@ -31,7 +31,6 @@ let
     "openhue-cli"
     "wacli"
     "sonoscli"
-    "imsg"
     "ordercli"
     "blucli"
     "eightctl"

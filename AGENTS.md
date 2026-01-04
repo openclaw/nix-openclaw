@@ -12,6 +12,8 @@ Defaults:
 - Declarative config only.
 - Batteries‑included install is the baseline.
 - Breaking changes are acceptable pre‑1.0.0 (move fast, keep docs accurate).
+- NEVER send any message (iMessage, email, SMS, etc.) without explicit user confirmation:
+  - Always show the full message text and ask: “I’m going to send this: <message>. Send? (y/n)”
 
 Philosophy:
 

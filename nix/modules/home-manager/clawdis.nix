@@ -447,8 +447,6 @@ let
         (map mkAssertion plugins) ++ (map mkConfigAssertion plugins)
     ) enabledInstances);
 
-  pluginStateDirs = lib.flatten (map pluginStateDirsFor (lib.attrNames enabledInstances));
-
   pluginSkillsFiles =
     let
       skillEntriesFor = p:
@@ -534,7 +532,7 @@ let
     gatewayPackage =
       if inst.gatewayPath != null then
         pkgs.callPackage ../../packages/clawdis-gateway.nix {
-          src_ = builtins.path {
+          gatewaySrc = builtins.path {
             path = inst.gatewayPath;
             name = "clawdis-gateway-src";
           };
@@ -591,13 +589,19 @@ let
         enable = true;
         config = {
           Label = inst.launchd.label;
-          ProgramArguments = [ "${gatewayWrapper}/bin/clawdis-gateway-${name}" ];
+          ProgramArguments = [
+            "${gatewayWrapper}/bin/clawdis-gateway-${name}"
+            "gateway"
+            "--port"
+            "${toString inst.gatewayPort}"
+          ];
           RunAtLoad = true;
           KeepAlive = true;
           WorkingDirectory = inst.stateDir;
           StandardOutPath = inst.logPath;
           StandardErrorPath = inst.logPath;
           EnvironmentVariables = {
+            HOME = homeDir;
             CLAWDIS_CONFIG_PATH = inst.configPath;
             CLAWDIS_STATE_DIR = inst.stateDir;
             CLAWDIS_IMAGE_BACKEND = "sips";
@@ -637,6 +641,7 @@ CLAWDIS_CONFIG
   appDefaults = lib.foldl' (acc: item: lib.recursiveUpdate acc item.appDefaults) {} instanceConfigs;
 
   appDefaultsEnabled = lib.filterAttrs (_: inst: inst.appDefaults.enable) enabledInstances;
+  pluginStateDirsAll = lib.flatten (map pluginStateDirsFor (lib.attrNames enabledInstances));
 
   assertions = lib.flatten (lib.mapAttrsToList (name: inst: [
     {
@@ -802,9 +807,7 @@ in {
 
     home.activation.clawdisDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       /bin/mkdir -p ${lib.concatStringsSep " " (lib.concatMap (item: item.dirs) instanceConfigs)}
-      ${lib.optionalString (pluginStateDirs != []) ''
-      /bin/mkdir -p ${lib.concatStringsSep " " pluginStateDirs}
-      ''}
+      ${lib.optionalString (pluginStateDirsAll != []) "/bin/mkdir -p ${lib.concatStringsSep " " pluginStateDirsAll}"}
     '';
 
     home.activation.clawdisConfig = lib.hm.dag.entryAfter [ "clawdisDirs" ] ''

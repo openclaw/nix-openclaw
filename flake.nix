@@ -33,6 +33,10 @@
           clawdis = flake-utils.lib.mkApp { drv = pkgs.clawdis-gateway; };
         };
 
+        checks = pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+          gateway = pkgs.clawdis-gateway;
+        };
+
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.git

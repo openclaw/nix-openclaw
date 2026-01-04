@@ -2,9 +2,13 @@
 
 > Declarative Clawdis. Bulletproof by default.
 >
+> macOS only. Linux/Windows are out of scope for now.
+>
 > <sub>[skip to agent copypasta](#give-this-to-your-ai-agent)</sub>
 >
 > <sub>Questions? Join the Clawdis Discord and ask in **#nix**.</sub>
+
+![On declarative build systems](docs/images/on-declarative-build-systems.png)
 
 ## The Magic
 
@@ -395,7 +399,7 @@ We should warn on collisions so it’s obvious.
 
 **Media**: spotify-player, sox, camsnap
 
-**macOS**: peekaboo, imsg, blucli
+**macOS**: peekaboo, blucli
 
 **Integrations**: gogcli, wacli, bird, mcporter
 
