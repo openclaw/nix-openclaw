@@ -83,4 +83,5 @@ stdenv.mkDerivation (finalAttrs: {
   checkPhase = "${../scripts/gateway-tests-check.sh}";
 
   installPhase = "${../scripts/empty-install.sh}";
+  dontPatchShebangs = true;
 })

@@ -20,3 +20,12 @@ export NPM_CONFIG_STORE_PATH="$store_path"
 export HOME="$(mktemp -d)"
 
 pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "$store_path"
+if [ -z "${STDENV_SETUP:-}" ]; then
+  echo "STDENV_SETUP is not set" >&2
+  exit 1
+fi
+if [ ! -f "$STDENV_SETUP" ]; then
+  echo "STDENV_SETUP not found: $STDENV_SETUP" >&2
+  exit 1
+fi
+bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"

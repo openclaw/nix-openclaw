@@ -31,6 +31,8 @@ pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "$store_pa
 chmod -R u+w node_modules
 rm -rf node_modules/.pnpm/sharp@*/node_modules/sharp/src/build
 pnpm rebuild
-bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/{*,.*}"
+bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
 pnpm build
 pnpm ui:build
+CI=true pnpm prune --prod
+rm -rf node_modules/.pnpm/node_modules

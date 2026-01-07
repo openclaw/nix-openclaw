@@ -87,6 +87,7 @@ stdenv.mkDerivation (finalAttrs: {
   buildPhase = "${../scripts/gateway-build.sh}";
   installPhase = "${../scripts/gateway-install.sh}";
   dontStrip = true;
+  dontPatchShebangs = true;
 
   meta = with lib; {
     description = "Telegram-first AI gateway (Clawdbot)";
