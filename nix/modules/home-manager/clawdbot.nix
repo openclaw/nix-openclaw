@@ -734,6 +734,7 @@ let
       value = { text = configJson; };
     };
     configFile = configFile;
+    configPath = inst.configPath;
 
     dirs = [ inst.stateDir inst.workspaceDir (builtins.dirOf inst.logPath) ];
 
