@@ -135,16 +135,16 @@ if [[ -z "$release_json" ]]; then
   echo "Failed to fetch release metadata" >&2
   exit 1
 fi
-release_tag=$(printf '%s' "$release_json" | jq -r '[.[] | select([.assets[]?.name | (test("^Clawdis-.*\\.zip$") and (test("dSYM") | not))] | any)][0].tag_name // empty')
+release_tag=$(printf '%s' "$release_json" | jq -r '[.[] | select([.assets[]?.name | (test("^(Clawdbot|Clawdis)-.*\\.zip$") and (test("dSYM") | not))] | any)][0].tag_name // empty')
 if [[ -z "$release_tag" ]]; then
-  echo "Failed to resolve a release tag with a Clawdis app asset" >&2
+  echo "Failed to resolve a release tag with a Clawdbot app asset" >&2
   exit 1
 fi
 log "Latest app release tag with asset: $release_tag"
 
-app_url=$(printf '%s' "$release_json" | jq -r '[.[] | select([.assets[]?.name | (test("^Clawdis-.*\\.zip$") and (test("dSYM") | not))] | any)][0].assets[] | select(.name | (test("^Clawdis-.*\\.zip$") and (test("dSYM") | not))) | .browser_download_url' | head -n 1 || true)
+app_url=$(printf '%s' "$release_json" | jq -r '[.[] | select([.assets[]?.name | (test("^(Clawdbot|Clawdis)-.*\\.zip$") and (test("dSYM") | not))] | any)][0].assets[] | select(.name | (test("^(Clawdbot|Clawdis)-.*\\.zip$") and (test("dSYM") | not))) | .browser_download_url' | head -n 1 || true)
 if [[ -z "$app_url" ]]; then
-  echo "Failed to resolve Clawdis app asset URL from latest release" >&2
+  echo "Failed to resolve Clawdbot app asset URL from latest release" >&2
   exit 1
 fi
 log "App asset URL: $app_url"
@@ -199,7 +199,24 @@ trap - EXIT
 log "Building app to validate fetchzip hash"
 current_system=$(nix eval --impure --raw --expr 'builtins.currentSystem' 2>/dev/null || true)
 if [[ "$current_system" == *darwin* ]]; then
-  nix build .#clawdbot-app --accept-flake-config
+  app_build_log=$(mktemp)
+  if ! nix build .#clawdbot-app --accept-flake-config >"$app_build_log" 2>&1; then
+    app_hash_mismatch=$(grep -Eo 'got: *sha256-[A-Za-z0-9+/=]+' "$app_build_log" | head -n 1 | sed 's/.*got: *//' || true)
+    if [[ -n "$app_hash_mismatch" ]]; then
+      log "App hash mismatch detected: $app_hash_mismatch"
+      perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${app_hash_mismatch}\";|" "$app_file"
+      if ! nix build .#clawdbot-app --accept-flake-config >"$app_build_log" 2>&1; then
+        tail -n 200 "$app_build_log" >&2 || true
+        rm -f "$app_build_log"
+        exit 1
+      fi
+    else
+      tail -n 200 "$app_build_log" >&2 || true
+      rm -f "$app_build_log"
+      exit 1
+    fi
+  fi
+  rm -f "$app_build_log"
 else
   log "Skipping app build on non-darwin system (${current_system:-unknown})"
 fi

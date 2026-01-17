@@ -4,7 +4,7 @@
 >
 > macOS + Linux (headless). Windows is out of scope for now.
 >
-> <sub>Questions? Join the Clawdbot Discord and ask in **#nix-packaging**: https://discord.com/channels/1456350064065904867/1457003026412736537</sub>
+> <sub>Questions? Join the Clawdbot Discord and ask in **#golden-path-deployments**: https://discord.com/channels/1456350064065904867/1457003026412736537</sub>
 
 ## Table of Contents
 
