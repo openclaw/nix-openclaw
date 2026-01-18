@@ -3890,6 +3890,62 @@ in
     mainKey = lib.mkOption {
       type = t.str;
     };
+    reset = lib.mkOption {
+      type = t.submodule { options = {
+      atHour = lib.mkOption {
+        type = t.int;
+      };
+      idleMinutes = lib.mkOption {
+        type = t.int;
+      };
+      mode = lib.mkOption {
+        type = t.oneOf [ t.enum [ "daily" ] t.enum [ "idle" ] ];
+      };
+    }; };
+    };
+    resetByType = lib.mkOption {
+      type = t.submodule { options = {
+      dm = lib.mkOption {
+        type = t.submodule { options = {
+        atHour = lib.mkOption {
+          type = t.int;
+        };
+        idleMinutes = lib.mkOption {
+          type = t.int;
+        };
+        mode = lib.mkOption {
+          type = t.oneOf [ t.enum [ "daily" ] t.enum [ "idle" ] ];
+        };
+      }; };
+      };
+      group = lib.mkOption {
+        type = t.submodule { options = {
+        atHour = lib.mkOption {
+          type = t.int;
+        };
+        idleMinutes = lib.mkOption {
+          type = t.int;
+        };
+        mode = lib.mkOption {
+          type = t.oneOf [ t.enum [ "daily" ] t.enum [ "idle" ] ];
+        };
+      }; };
+      };
+      thread = lib.mkOption {
+        type = t.submodule { options = {
+        atHour = lib.mkOption {
+          type = t.int;
+        };
+        idleMinutes = lib.mkOption {
+          type = t.int;
+        };
+        mode = lib.mkOption {
+          type = t.oneOf [ t.enum [ "daily" ] t.enum [ "idle" ] ];
+        };
+      }; };
+      };
+    }; };
+    };
     resetTriggers = lib.mkOption {
       type = t.listOf (t.str);
     };
