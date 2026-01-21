@@ -302,7 +302,12 @@ let
     gatewayPort = 18789;
     gatewayPath = null;
     gatewayPnpmDepsHash = lib.fakeHash;
-    providers = cfg.providers;
+    providers = {
+      anthropic = cfg.providers.anthropic;
+      telegram = cfg.providers.telegram // {
+        groups = {};
+      };
+    };
     routing = cfg.routing;
     launchd = {
       enable = cfg.launchd.enable;
