@@ -300,6 +300,8 @@ let
     configPath = "${cfg.stateDir}/clawdbot.json";
     logPath = "/tmp/clawdbot/clawdbot-gateway.log";
     gatewayPort = 18789;
+    gatewayPath = null;
+    gatewayPnpmDepsHash = lib.fakeHash;
     providers = cfg.providers;
     routing = cfg.routing;
     launchd = {
