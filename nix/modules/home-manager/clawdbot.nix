@@ -302,9 +302,19 @@ let
     gatewayPort = 18789;
     providers = cfg.providers;
     routing = cfg.routing;
-    launchd = cfg.launchd;
-    systemd = cfg.systemd;
+    launchd = {
+      enable = cfg.launchd.enable;
+      label = "com.steipete.clawdbot.gateway";
+    };
+    systemd = {
+      enable = cfg.systemd.enable;
+      unitName = "clawdbot-gateway";
+    };
     plugins = cfg.plugins;
+    agent = {
+      model = cfg.defaults.model;
+      thinkingDefault = cfg.defaults.thinkingDefault;
+    };
     configOverrides = {};
     config = {};
     appDefaults = {
