@@ -1198,6 +1198,43 @@ in
   }; };
   };
 
+  approvals = lib.mkOption {
+    type = t.submodule { options = {
+    exec = lib.mkOption {
+      type = t.submodule { options = {
+      agentFilter = lib.mkOption {
+        type = t.listOf (t.str);
+      };
+      enabled = lib.mkOption {
+        type = t.bool;
+      };
+      mode = lib.mkOption {
+        type = t.oneOf [ t.enum [ "session" ] t.enum [ "targets" ] t.enum [ "both" ] ];
+      };
+      sessionFilter = lib.mkOption {
+        type = t.listOf (t.str);
+      };
+      targets = lib.mkOption {
+        type = t.listOf (t.submodule { options = {
+        accountId = lib.mkOption {
+          type = t.str;
+        };
+        channel = lib.mkOption {
+          type = t.str;
+        };
+        threadId = lib.mkOption {
+          type = t.oneOf [ t.str t.number ];
+        };
+        to = lib.mkOption {
+          type = t.str;
+        };
+      }; });
+      };
+    }; };
+    };
+  }; };
+  };
+
   audio = lib.mkOption {
     type = t.submodule { options = {
     transcription = lib.mkOption {
@@ -1785,6 +1822,22 @@ in
         enabled = lib.mkOption {
           type = t.bool;
         };
+        execApprovals = lib.mkOption {
+          type = t.submodule { options = {
+          agentFilter = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          approvers = lib.mkOption {
+            type = t.listOf (t.oneOf [ t.str t.number ]);
+          };
+          enabled = lib.mkOption {
+            type = t.bool;
+          };
+          sessionFilter = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; };
+        };
         groupPolicy = lib.mkOption {
           type = t.enum [ "open" "disabled" "allowlist" ];
         };
@@ -2032,6 +2085,22 @@ in
       };
       enabled = lib.mkOption {
         type = t.bool;
+      };
+      execApprovals = lib.mkOption {
+        type = t.submodule { options = {
+        agentFilter = lib.mkOption {
+          type = t.listOf (t.str);
+        };
+        approvers = lib.mkOption {
+          type = t.listOf (t.oneOf [ t.str t.number ]);
+        };
+        enabled = lib.mkOption {
+          type = t.bool;
+        };
+        sessionFilter = lib.mkOption {
+          type = t.listOf (t.str);
+        };
+      }; };
       };
       groupPolicy = lib.mkOption {
         type = t.enum [ "open" "disabled" "allowlist" ];
@@ -4291,6 +4360,9 @@ in
       };
       token = lib.mkOption {
         type = t.str;
+      };
+      transport = lib.mkOption {
+        type = t.oneOf [ t.enum [ "ssh" ] t.enum [ "direct" ] ];
       };
       url = lib.mkOption {
         type = t.str;
