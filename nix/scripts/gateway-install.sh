@@ -4,6 +4,18 @@ mkdir -p "$out/lib/clawdbot" "$out/bin"
 
 cp -r dist node_modules package.json ui "$out/lib/clawdbot/"
 
+# Copy extensions directory for channel plugins (telegram, discord, etc.)
+# See: https://github.com/clawdbot/nix-clawdbot/issues/6
+if [ -d "extensions" ]; then
+  cp -r extensions "$out/lib/clawdbot/"
+fi
+
+# Copy docs/reference/templates for workspace initialization
+if [ -d "docs/reference/templates" ]; then
+  mkdir -p "$out/lib/clawdbot/docs/reference"
+  cp -r docs/reference/templates "$out/lib/clawdbot/docs/reference/"
+fi
+
 if [ -z "${STDENV_SETUP:-}" ]; then
   echo "STDENV_SETUP is not set" >&2
   exit 1
