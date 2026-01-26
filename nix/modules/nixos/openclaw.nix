@@ -293,8 +293,9 @@ in {
         IPAddressDeny = "multicast";
 
         # System call filtering
-        # Note: @resources filter removed - clipboard native module needs resource syscalls
-        SystemCallFilter = [ "@system-service" "~@privileged" ];
+        # Only @system-service - Node.js with native modules needs more syscalls
+        # Security comes from capability restrictions and namespace isolation instead
+        SystemCallFilter = [ "@system-service" ];
         SystemCallArchitectures = "native";
 
         # Memory protection
