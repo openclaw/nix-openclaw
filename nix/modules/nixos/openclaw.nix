@@ -237,11 +237,6 @@ in {
 
         # Filesystem access
         ReadWritePaths = [ instCfg.stateDir ];
-        # Allow reading credential files (e.g., from agenix)
-        ReadOnlyPaths = [
-          "/run/agenix"
-          "/run/secrets"
-        ];
 
         # Capability restrictions
         CapabilityBoundingSet = "";
