@@ -3,15 +3,22 @@
 # Runs the Openclaw gateway as an isolated system user with systemd hardening.
 # This contains the blast radius if the LLM is compromised.
 #
-# Example usage:
+# Example usage (OAuth - recommended, uses Claude Pro/Max subscription):
 #   services.openclaw = {
 #     enable = true;
-#     providers.anthropic.apiKeyFile = "/run/agenix/anthropic-api-key";
+#     # Use Claude CLI OAuth credentials (run `claude` to authenticate first)
+#     providers.anthropic.oauthCredentialsDir = "/home/myuser/.claude";
 #     providers.telegram = {
 #       enable = true;
 #       botTokenFile = "/run/agenix/telegram-bot-token";
 #       allowFrom = [ 12345678 ];
 #     };
+#   };
+#
+# Example usage (API key):
+#   services.openclaw = {
+#     enable = true;
+#     providers.anthropic.apiKeyFile = "/run/agenix/anthropic-api-key";
 #   };
 
 { config, lib, pkgs, ... }:
@@ -103,6 +110,8 @@ let
   mkInstanceConfig = name: inst:
     let
       gatewayPackage = inst.package;
+      oauthDir = inst.providers.anthropic.oauthCredentialsDir;
+      hasOauth = oauthDir != null;
 
       baseConfig = mkBaseConfig inst.workspaceDir inst;
       mergedConfig = lib.recursiveUpdate
@@ -132,7 +141,7 @@ let
         then "openclaw-gateway"
         else "openclaw-gateway-${name}";
     in {
-      inherit configFile configJson unitName gatewayWrapper;
+      inherit configFile configJson unitName gatewayWrapper hasOauth oauthDir;
       configPath = inst.configPath;
       stateDir = inst.stateDir;
       workspaceDir = inst.workspaceDir;
@@ -259,6 +268,10 @@ in {
 
         # UMask for created files
         UMask = "0027";
+      } // lib.optionalAttrs instCfg.hasOauth {
+        # Bind-mount OAuth credentials dir into service's home
+        # This allows the service to use Claude CLI OAuth while remaining sandboxed
+        BindPaths = [ "${instCfg.oauthDir}:${cfg.stateDir}/.claude" ];
       };
     }) instanceConfigs;
 

@@ -89,6 +89,18 @@ let
           default = "";
           description = "Path to Anthropic API key file.";
         };
+
+        oauthCredentialsDir = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Path to Claude CLI credentials directory (typically ~/.claude).
+            When set, this directory is bind-mounted into the service's sandbox,
+            allowing the service to use OAuth credentials from `claude` CLI auth.
+            The service can read and write to this directory (for token refresh).
+          '';
+          example = "/home/myuser/.claude";
+        };
       };
 
       plugins = lib.mkOption {
@@ -307,6 +319,18 @@ in {
         type = lib.types.str;
         default = "";
         description = "Path to Anthropic API key file.";
+      };
+
+      oauthCredentialsDir = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Path to Claude CLI credentials directory (typically ~/.claude).
+          When set, this directory is bind-mounted into the service's sandbox,
+          allowing the service to use OAuth credentials from `claude` CLI auth.
+          The service can read and write to this directory (for token refresh).
+        '';
+        example = "/home/myuser/.claude";
       };
     };
 
