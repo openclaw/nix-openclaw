@@ -12,7 +12,7 @@
 # - Removes: launchd.*, app.*, appDefaults.* (macOS-specific)
 # - systemd options are for system services (not user services)
 
-{ lib, cfg, defaultPackage, generatedConfigOptions }:
+{ lib, cfg, defaultPackage }:
 
 let
   stateDir = "/var/lib/openclaw";
@@ -98,7 +98,7 @@ let
             Generate with `claude setup-token` - these tokens are long-lived.
             This is the recommended auth method for headless/server deployments.
           '';
-          example = "/run/agenix/clawdbot-anthropic-token";
+          example = "/run/agenix/openclaw-anthropic-token";
         };
       };
 
@@ -165,7 +165,7 @@ let
             Path to file containing the gateway authentication token.
             Required when auth mode is "token".
           '';
-          example = "/run/agenix/clawdbot-gateway-token";
+          example = "/run/agenix/openclaw-gateway-token";
         };
 
         passwordFile = lib.mkOption {
@@ -175,7 +175,7 @@ let
             Path to file containing the gateway authentication password.
             Required when auth mode is "password".
           '';
-          example = "/run/agenix/clawdbot-gateway-password";
+          example = "/run/agenix/openclaw-gateway-password";
         };
       };
 
@@ -183,12 +183,6 @@ let
         type = lib.types.attrs;
         default = {};
         description = "Additional config to merge into generated JSON.";
-      };
-
-      config = lib.mkOption {
-        type = lib.types.submodule { options = generatedConfigOptions; };
-        default = {};
-        description = "Upstream Openclaw config (generated from schema).";
       };
     };
   };
@@ -269,10 +263,10 @@ in {
             default = "";
             description = "Optional skill body (markdown).";
           };
-          clawdbot = lib.mkOption {
+          openclaw = lib.mkOption {
             type = lib.types.nullOr lib.types.attrs;
             default = null;
-            description = "Optional clawdbot metadata.";
+            description = "Optional openclaw metadata.";
           };
           mode = lib.mkOption {
             type = lib.types.enum [ "copy" "inline" ];
@@ -356,7 +350,7 @@ in {
           Generate with `claude setup-token` - these tokens are long-lived.
           This is the recommended auth method for headless/server deployments.
         '';
-        example = "/run/agenix/clawdbot-anthropic-token";
+        example = "/run/agenix/openclaw-anthropic-token";
       };
     };
 
@@ -392,7 +386,7 @@ in {
           Path to file containing the gateway authentication token.
           Required when auth mode is "token".
         '';
-        example = "/run/agenix/clawdbot-gateway-token";
+        example = "/run/agenix/openclaw-gateway-token";
       };
 
       passwordFile = lib.mkOption {
@@ -402,7 +396,7 @@ in {
           Path to file containing the gateway authentication password.
           Required when auth mode is "password".
         '';
-        example = "/run/agenix/clawdbot-gateway-password";
+        example = "/run/agenix/openclaw-gateway-password";
       };
     };
 
