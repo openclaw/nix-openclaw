@@ -1,10 +1,10 @@
-# NixOS module for Clawdbot system service
+# NixOS module for Openclaw system service
 #
-# Runs the Clawdbot gateway as an isolated system user with systemd hardening.
+# Runs the Openclaw gateway as an isolated system user with systemd hardening.
 # This contains the blast radius if the LLM is compromised.
 #
 # Example usage:
-#   services.clawdbot = {
+#   services.openclaw = {
 #     enable = true;
 #     providers.anthropic.apiKeyFile = "/run/agenix/anthropic-api-key";
 #     providers.telegram = {
@@ -17,7 +17,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.clawdbot;
+  cfg = config.services.openclaw;
 
   # Tool overrides (same pattern as home-manager)
   toolOverrides = {
@@ -27,11 +27,11 @@ let
   toolOverridesEnabled = cfg.toolNames != null || cfg.excludeTools != [];
   toolSets = import ../../tools/extended.nix ({ inherit pkgs; } // toolOverrides);
   defaultPackage =
-    if toolOverridesEnabled && cfg.package == pkgs.clawdbot
-    then (pkgs.clawdbotPackages.withTools toolOverrides).clawdbot
+    if toolOverridesEnabled && cfg.package == pkgs.openclaw
+    then (pkgs.openclawPackages.withTools toolOverrides).openclaw
     else cfg.package;
 
-  generatedConfigOptions = import ../../generated/clawdbot-config-options.nix { inherit lib; };
+  generatedConfigOptions = import ../../generated/openclaw-config-options.nix { inherit lib; };
 
   # Import option definitions
   optionsDef = import ./options.nix {
@@ -44,7 +44,7 @@ let
     package = cfg.package;
     stateDir = cfg.stateDir;
     workspaceDir = cfg.workspaceDir;
-    configPath = "${cfg.stateDir}/clawdbot.json";
+    configPath = "${cfg.stateDir}/openclaw.json";
     gatewayPort = 18789;
     providers = cfg.providers;
     routing = cfg.routing;
@@ -109,10 +109,10 @@ let
         (lib.recursiveUpdate baseConfig (lib.recursiveUpdate (mkTelegramConfig inst) (mkRoutingConfig inst)))
         inst.configOverrides;
       configJson = builtins.toJSON mergedConfig;
-      configFile = pkgs.writeText "clawdbot-${name}.json" configJson;
+      configFile = pkgs.writeText "openclaw-${name}.json" configJson;
 
       # Gateway wrapper script that loads credentials at runtime
-      gatewayWrapper = pkgs.writeShellScriptBin "clawdbot-gateway-${name}" ''
+      gatewayWrapper = pkgs.writeShellScriptBin "openclaw-gateway-${name}" ''
         set -euo pipefail
 
         # Load Anthropic API key if configured
@@ -125,12 +125,12 @@ let
           export ANTHROPIC_API_KEY
         fi
 
-        exec "${gatewayPackage}/bin/clawdbot" "$@"
+        exec "${gatewayPackage}/bin/openclaw" "$@"
       '';
 
       unitName = if name == "default"
-        then "clawdbot-gateway"
-        else "clawdbot-gateway-${name}";
+        then "openclaw-gateway"
+        else "openclaw-gateway-${name}";
     in {
       inherit configFile configJson unitName gatewayWrapper;
       configPath = inst.configPath;
@@ -146,26 +146,26 @@ let
   assertions = lib.flatten (lib.mapAttrsToList (name: inst: [
     {
       assertion = !inst.providers.telegram.enable || inst.providers.telegram.botTokenFile != "";
-      message = "services.clawdbot.instances.${name}.providers.telegram.botTokenFile must be set when Telegram is enabled.";
+      message = "services.openclaw.instances.${name}.providers.telegram.botTokenFile must be set when Telegram is enabled.";
     }
     {
       assertion = !inst.providers.telegram.enable || (lib.length inst.providers.telegram.allowFrom > 0);
-      message = "services.clawdbot.instances.${name}.providers.telegram.allowFrom must be non-empty when Telegram is enabled.";
+      message = "services.openclaw.instances.${name}.providers.telegram.allowFrom must be non-empty when Telegram is enabled.";
     }
   ]) enabledInstances);
 
 in {
-  options.services.clawdbot = optionsDef.topLevelOptions // {
+  options.services.openclaw = optionsDef.topLevelOptions // {
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.clawdbot;
-      description = "Clawdbot batteries-included package.";
+      default = pkgs.openclaw;
+      description = "Openclaw batteries-included package.";
     };
 
     instances = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule optionsDef.instanceModule);
       default = {};
-      description = "Named Clawdbot instances.";
+      description = "Named Openclaw instances.";
     };
   };
 
@@ -178,7 +178,7 @@ in {
       group = cfg.group;
       home = cfg.stateDir;
       createHome = true;
-      description = "Clawdbot gateway service user";
+      description = "Openclaw gateway service user";
     };
 
     users.groups.${cfg.group} = {};
@@ -191,7 +191,7 @@ in {
 
     # Systemd services with hardening
     systemd.services = lib.mapAttrs' (name: instCfg: lib.nameValuePair instCfg.unitName {
-      description = "Clawdbot gateway (${name})";
+      description = "Openclaw gateway (${name})";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
@@ -200,7 +200,7 @@ in {
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
-        ExecStart = "${instCfg.gatewayWrapper}/bin/clawdbot-gateway-${name} gateway --port ${toString instCfg.gatewayPort}";
+        ExecStart = "${instCfg.gatewayWrapper}/bin/openclaw-gateway-${name} gateway --port ${toString instCfg.gatewayPort}";
         WorkingDirectory = instCfg.stateDir;
         Restart = "always";
         RestartSec = "5s";
@@ -269,7 +269,7 @@ in {
 
     # Write config files
     environment.etc = lib.mapAttrs' (name: instCfg:
-      lib.nameValuePair "clawdbot/${name}.json" {
+      lib.nameValuePair "openclaw/${name}.json" {
         text = instCfg.configJson;
         user = cfg.user;
         group = cfg.group;
@@ -278,9 +278,9 @@ in {
     ) instanceConfigs;
 
     # Symlink config from /etc to state dir (activation script)
-    system.activationScripts.clawdbotConfig = lib.stringAfter [ "etc" ] ''
+    system.activationScripts.openclawConfig = lib.stringAfter [ "etc" ] ''
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: instCfg: ''
-        ln -sfn /etc/clawdbot/${name}.json ${instCfg.configPath}
+        ln -sfn /etc/openclaw/${name}.json ${instCfg.configPath}
       '') instanceConfigs)}
     '';
   };

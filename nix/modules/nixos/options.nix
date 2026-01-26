@@ -1,13 +1,13 @@
-# NixOS module options for Clawdbot system service
+# NixOS module options for Openclaw system service
 #
-# TODO: Consolidate with home-manager/clawdbot.nix options
+# TODO: Consolidate with home-manager/openclaw.nix options
 # This file duplicates option definitions for NixOS system service support.
 # The duplication is intentional to avoid risking the stable home-manager module
 # while adding NixOS support. Once patterns stabilize, extract shared options.
 #
 # Key differences from home-manager:
-# - Namespace: services.clawdbot (not programs.clawdbot)
-# - Paths: /var/lib/clawdbot (not ~/.clawdbot)
+# - Namespace: services.openclaw (not programs.openclaw)
+# - Paths: /var/lib/openclaw (not ~/.openclaw)
 # - Adds: user, group options for system user
 # - Removes: launchd.*, app.*, appDefaults.* (macOS-specific)
 # - systemd options are for system services (not user services)
@@ -15,20 +15,20 @@
 { lib, cfg, defaultPackage, generatedConfigOptions }:
 
 let
-  stateDir = "/var/lib/clawdbot";
+  stateDir = "/var/lib/openclaw";
 
   instanceModule = { name, config, ... }: {
     options = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable this Clawdbot instance.";
+        description = "Enable this Openclaw instance.";
       };
 
       package = lib.mkOption {
         type = lib.types.package;
         default = defaultPackage;
-        description = "Clawdbot batteries-included package.";
+        description = "Openclaw batteries-included package.";
       };
 
       stateDir = lib.mkOption {
@@ -36,25 +36,25 @@ let
         default = if name == "default"
           then stateDir
           else "${stateDir}-${name}";
-        description = "State directory for this Clawdbot instance.";
+        description = "State directory for this Openclaw instance.";
       };
 
       workspaceDir = lib.mkOption {
         type = lib.types.str;
         default = "${config.stateDir}/workspace";
-        description = "Workspace directory for this Clawdbot instance.";
+        description = "Workspace directory for this Openclaw instance.";
       };
 
       configPath = lib.mkOption {
         type = lib.types.str;
-        default = "${config.stateDir}/clawdbot.json";
-        description = "Path to generated Clawdbot config JSON.";
+        default = "${config.stateDir}/openclaw.json";
+        description = "Path to generated Openclaw config JSON.";
       };
 
       gatewayPort = lib.mkOption {
         type = lib.types.int;
         default = 18789;
-        description = "Gateway port for this Clawdbot instance.";
+        description = "Gateway port for this Openclaw instance.";
       };
 
       providers.telegram = {
@@ -149,7 +149,7 @@ let
       config = lib.mkOption {
         type = lib.types.submodule { options = generatedConfigOptions; };
         default = {};
-        description = "Upstream Clawdbot config (generated from schema).";
+        description = "Upstream Openclaw config (generated from schema).";
       };
     };
   };
@@ -157,25 +157,25 @@ let
 in {
   inherit instanceModule;
 
-  # Top-level options for services.clawdbot
+  # Top-level options for services.openclaw
   topLevelOptions = {
-    enable = lib.mkEnableOption "Clawdbot system service";
+    enable = lib.mkEnableOption "Openclaw system service";
 
     package = lib.mkOption {
       type = lib.types.package;
-      description = "Clawdbot batteries-included package.";
+      description = "Openclaw batteries-included package.";
     };
 
     user = lib.mkOption {
       type = lib.types.str;
-      default = "clawdbot";
-      description = "System user to run the Clawdbot gateway.";
+      default = "openclaw";
+      description = "System user to run the Openclaw gateway.";
     };
 
     group = lib.mkOption {
       type = lib.types.str;
-      default = "clawdbot";
-      description = "System group for the Clawdbot user.";
+      default = "openclaw";
+      description = "System group for the Openclaw user.";
     };
 
     toolNames = lib.mkOption {
@@ -193,13 +193,13 @@ in {
     stateDir = lib.mkOption {
       type = lib.types.str;
       default = stateDir;
-      description = "State directory for Clawdbot.";
+      description = "State directory for Openclaw.";
     };
 
     workspaceDir = lib.mkOption {
       type = lib.types.str;
       default = "${stateDir}/workspace";
-      description = "Workspace directory for Clawdbot agent skills.";
+      description = "Workspace directory for Openclaw agent skills.";
     };
 
     documents = lib.mkOption {
@@ -230,10 +230,10 @@ in {
             default = "";
             description = "Optional skill body (markdown).";
           };
-          clawdbot = lib.mkOption {
+          openclaw = lib.mkOption {
             type = lib.types.nullOr lib.types.attrs;
             default = null;
-            description = "Optional clawdbot metadata.";
+            description = "Optional openclaw metadata.";
           };
           mode = lib.mkOption {
             type = lib.types.enum [ "symlink" "copy" "inline" ];
@@ -331,7 +331,7 @@ in {
     instances = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule instanceModule);
       default = {};
-      description = "Named Clawdbot instances.";
+      description = "Named Openclaw instances.";
     };
   };
 }

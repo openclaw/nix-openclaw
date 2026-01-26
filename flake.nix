@@ -78,5 +78,6 @@
       overlays.default = overlay;
       homeManagerModules.openclaw = import ./nix/modules/home-manager/openclaw.nix;
       darwinModules.openclaw = import ./nix/modules/darwin/openclaw.nix;
+      nixosModules.openclaw = import ./nix/modules/nixos/openclaw.nix;
     };
 }
