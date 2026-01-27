@@ -2,7 +2,18 @@
 set -e
 mkdir -p "$out/lib/clawdbot" "$out/bin"
 
+# Copy core files
 cp -r dist node_modules package.json ui "$out/lib/clawdbot/"
+
+# Copy bundled extensions (memory-core, etc.) if present
+if [ -d "extensions" ]; then
+  cp -r extensions "$out/lib/clawdbot/"
+fi
+
+# Copy docs (workspace templates like AGENTS.md, SOUL.md, TOOLS.md)
+if [ -d "docs" ]; then
+  cp -r docs "$out/lib/clawdbot/"
+fi
 
 if [ -z "${STDENV_SETUP:-}" ]; then
   echo "STDENV_SETUP is not set" >&2
@@ -34,4 +45,4 @@ if [ -n "$strip_ansi_src" ]; then
     ln -s "$strip_ansi_src" "$out/lib/clawdbot/node_modules/strip-ansi"
   fi
 fi
-bash -e -c '. "$STDENV_SETUP"; makeWrapper "$NODE_BIN" "$out/bin/clawdbot" --add-flags "$out/lib/clawdbot/dist/index.js" --set-default CLAWDBOT_NIX_MODE "1"'
+bash -e -c '. "$STDENV_SETUP"; makeWrapper "$NODE_BIN" "$out/bin/clawdbot" --add-flags "$out/lib/clawdbot/dist/index.js" --set-default CLAWDBOT_NIX_MODE "1" --set-default CLAWDBOT_BUNDLED_PLUGINS_DIR "$out/lib/clawdbot/extensions"'
