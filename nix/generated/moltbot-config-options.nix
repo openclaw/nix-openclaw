@@ -112,6 +112,9 @@ in
       };
       compaction = lib.mkOption {
         type = t.submodule { options = {
+        maxHistoryShare = lib.mkOption {
+          type = t.number;
+        };
         memoryFlush = lib.mkOption {
           type = t.submodule { options = {
           enabled = lib.mkOption {
@@ -468,15 +471,6 @@ in
           type = t.submodule { options = {
           allowHostControl = lib.mkOption {
             type = t.bool;
-          };
-          allowedControlHosts = lib.mkOption {
-            type = t.listOf (t.str);
-          };
-          allowedControlPorts = lib.mkOption {
-            type = t.listOf (t.int);
-          };
-          allowedControlUrls = lib.mkOption {
-            type = t.listOf (t.str);
           };
           autoStart = lib.mkOption {
             type = t.bool;
@@ -934,15 +928,6 @@ in
           allowHostControl = lib.mkOption {
             type = t.bool;
           };
-          allowedControlHosts = lib.mkOption {
-            type = t.listOf (t.str);
-          };
-          allowedControlPorts = lib.mkOption {
-            type = t.listOf (t.int);
-          };
-          allowedControlUrls = lib.mkOption {
-            type = t.listOf (t.str);
-          };
           autoStart = lib.mkOption {
             type = t.bool;
           };
@@ -1349,16 +1334,13 @@ in
     color = lib.mkOption {
       type = t.str;
     };
-    controlToken = lib.mkOption {
-      type = t.str;
-    };
-    controlUrl = lib.mkOption {
-      type = t.str;
-    };
     defaultProfile = lib.mkOption {
       type = t.str;
     };
     enabled = lib.mkOption {
+      type = t.bool;
+    };
+    evaluateEnabled = lib.mkOption {
       type = t.bool;
     };
     executablePath = lib.mkOption {
@@ -1492,6 +1474,19 @@ in
               type = t.listOf (t.str);
             };
           }; };
+          };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
           };
         }; });
         };
@@ -1645,6 +1640,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
       }; });
       };
@@ -1900,6 +1908,19 @@ in
               };
             }; };
             };
+            toolsBySender = lib.mkOption {
+              type = t.attrsOf (t.submodule { options = {
+              allow = lib.mkOption {
+                type = t.listOf (t.str);
+              };
+              alsoAllow = lib.mkOption {
+                type = t.listOf (t.str);
+              };
+              deny = lib.mkOption {
+                type = t.listOf (t.str);
+              };
+            }; });
+            };
             users = lib.mkOption {
               type = t.listOf (t.oneOf [ t.str t.number ]);
             };
@@ -1926,6 +1947,19 @@ in
               type = t.listOf (t.str);
             };
           }; };
+          };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
           };
           users = lib.mkOption {
             type = t.listOf (t.oneOf [ t.str t.number ]);
@@ -2183,6 +2217,19 @@ in
             };
           }; };
           };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
+          };
           users = lib.mkOption {
             type = t.listOf (t.oneOf [ t.str t.number ]);
           };
@@ -2209,6 +2256,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
         users = lib.mkOption {
           type = t.listOf (t.oneOf [ t.str t.number ]);
@@ -2629,6 +2689,19 @@ in
             };
           }; };
           };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
+          };
         }; });
         };
         heartbeat = lib.mkOption {
@@ -2750,6 +2823,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
       }; });
       };
@@ -2915,6 +3001,19 @@ in
             };
           }; };
           };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
+          };
         }; });
         };
         replyStyle = lib.mkOption {
@@ -2935,6 +3034,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
       }; });
       };
@@ -3319,6 +3431,19 @@ in
             };
           }; };
           };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
+          };
           users = lib.mkOption {
             type = t.listOf (t.oneOf [ t.str t.number ]);
           };
@@ -3567,6 +3692,19 @@ in
           };
         }; };
         };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
+        };
         users = lib.mkOption {
           type = t.listOf (t.oneOf [ t.str t.number ]);
         };
@@ -3741,6 +3879,9 @@ in
           sendMessage = lib.mkOption {
             type = t.bool;
           };
+          sticker = lib.mkOption {
+            type = t.bool;
+          };
         }; };
         };
         allowFrom = lib.mkOption {
@@ -3862,6 +4003,19 @@ in
               type = t.listOf (t.str);
             };
           }; };
+          };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
           };
           topics = lib.mkOption {
             type = t.attrsOf (t.submodule { options = {
@@ -3985,6 +4139,9 @@ in
         sendMessage = lib.mkOption {
           type = t.bool;
         };
+        sticker = lib.mkOption {
+          type = t.bool;
+        };
       }; };
       };
       allowFrom = lib.mkOption {
@@ -4106,6 +4263,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
         topics = lib.mkOption {
           type = t.attrsOf (t.submodule { options = {
@@ -4309,6 +4479,19 @@ in
             };
           }; };
           };
+          toolsBySender = lib.mkOption {
+            type = t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            alsoAllow = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+            deny = lib.mkOption {
+              type = t.listOf (t.str);
+            };
+          }; });
+          };
         }; });
         };
         heartbeat = lib.mkOption {
@@ -4447,6 +4630,19 @@ in
             type = t.listOf (t.str);
           };
         }; };
+        };
+        toolsBySender = lib.mkOption {
+          type = t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          alsoAllow = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+          deny = lib.mkOption {
+            type = t.listOf (t.str);
+          };
+        }; });
         };
       }; });
       };
@@ -5545,7 +5741,7 @@ in
     }; };
     };
     dmScope = lib.mkOption {
-      type = t.oneOf [ t.enum [ "main" ] t.enum [ "per-peer" ] t.enum [ "per-channel-peer" ] ];
+      type = t.oneOf [ t.enum [ "main" ] t.enum [ "per-peer" ] t.enum [ "per-channel-peer" ] t.enum [ "per-account-channel-peer" ] ];
     };
     identityLinks = lib.mkOption {
       type = t.attrsOf (t.listOf (t.str));
