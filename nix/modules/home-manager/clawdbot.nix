@@ -239,6 +239,29 @@ let
         description = "launchd label for this instance.";
       };
 
+      launchd.useAppRunner = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Run the gateway via a minimal .app bundle instead of a raw script.
+          This allows granting Full Disk Access (FDA) to the gateway process,
+          which is required for iMessage support (imsg needs to read Messages.db).
+          
+          When enabled:
+          1. A "Clawdbot Gateway Runner.app" is installed to ~/Applications/
+          2. The LaunchAgent runs the app's executable directly
+          3. Grant FDA to the app in System Settings > Privacy & Security > Full Disk Access
+        '';
+      };
+
+      launchd.appRunnerPath = lib.mkOption {
+        type = lib.types.str;
+        default = if name == "default"
+          then "${homeDir}/Applications/Clawdbot Gateway Runner.app"
+          else "${homeDir}/Applications/Clawdbot Gateway Runner (${name}).app";
+        description = "Installation path for the gateway runner app (when useAppRunner is enabled).";
+      };
+
       systemd.enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -313,6 +336,8 @@ let
     launchd = {
       enable = cfg.launchd.enable;
       label = "com.steipete.clawdbot.gateway";
+      useAppRunner = cfg.launchd.useAppRunner or false;
+      appRunnerPath = cfg.launchd.appRunnerPath or "${homeDir}/Applications/Clawdbot Gateway Runner.app";
     };
     systemd = {
       enable = cfg.systemd.enable;
@@ -776,6 +801,23 @@ let
 
       exec "${gatewayPackage}/bin/clawdbot" "$@"
     '';
+
+    # Build gateway runner .app for FDA support (when useAppRunner is enabled)
+    gatewayRunnerApp = lib.optionalAttrs (pkgs.stdenv.hostPlatform.isDarwin && inst.launchd.useAppRunner) (
+      pkgs.callPackage ../../packages/clawdbot-gateway-runner.nix {
+        instanceName = name;
+        inherit gatewayWrapper homeDir;
+        stateDir = inst.stateDir;
+        logPath = inst.logPath;
+        gatewayPort = inst.gatewayPort;
+        configPath = inst.configPath;
+      }
+    );
+
+    appName = if name == "default" 
+      then "Clawdbot Gateway Runner" 
+      else "Clawdbot Gateway Runner (${name})";
+
   in {
     homeFile = {
       name = toRelative inst.configPath;
@@ -791,31 +833,46 @@ let
         enable = true;
         config = {
           Label = inst.launchd.label;
-          ProgramArguments = [
-            "${gatewayWrapper}/bin/clawdbot-gateway-${name}"
-            "gateway"
-            "--port"
-            "${toString inst.gatewayPort}"
-          ];
+          ProgramArguments = 
+            if inst.launchd.useAppRunner then [
+              # Run the gateway runner app's executable directly
+              # This allows FDA to be granted to the .app bundle
+              "${inst.launchd.appRunnerPath}/Contents/MacOS/clawdbot-gateway-runner"
+            ] else [
+              "${gatewayWrapper}/bin/clawdbot-gateway-${name}"
+              "gateway"
+              "--port"
+              "${toString inst.gatewayPort}"
+            ];
           RunAtLoad = true;
           KeepAlive = true;
           WorkingDirectory = inst.stateDir;
           StandardOutPath = inst.logPath;
           StandardErrorPath = inst.logPath;
-        EnvironmentVariables = {
-          HOME = homeDir;
-          CLAWDBOT_CONFIG_PATH = inst.configPath;
-          CLAWDBOT_STATE_DIR = inst.stateDir;
-          CLAWDBOT_IMAGE_BACKEND = "sips";
-          CLAWDBOT_NIX_MODE = "1";
-          # Backward-compatible env names (gateway still uses CLAWDIS_* in some builds).
-          CLAWDIS_CONFIG_PATH = inst.configPath;
-          CLAWDIS_STATE_DIR = inst.stateDir;
-          CLAWDIS_IMAGE_BACKEND = "sips";
-          CLAWDIS_NIX_MODE = "1";
+          EnvironmentVariables = {
+            HOME = homeDir;
+            CLAWDBOT_CONFIG_PATH = inst.configPath;
+            CLAWDBOT_STATE_DIR = inst.stateDir;
+            CLAWDBOT_IMAGE_BACKEND = "sips";
+            CLAWDBOT_NIX_MODE = "1";
+            # Backward-compatible env names (gateway still uses CLAWDIS_* in some builds).
+            CLAWDIS_CONFIG_PATH = inst.configPath;
+            CLAWDIS_STATE_DIR = inst.stateDir;
+            CLAWDIS_IMAGE_BACKEND = "sips";
+            CLAWDIS_NIX_MODE = "1";
+          };
         };
       };
     };
+
+    # Install the gateway runner app when useAppRunner is enabled
+    appRunnerInstall = lib.optionalAttrs (pkgs.stdenv.hostPlatform.isDarwin && inst.launchd.useAppRunner) {
+      name = toRelative inst.launchd.appRunnerPath;
+      value = {
+        source = "${gatewayRunnerApp}/Applications/${appName}.app";
+        recursive = true;
+        force = true;
+      };
     };
 
     systemdService = lib.optionalAttrs (pkgs.stdenv.hostPlatform.isLinux && inst.systemd.enable) {
@@ -867,6 +924,7 @@ let
 
   instanceConfigs = lib.mapAttrsToList mkInstanceConfig enabledInstances;
   appInstalls = lib.filter (item: item != null) (map (item: item.appInstall) instanceConfigs);
+  appRunnerInstalls = lib.filter (item: item != {}) (map (item: item.appRunnerInstall) instanceConfigs);
 
   appDefaults = lib.foldl' (acc: item: lib.recursiveUpdate acc item.appDefaults) {} instanceConfigs;
 
@@ -1119,6 +1177,22 @@ in {
       description = "Run Clawdbot gateway via launchd (macOS).";
     };
 
+    launchd.useAppRunner = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Run the gateway via a minimal .app bundle instead of a raw script.
+        This allows granting Full Disk Access (FDA) to the gateway process,
+        which is required for iMessage support.
+      '';
+    };
+
+    launchd.appRunnerPath = lib.mkOption {
+      type = lib.types.str;
+      default = "${homeDir}/Applications/Clawdbot Gateway Runner.app";
+      description = "Installation path for the gateway runner app.";
+    };
+
     systemd.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -1175,6 +1249,7 @@ in {
         };
       })
       // (lib.listToAttrs appInstalls)
+      // (lib.listToAttrs (lib.filter (x: x != {}) (map (item: item.appRunnerInstall) instanceConfigs)))
       // documentsFiles
       // skillFiles
       // pluginSkillsFiles
