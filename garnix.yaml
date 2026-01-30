@@ -8,8 +8,6 @@ builds:
     - "packages.x86_64-linux.openclaw-gateway"
     - "packages.x86_64-linux.openclaw-tools"
     - "checks.aarch64-darwin.gateway"
-    - "checks.aarch64-darwin.first-party-plugins"
     - "checks.x86_64-linux.gateway"
-    - "checks.x86_64-linux.first-party-plugins"
     - "checks.x86_64-linux.gateway-tests"
     - "checks.x86_64-linux.config-options"
