@@ -187,7 +187,15 @@ cleanup_tmp() {
   rm -rf "$tmp_src"
 }
 trap cleanup_tmp EXIT
-cp -R "$selected_source_store_path" "$tmp_src/src"
+if [[ -d "$selected_source_store_path" ]]; then
+  cp -R "$selected_source_store_path" "$tmp_src/src"
+elif [[ -f "$selected_source_store_path" ]]; then
+  mkdir -p "$tmp_src/src"
+  tar -xf "$selected_source_store_path" -C "$tmp_src/src" --strip-components=1
+else
+  echo "Source path not found: $selected_source_store_path" >&2
+  exit 1
+fi
 chmod -R u+w "$tmp_src/src"
 
 nix shell --extra-experimental-features "nix-command flakes" nixpkgs#nodejs_22 nixpkgs#pnpm_10 -c \
