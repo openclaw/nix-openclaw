@@ -428,12 +428,14 @@ Deliverables: flake output, env overrides, AGENTS.md, skill update.
 ## Configuration
 
 > **Note:** You probably don't need to write this yourself. Your AI agent handles this when you use the [Quick Start](#quick-start) copypasta. These examples are here for reference.
+>
+> **Breaking change:** Nix now only emits config from `programs.openclaw.config` / `instances.<name>.config` (schema-typed). Legacy provider/routing/agent options are removed.
 
 ### What Openclaw needs (minimum)
 
-1. **Telegram bot token** - create via [@BotFather](https://t.me/BotFather), save to a file
-2. **Your Telegram user ID** - get from [@userinfobot](https://t.me/userinfobot)
-3. **Anthropic API key** - from [console.anthropic.com](https://console.anthropic.com), save to a file
+1. **Telegram bot token file** - create via [@BotFather](https://t.me/BotFather), set `channels.telegram.tokenFile`
+2. **Your Telegram user ID** - get from [@userinfobot](https://t.me/userinfobot), set `channels.telegram.allowFrom`
+3. **Provider API keys** - set via environment (e.g., `ANTHROPIC_API_KEY`) or `config.env.vars` (avoid secrets in store)
 
 That's it. Everything else has sensible defaults.
 
@@ -445,13 +447,11 @@ The simplest setup:
 {
   programs.openclaw = {
     enable = true;
-    providers.telegram = {
-      enable = true;
-      botTokenFile = "/run/agenix/telegram-bot-token"; # any file path works
-      allowFrom = [ 12345678 ];  # your Telegram user ID
-    };
-    providers.anthropic = {
-      apiKeyFile = "/run/agenix/anthropic-api-key"; # any file path works
+    config = {
+      channels.telegram = {
+        tokenFile = "/run/agenix/telegram-bot-token"; # any file path works
+        allowFrom = [ 12345678 ];  # your Telegram user ID
+      };
     };
 
     # Built-ins (tools + skills) shipped via nix-steipete-tools.
@@ -472,15 +472,9 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
 {
   programs.openclaw = {
     documents = ./documents;
-    instances.default = {
-      enable = true;
-      package = pkgs.openclaw; # batteries-included
-      stateDir = "~/.openclaw";
-      workspaceDir = "~/.openclaw/workspace";
-
-      providers.telegram = {
-        enable = true;
-        botTokenFile = "/run/agenix/telegram-bot-token";
+    config = {
+      channels.telegram = {
+        tokenFile = "/run/agenix/telegram-bot-token";
         allowFrom = [
           12345678         # you (DM)
           -1001234567890   # couples group (no @mention required)
@@ -492,9 +486,13 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
           "-1002345678901" = { requireMention = true; };  # noisy group
         };
       };
+    };
 
-      providers.anthropic.apiKeyFile = "/run/agenix/anthropic-api-key";
-
+    instances.default = {
+      enable = true;
+      package = pkgs.openclaw; # batteries-included
+      stateDir = "~/.openclaw";
+      workspaceDir = "~/.openclaw/workspace";
       launchd.enable = true;
 
       # Plugins (prod: pinned GitHub). Built-ins are via nix-steipete-tools.
@@ -544,14 +542,23 @@ inputs = {
 };
 
 let
+  prodConfig = {
+    channels.telegram = {
+      tokenFile = "/run/agenix/telegram-prod";
+      allowFrom = [ 12345678 ];
+    };
+  };
+  devConfig = {
+    channels.telegram = {
+      tokenFile = "/run/agenix/telegram-dev";
+      allowFrom = [ 12345678 ];
+    };
+  };
   prod = {
     enable = true;
     # Prod gateway pin (comes from nix-openclaw input @ v0.1.0 above).
     package = inputs.nix-openclaw.packages.${pkgs.system}.openclaw-gateway;
-    providers.telegram.enable = true;
-    providers.telegram.botTokenFile = "/run/agenix/telegram-prod";
-    providers.telegram.allowFrom = [ 12345678 ];
-    providers.anthropic.apiKeyFile = "/run/agenix/anthropic-api-key";
+    config = prodConfig;
     plugins = [ { source = "github:owner/your-plugin"; } ];
   };
 in {
@@ -564,7 +571,7 @@ in {
     dev = prod // {
       # Dev uses the same pinned macOS app (from nix-openclaw input),
       # but overrides the gateway package to a local checkout.
-      providers.telegram.botTokenFile = "/run/agenix/telegram-dev";
+      config = devConfig;
       gatewayPort = 18790;
       # Local gateway checkout (path). App stays pinned.
       gatewayPath = "/Users/you/code/openclaw";

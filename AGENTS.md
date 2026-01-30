@@ -12,6 +12,7 @@ Defaults:
 - Declarative config only.
 - Batteries‑included install is the baseline.
 - Breaking changes are acceptable pre‑1.0.0 (move fast, keep docs accurate).
+- No deprecations; use breaking changes.
 - NO INLINE SCRIPTS EVER.
 - NEVER send any message (iMessage, email, SMS, etc.) without explicit user confirmation:
   - Always show the full message text and ask: “I’m going to send this: <message>. Send? (y/n)”
@@ -57,3 +58,4 @@ Nix file policy:
 - No inline file contents in Nix code, ever.
 - Always reference explicit file paths (keep docs as real files in the repo).
 - No inline scripts in Nix code, ever (use repo scripts and reference their paths).
+- No files longer than 400 LOC without user alignment; refactor as you go.

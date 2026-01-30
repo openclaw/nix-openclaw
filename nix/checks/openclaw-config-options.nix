@@ -67,6 +67,11 @@ let
         type = lib.types.bool;
         default = false;
       };
+
+      lib = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
     };
   };
 
@@ -78,6 +83,7 @@ let
         config = {
           home.homeDirectory = "/tmp";
           programs.git.enable = false;
+          lib.file.mkOutOfStoreSymlink = path: path;
           programs.openclaw = {
             enable = true;
             launchd.enable = false;
