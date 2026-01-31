@@ -52,22 +52,49 @@ jobs:
               await new Promise((resolve) => setTimeout(resolve, intervalMs))
             }
 
-      - name: Fail fast on cache misses
+      - name: Verify cache.garnix.io has required outputs
         env:
-          NIX_CONFIG: |
-            max-jobs = 0
-            builders =
-            fallback = false
+          STORE_URL: https://cache.garnix.io
+          WAIT_MINUTES: 30
         run: |
-          nix build --no-link --accept-flake-config \
-            .#packages.aarch64-darwin.moltbot \
-            .#packages.aarch64-darwin.moltbot-gateway \
-            .#packages.aarch64-darwin.moltbot-tools \
-            .#packages.aarch64-darwin.moltbot-app \
-            .#packages.x86_64-linux.moltbot \
-            .#packages.x86_64-linux.moltbot-gateway \
-            .#packages.x86_64-linux.moltbot-tools \
-            .#checks.aarch64-darwin.gateway \
-            .#checks.x86_64-linux.gateway \
-            .#checks.x86_64-linux.gateway-tests \
-            .#checks.x86_64-linux.config-options
+          set -euo pipefail
+
+          targets=(
+            packages.aarch64-darwin.openclaw
+            packages.aarch64-darwin.openclaw-gateway
+            packages.aarch64-darwin.openclaw-tools
+            packages.aarch64-darwin.openclaw-app
+            packages.x86_64-linux.openclaw
+            packages.x86_64-linux.openclaw-gateway
+            packages.x86_64-linux.openclaw-tools
+            checks.aarch64-darwin.gateway
+            checks.x86_64-linux.gateway
+            checks.x86_64-linux.gateway-tests
+            checks.x86_64-linux.config-options
+          )
+
+          deadline=$(( $(date +%s) + WAIT_MINUTES * 60 ))
+
+          while true; do
+            missing=()
+            for target in "${targets[@]}"; do
+              out_path=$(nix --extra-experimental-features 'nix-command flakes' eval --accept-flake-config --raw ".#${target}.outPath")
+              if ! nix path-info --store "$STORE_URL" "$out_path" >/dev/null 2>&1; then
+                missing+=("${target}:${out_path}")
+              fi
+            done
+
+            if [ ${#missing[@]} -eq 0 ]; then
+              echo "Cache ready on ${STORE_URL}."
+              break
+            fi
+
+            if [ "$(date +%s)" -gt "$deadline" ]; then
+              echo "Cache missing after ${WAIT_MINUTES} minutes:"
+              printf ' - %s\n' "${missing[@]}"
+              exit 1
+            fi
+
+            echo "Cache still missing (${#missing[@]}). Retrying in 30s..."
+            sleep 30
+          done

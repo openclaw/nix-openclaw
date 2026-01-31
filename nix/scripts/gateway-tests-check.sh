@@ -12,14 +12,14 @@ fi
 export HOME="$(mktemp -d)"
 export TMPDIR="${HOME}/tmp"
 mkdir -p "$TMPDIR"
-export MOLTBOT_LOG_DIR="${TMPDIR}/moltbot-logs"
-export MOLTBOT_LOG_PATH="${MOLTBOT_LOG_DIR}/moltbot-gateway.log"
-mkdir -p "$MOLTBOT_LOG_DIR"
-mkdir -p /tmp/moltbot || true
-chmod 700 /tmp/moltbot || true
-export VITEST_POOL="threads"
-export VITEST_MIN_THREADS="2"
-export VITEST_MAX_THREADS="2"
+export OPENCLAW_LOG_DIR="${TMPDIR}/openclaw-logs"
+export MOLTBOT_LOG_PATH="${OPENCLAW_LOG_DIR}/openclaw-gateway.log"
+mkdir -p "$OPENCLAW_LOG_DIR"
+mkdir -p /tmp/openclaw || true
+chmod 700 /tmp/openclaw || true
+export OPENCLAW_BUNDLED_PLUGINS_DIR="${TMPDIR}/openclaw-empty-extensions"
+mkdir -p "$OPENCLAW_BUNDLED_PLUGINS_DIR"
+export VITEST_POOL="forks"
 export VITEST_MIN_WORKERS="2"
 export VITEST_MAX_WORKERS="2"
 

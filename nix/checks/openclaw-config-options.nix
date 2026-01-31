@@ -1,4 +1,5 @@
 { lib
+, pkgs
 , stdenv
 , fetchFromGitHub
 , fetchurl
@@ -15,6 +16,89 @@
 }:
 
 let
+  linuxFirstParty = [
+    "summarize"
+    "gogcli"
+    "camsnap"
+    "sonoscli"
+    "sag"
+    "oracle"
+  ];
+  enableFirstParty = name: stdenv.hostPlatform.isDarwin || lib.elem name linuxFirstParty;
+
+  stubModule = { lib, ... }: {
+    options = {
+      assertions = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [];
+      };
+
+      home.homeDirectory = lib.mkOption {
+        type = lib.types.str;
+        default = "/tmp";
+      };
+
+      home.packages = lib.mkOption {
+        type = lib.types.listOf lib.types.anything;
+        default = [];
+      };
+
+      home.file = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
+
+      home.activation = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
+
+      launchd.agents = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
+
+      systemd.user.services = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
+
+      programs.git.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+      };
+
+      lib = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+      };
+    };
+  };
+
+  pluginEval = lib.evalModules {
+    modules = [
+      stubModule
+      ../modules/home-manager/openclaw.nix
+      ({ lib, options, ... }: {
+        config = {
+          home.homeDirectory = "/tmp";
+          programs.git.enable = false;
+          lib.file.mkOutOfStoreSymlink = path: path;
+          programs.openclaw = {
+            enable = true;
+            launchd.enable = false;
+            systemd.enable = false;
+            instances.default = {};
+            firstParty = lib.mapAttrs (name: _: { enable = enableFirstParty name; }) options.programs.openclaw.firstParty;
+          };
+        };
+      })
+    ];
+    specialArgs = { inherit pkgs; };
+  };
+
+  pluginEvalKey = builtins.deepSeq pluginEval.config.assertions "ok";
+
   sourceFetch = lib.removeAttrs sourceInfo [ "pnpmDepsHash" ];
   pnpmPlatform = if stdenv.hostPlatform.isDarwin then "darwin" else "linux";
   pnpmArch = if stdenv.hostPlatform.isAarch64 then "arm64" else "x64";
@@ -33,7 +117,7 @@ let
 in
 
 stdenv.mkDerivation (finalAttrs: {
-  pname = "moltbot-config-options";
+  pname = "openclaw-config-options";
   version = "2026.1.8-2";
 
   src = fetchFromGitHub sourceFetch;
@@ -73,8 +157,9 @@ stdenv.mkDerivation (finalAttrs: {
     REMOVE_PACKAGE_MANAGER_FIELD_SH = "${../scripts/remove-package-manager-field.sh}";
     STDENV_SETUP = "${stdenv}/setup";
     CONFIG_OPTIONS_GENERATOR = "${../scripts/generate-config-options.ts}";
-    CONFIG_OPTIONS_GOLDEN = "${../generated/moltbot-config-options.nix}";
+    CONFIG_OPTIONS_GOLDEN = "${../generated/openclaw-config-options.nix}";
     NODE_ENGINE_CHECK = "${../scripts/check-node-engine.ts}";
+    OPENCLAW_PLUGIN_EVAL = pluginEvalKey;
   };
 
   buildPhase = "${../scripts/gateway-tests-build.sh}";
