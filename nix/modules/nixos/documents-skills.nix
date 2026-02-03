@@ -12,8 +12,8 @@ let
   renderSkill = skill:
     let
       metadataLine =
-        if skill.clawdbot != null
-        then "metadata: ${builtins.toJSON { clawdbot = skill.clawdbot; }}"
+        if skill.openclaw != null
+        then "metadata: ${builtins.toJSON { openclaw = skill.openclaw; }}"
         else null;
       homepageLine =
         if skill.homepage != null
@@ -53,7 +53,7 @@ let
 
   toolsWithReport =
     if documentsEnabled then
-      pkgs.runCommand "clawdbot-tools-with-report.md" {} ''
+      pkgs.runCommand "openclaw-tools-with-report.md" {} ''
         cat ${cfg.documents + "/TOOLS.md"} > $out
         echo "" >> $out
         cat <<'EOF' >> $out
@@ -67,19 +67,19 @@ EOF
   documentsAssertions = lib.optionals documentsEnabled [
     {
       assertion = builtins.pathExists cfg.documents;
-      message = "services.clawdbot.documents must point to an existing directory.";
+      message = "services.openclaw.documents must point to an existing directory.";
     }
     {
       assertion = builtins.pathExists (cfg.documents + "/AGENTS.md");
-      message = "Missing AGENTS.md in services.clawdbot.documents.";
+      message = "Missing AGENTS.md in services.openclaw.documents.";
     }
     {
       assertion = builtins.pathExists (cfg.documents + "/SOUL.md");
-      message = "Missing SOUL.md in services.clawdbot.documents.";
+      message = "Missing SOUL.md in services.openclaw.documents.";
     }
     {
       assertion = builtins.pathExists (cfg.documents + "/TOOLS.md");
-      message = "Missing TOOLS.md in services.clawdbot.documents.";
+      message = "Missing TOOLS.md in services.openclaw.documents.";
     }
   ];
 
@@ -94,12 +94,12 @@ EOF
       (if duplicateNames == [] then [] else [
         {
           assertion = false;
-          message = "services.clawdbot.skills has duplicate names: ${lib.concatStringsSep ", " duplicateNames}";
+          message = "services.openclaw.skills has duplicate names: ${lib.concatStringsSep ", " duplicateNames}";
         }
       ])
       ++ (map (s: {
         assertion = false;
-        message = "services.clawdbot.skills: skill '${s.name}' uses copy mode but has no source.";
+        message = "services.openclaw.skills: skill '${s.name}' uses copy mode but has no source.";
       }) copySkillsWithoutSource);
 
   # Build skill derivations for each instance
