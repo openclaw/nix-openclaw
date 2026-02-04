@@ -85,7 +85,7 @@ let
 
       ${lib.concatStringsSep "\n" (map (entry: ''
         if [ -f "${entry.value}" ]; then
-          rawValue="$(cat "${entry.value}")"
+          rawValue="$("${lib.getExe' pkgs.coreutils "cat"}" "${entry.value}")"
           if [ "''${rawValue#${entry.key}=}" != "$rawValue" ]; then
             export ${entry.key}="''${rawValue#${entry.key}=}"
           else
