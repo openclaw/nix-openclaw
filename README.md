@@ -24,6 +24,7 @@ If you’re **not listed as a maintainer** (see [AGENTS.md#maintainers](AGENTS.m
 - [How It Works](#how-it-works)
 - [Plugins](#plugins)
 - [Configuration](#configuration)
+  - [LLM Provider Configuration](#llm-provider-configuration)
 - [Advanced](#advanced)
 - [Packaging & Updates](#packaging--updates)
 - [Reference](#reference)
@@ -126,8 +127,9 @@ What I need you to do:
 2. Create a local flake at ~/code/openclaw-local using templates/agent-first/flake.nix
 3. Create a docs dir next to the config (e.g., ~/code/openclaw-local/documents) with AGENTS.md, SOUL.md, TOOLS.md (optional: IDENTITY.md, USER.md, LORE.md, HEARTBEAT.md, PROMPTING-EXAMPLES.md)
    - If ~/.openclaw/workspace already has these files, adopt them into the documents dir first (use copy/rsync that dereferences symlinks, e.g. `cp -L`)
+   - Kimi (Moonshot AI) is configured as the default LLM provider with a 262K context window
 4. Help me create a Matrix account and get an access token for the bot
-5. Set up secrets (Matrix token/password, Anthropic key) - plain files at ~/.secrets/ is fine
+5. Set up secrets (Matrix token/password, Kimi API key) - plain files at ~/.secrets/ is fine
 6. Fill in the template placeholders and run home-manager switch
 7. Verify: service running, bot responds to messages
 
@@ -163,7 +165,7 @@ Your agent will install Nix, create your config, and get Openclaw running. You j
    - `system` = `aarch64-darwin` (Apple Silicon) or `x86_64-darwin` (Intel)
    - `home.username` and `home.homeDirectory`
    - `programs.openclaw.documents` with `AGENTS.md`, `SOUL.md`, `TOOLS.md` (optional: `IDENTITY.md`, `USER.md`, `LORE.md`, `HEARTBEAT.md`, `PROMPTING-EXAMPLES.md`)
-   - Provider secrets (Matrix tokens, Anthropic API key)
+   - Provider secrets (Matrix tokens, Kimi API key - get from https://www.kimi.com/)
 4. Apply:
    ```bash
    home-manager switch --flake .#<user>
@@ -185,7 +187,7 @@ Your agent will install Nix, create your config, and get Openclaw running. You j
    - `system` = `x86_64-linux`
    - `home.username` and `home.homeDirectory` (e.g., `/home/<user>`)
    - `programs.openclaw.documents` with `AGENTS.md`, `SOUL.md`, `TOOLS.md` (optional: `IDENTITY.md`, `USER.md`, `LORE.md`, `HEARTBEAT.md`, `PROMPTING-EXAMPLES.md`)
-   - Provider secrets (Matrix tokens, Anthropic API key)
+   - Provider secrets (Matrix tokens, Kimi API key - get from https://www.kimi.com/)
 4. Apply:
    ```bash
    home-manager switch --flake .#<user>
@@ -541,6 +543,79 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
   };
 }
 ```
+
+---
+
+### LLM Provider Configuration
+
+Openclaw supports multiple LLM providers. By default, it uses Anthropic Claude, but you can configure any OpenAI-compatible provider.
+
+#### Supported Providers
+
+| Provider | API Type | Base URL | Context Window | Multimodal |
+|----------|----------|----------|----------------|------------|
+| **Anthropic Claude** | `anthropic-messages` | `https://api.anthropic.com` | 200K | ✅ |
+| **OpenAI GPT** | `openai-completions` | `https://api.openai.com/v1` | 128K | ✅ |
+| **Kimi (Moonshot AI)** | `openai-completions` | `https://api.kimi.com/coding/v1` | 262K | ✅ |
+| **Google Gemini** | `google-generative-ai` | `https://generativelanguage.googleapis.com` | 128K | ✅ |
+| **OpenRouter** | `openai-completions` | `https://openrouter.ai/api/v1` | Varies | ✅ |
+
+#### Kimi (Moonshot AI) Example
+
+The K2.5 model offers a **262K context window** with multimodal support:
+
+```nix
+{
+  programs.openclaw.config = {
+    models = {
+      providers = {
+        kimi = {
+          baseUrl = "https://api.kimi.com/coding/v1";
+          api = "openai-completions";
+          auth = "api-key";
+          apiKey = "\${KIMI_API_KEY}";  # From environment
+          models = [
+            {
+              id = "kimi-k2p5";
+              name = "Kimi K2.5";
+              contextWindow = 262144;  # 262K context
+              maxTokens = 8192;
+              input = [ "text" "image" ];  # Multimodal
+              reasoning = true;
+              api = "openai-completions";
+              compat = {
+                maxTokensField = "max_tokens";
+                supportsDeveloperRole = false;
+                supportsReasoningEffort = true;
+                supportsStore = false;
+              };
+              cost = {
+                input = 0.002;
+                output = 0.008;
+              };
+            }
+          ];
+        };
+      };
+    };
+
+    agents = {
+      defaults = {
+        model = {
+          primary = "kimi/kimi-k2p5";
+          fallbacks = [ "anthropic/claude-3-5-sonnet-20241022" ];
+        };
+      };
+    };
+  };
+}
+```
+
+**Get your API key:** https://www.kimi.com/
+
+**Full documentation:** See [docs/kimi-provider.md](docs/kimi-provider.md) for detailed setup instructions and troubleshooting.
+
+**Example configuration:** See [examples/kimi-provider/](examples/kimi-provider/) for a complete working example.
 
 ---
 

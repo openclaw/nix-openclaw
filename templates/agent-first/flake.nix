@@ -45,6 +45,50 @@
                 accessTokenFile = "<accessTokenPath>";
               };
 
+              # Kimi (Moonshot AI) is configured as the default LLM provider
+              # Get your API key from: https://www.kimi.com/
+              config = {
+                models = {
+                  providers = {
+                    kimi = {
+                      api = "openai-completions";
+                      baseUrl = "https://api.kimi.com/coding/v1";
+                      apiKey = "\${KIMI_API_KEY}";
+                      auth = "api-key";
+                      models = [
+                        {
+                          id = "kimi-k2p5";
+                          name = "Kimi K2.5";
+                          api = "openai-completions";
+                          contextWindow = 262144;  # 262K context window
+                          maxTokens = 8192;
+                          input = [ "text" "image" ];  # Multimodal support
+                          reasoning = true;
+                          compat = {
+                            maxTokensField = "max_tokens";
+                            supportsDeveloperRole = false;
+                            supportsReasoningEffort = true;
+                            supportsStore = false;
+                          };
+                          cost = {
+                            input = 0.002;
+                            output = 0.008;
+                          };
+                        }
+                      ];
+                    };
+                  };
+                };
+                agents = {
+                  defaults = {
+                    model = {
+                      primary = "kimi/kimi-k2p5";
+                      fallbacks = [ "anthropic/claude-3-5-sonnet-20241022" ];
+                    };
+                  };
+                };
+              };
+
               instances.default = {
                 enable = true;
                 # Note: The @openclaw/matrix plugin is loaded automatically when Matrix is enabled
@@ -53,6 +97,13 @@
                   { source = "github:acme/hello-world"; }
                 ];
               };
+            };
+
+            # Environment variables for API keys
+            home.sessionVariables = {
+              # REPLACE: Set your Kimi API key here or reference a secrets file
+              # Get your API key from: https://www.kimi.com/
+              KIMI_API_KEY = "$(cat <kimiApiKeyPath>)";
             };
           }
         ];
