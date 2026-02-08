@@ -50,6 +50,11 @@ If something is missing for a fully declarative deployment, it’s a bug — fix
 - Node: optional
 - Expect downtime / sleep / network changes
 
+## macOS permissions (TCC)
+
+On unmanaged Macs, privacy permissions (Screen Recording, Accessibility, etc.) are not fully declarative.
+You can check required permissions in `openclaw nodes status/describe` and then approve them once.
+
 ## Runtime state vs pinned config
 
 Pinned / Nix-managed:
