@@ -1728,7 +1728,7 @@ in
           type = t.str;
         };
         kind = lib.mkOption {
-          type = t.oneOf [ (t.enum [ "dm" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ];
+          type = t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ];
         };
       }; });
         default = null;
@@ -7178,7 +7178,7 @@ in
               default = null;
             };
             chatType = lib.mkOption {
-              type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+              type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
               default = null;
             };
             keyPrefix = lib.mkOption {
@@ -7883,6 +7883,23 @@ in
     };
     resetByType = lib.mkOption {
       type = t.nullOr (t.submodule { options = {
+      direct = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        atHour = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        idleMinutes = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        mode = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.enum [ "daily" ]) (t.enum [ "idle" ]) ]);
+          default = null;
+        };
+      }; });
+        default = null;
+      };
       dm = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
         atHour = lib.mkOption {
@@ -7963,7 +7980,7 @@ in
             default = null;
           };
           chatType = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+            type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
             default = null;
           };
           keyPrefix = lib.mkOption {
@@ -8253,7 +8270,7 @@ in
               default = null;
             };
             chatType = lib.mkOption {
-              type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+              type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
               default = null;
             };
             keyPrefix = lib.mkOption {
@@ -8450,7 +8467,7 @@ in
                 default = null;
               };
               chatType = lib.mkOption {
-                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
                 default = null;
               };
               keyPrefix = lib.mkOption {
@@ -8649,7 +8666,7 @@ in
                 default = null;
               };
               chatType = lib.mkOption {
-                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
                 default = null;
               };
               keyPrefix = lib.mkOption {
@@ -8930,7 +8947,7 @@ in
                 default = null;
               };
               chatType = lib.mkOption {
-                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) ]);
+                type = t.nullOr (t.oneOf [ (t.enum [ "direct" ]) (t.enum [ "group" ]) (t.enum [ "channel" ]) (t.enum [ "dm" ]) ]);
                 default = null;
               };
               keyPrefix = lib.mkOption {
