@@ -6,7 +6,86 @@ on:
   workflow_dispatch:
 
 jobs:
-  smoke:
+  build-linux:
     runs-on: ubuntu-latest
+    env:
+      CACHIX_CACHE_NAME: ${{ vars.CACHIX_CACHE_NAME }}
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
     steps:
-      - run: echo "smoke ok"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Setup Cachix
+        if: ${{ vars.CACHIX_CACHE_NAME != '' }}
+        uses: cachix/cachix-action@v15
+        with:
+          name: ${{ vars.CACHIX_CACHE_NAME }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build (and push if configured)
+        run: |
+          set -euo pipefail
+
+          targets=(
+            .#packages.x86_64-linux.openclaw
+            .#packages.x86_64-linux.openclaw-gateway
+            .#packages.x86_64-linux.openclaw-tools
+            .#checks.x86_64-linux.gateway
+            .#checks.x86_64-linux.gateway-tests
+            .#checks.x86_64-linux.config-options
+            .#checks.x86_64-linux.default-instance
+            .#checks.x86_64-linux.config-validity
+            .#checks.x86_64-linux.package-contents
+          )
+
+          if [ -n "${CACHIX_CACHE_NAME:-}" ] && [ -n "${CACHIX_AUTH_TOKEN:-}" ]; then
+            echo "Building + pushing to Cachix cache: ${CACHIX_CACHE_NAME}"
+            cachix watch-exec "${CACHIX_CACHE_NAME}" -- \
+              nix build --accept-flake-config --print-build-logs "${targets[@]}"
+          else
+            echo "Building without Cachix push (cache not configured)."
+            nix build --accept-flake-config --print-build-logs "${targets[@]}"
+          fi
+
+  build-macos:
+    runs-on: macos-14
+    env:
+      CACHIX_CACHE_NAME: ${{ vars.CACHIX_CACHE_NAME }}
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Setup Cachix
+        if: ${{ vars.CACHIX_CACHE_NAME != '' }}
+        uses: cachix/cachix-action@v15
+        with:
+          name: ${{ vars.CACHIX_CACHE_NAME }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build (and push if configured)
+        run: |
+          set -euo pipefail
+
+          targets=(
+            .#packages.aarch64-darwin.openclaw
+            .#packages.aarch64-darwin.openclaw-gateway
+            .#packages.aarch64-darwin.openclaw-tools
+            .#packages.aarch64-darwin.openclaw-app
+            .#checks.aarch64-darwin.gateway
+          )
+
+          if [ -n "${CACHIX_CACHE_NAME:-}" ] && [ -n "${CACHIX_AUTH_TOKEN:-}" ]; then
+            echo "Building + pushing to Cachix cache: ${CACHIX_CACHE_NAME}"
+            cachix watch-exec "${CACHIX_CACHE_NAME}" -- \
+              nix build --accept-flake-config --print-build-logs "${targets[@]}"
+          else
+            echo "Building without Cachix push (cache not configured)."
+            nix build --accept-flake-config --print-build-logs "${targets[@]}"
+          fi
