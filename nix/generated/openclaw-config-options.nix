@@ -640,6 +640,10 @@ in
             type = t.nullOr (t.int);
             default = null;
           };
+          binds = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
           cdpPort = lib.mkOption {
             type = t.nullOr (t.int);
             default = null;
@@ -1248,6 +1252,10 @@ in
           };
           autoStartTimeoutMs = lib.mkOption {
             type = t.nullOr (t.int);
+            default = null;
+          };
+          binds = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
             default = null;
           };
           cdpPort = lib.mkOption {
