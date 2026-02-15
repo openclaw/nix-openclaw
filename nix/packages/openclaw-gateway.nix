@@ -4,6 +4,7 @@
 , fetchurl
 , nodejs_22
 , pnpm_10
+, fetchPnpmDeps
 , pkg-config
 , jq
 , python3
@@ -34,8 +35,9 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = if gatewaySrc != null then gatewaySrc else fetchFromGitHub sourceFetch;
 
-  pnpmDeps = pnpm_10.fetchDeps {
+  pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
+    pnpm = pnpm_10;
     hash = if pnpmDepsHash != null
       then pnpmDepsHash
       else lib.fakeHash;

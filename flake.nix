@@ -16,21 +16,34 @@
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
   };
 
-  outputs = { self, nixpkgs, flake-utils, home-manager, nix-steipete-tools }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      home-manager,
+      nix-steipete-tools,
+    }:
     let
       overlay = import ./nix/overlay.nix;
       sourceInfoStable = import ./nix/sources/openclaw-source.nix;
-      systems = [ "x86_64-linux" "aarch64-darwin" ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-darwin"
+      ];
     in
-    flake-utils.lib.eachSystem systems (system:
+    flake-utils.lib.eachSystem systems (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ overlay ];
         };
-        steipetePkgs = if nix-steipete-tools ? packages && builtins.hasAttr system nix-steipete-tools.packages
-          then nix-steipete-tools.packages.${system}
-          else {};
+        steipetePkgs =
+          if nix-steipete-tools ? packages && builtins.hasAttr system nix-steipete-tools.packages then
+            nix-steipete-tools.packages.${system}
+          else
+            { };
         packageSetStable = import ./nix/packages {
           pkgs = pkgs;
           sourceInfo = sourceInfoStable;
@@ -38,6 +51,8 @@
         };
       in
       {
+        formatter = pkgs.nixfmt-tree;
+
         packages = packageSetStable // {
           default = packageSetStable.openclaw;
         };
@@ -54,28 +69,35 @@
           config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
             openclawGateway = packageSetStable.openclaw-gateway;
           };
-        } // (if pkgs.stdenv.hostPlatform.isLinux then {
-          gateway-tests = pkgs.callPackage ./nix/checks/openclaw-gateway-tests.nix {
-            sourceInfo = sourceInfoStable;
-          };
-          config-options = pkgs.callPackage ./nix/checks/openclaw-config-options.nix {
-            sourceInfo = sourceInfoStable;
-          };
-          default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {};
-          hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
-            inherit pkgs home-manager;
-          };
-        } else {});
+        }
+        // (
+          if pkgs.stdenv.hostPlatform.isLinux then
+            {
+              gateway-tests = pkgs.callPackage ./nix/checks/openclaw-gateway-tests.nix {
+                sourceInfo = sourceInfoStable;
+              };
+              config-options = pkgs.callPackage ./nix/checks/openclaw-config-options.nix {
+                sourceInfo = sourceInfoStable;
+              };
+              default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
+              hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
+                inherit pkgs home-manager;
+              };
+            }
+          else
+            { }
+        );
 
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.git
-            pkgs.nixfmt-rfc-style
+            pkgs.nixfmt-tree
             pkgs.nil
           ];
         };
       }
-    ) // {
+    )
+    // {
       overlays.default = overlay;
       homeManagerModules.openclaw = import ./nix/modules/home-manager/openclaw.nix;
       darwinModules.openclaw = import ./nix/modules/darwin/openclaw.nix;
