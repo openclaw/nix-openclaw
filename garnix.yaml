@@ -1,16 +1,8 @@
 builds:
   include:
-    - "packages.aarch64-darwin.openclaw"
-    - "packages.aarch64-darwin.openclaw-gateway"
-    - "packages.aarch64-darwin.openclaw-tools"
-    - "packages.aarch64-darwin.openclaw-app"
-    - "packages.x86_64-linux.openclaw"
-    - "packages.x86_64-linux.openclaw-gateway"
-    - "packages.x86_64-linux.openclaw-tools"
-    - "checks.aarch64-darwin.gateway"
-    - "checks.x86_64-linux.gateway"
-    - "checks.x86_64-linux.gateway-tests"
-    - "checks.x86_64-linux.config-options"
-    - "checks.x86_64-linux.default-instance"
-    - "checks.x86_64-linux.config-validity"
-    - "checks.x86_64-linux.package-contents"
+    # Single aggregator per platform.
+    #
+    # Avoids building openclaw-gateway multiple times across parallel CI jobs
+    # (cache-miss races) and reduces total compute/quota usage.
+    - "checks.aarch64-darwin.ci"
+    - "checks.x86_64-linux.ci"
