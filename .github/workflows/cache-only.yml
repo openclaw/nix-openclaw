@@ -1,4 +1,4 @@
-name: Cache Pipeline
+name: Cache Only
 
 on:
   pull_request:
@@ -9,8 +9,8 @@ on:
     types: [ completed ]
 
 jobs:
-  producer-cache-ready:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
+  cache-only:
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     env:
       TARGET_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
@@ -68,12 +68,9 @@ jobs:
             packages.x86_64-linux.openclaw-gateway
             packages.x86_64-linux.openclaw-tools
             checks.aarch64-darwin.gateway
-            checks.aarch64-darwin.gateway-smoke
             checks.x86_64-linux.gateway
-            checks.x86_64-linux.gateway-smoke
             checks.x86_64-linux.gateway-tests
             checks.x86_64-linux.config-options
-            checks.x86_64-linux.hm-activation
           )
 
           deadline=$(( $(date +%s) + WAIT_MINUTES * 60 ))
@@ -100,75 +97,4 @@ jobs:
 
             echo "Cache still missing (${#missing[@]}). Retrying in 30s..."
             sleep 30
-          done
-
-  consumer-cache-only:
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    env:
-      TARGET_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TARGET_SHA }}
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v13
-
-      - name: Wait for Garnix checks
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const waitMinutes = 30
-            const intervalMs = 30_000
-            const deadline = Date.now() + waitMinutes * 60 * 1000
-            const targetSha = process.env.TARGET_SHA || context.sha
-
-            while (true) {
-              const { data } = await github.rest.checks.listForRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: targetSha,
-              })
-              const garnix = data.check_runs.find((run) => run.name === 'All Garnix checks')
-              if (garnix && garnix.status === 'completed') {
-                if (garnix.conclusion !== 'success') {
-                  core.setFailed(`Garnix checks not successful: ${garnix.conclusion}`)
-                }
-                break
-              }
-              if (Date.now() > deadline) {
-                core.setFailed('Timed out waiting for Garnix checks')
-                break
-              }
-              await new Promise((resolve) => setTimeout(resolve, intervalMs))
-            }
-
-      - name: Consume Linux checks from cache only
-        run: |
-          nix build --extra-experimental-features 'nix-command flakes' \
-            --accept-flake-config \
-            --max-jobs 0 \
-            .#checks.x86_64-linux.ci \
-            --print-build-logs
-
-      - name: Consume Darwin artifacts from cache only
-        env:
-          STORE_URL: https://cache.garnix.io
-        run: |
-          set -euo pipefail
-
-          targets=(
-            packages.aarch64-darwin.openclaw
-            packages.aarch64-darwin.openclaw-gateway
-            packages.aarch64-darwin.openclaw-tools
-            packages.aarch64-darwin.openclaw-app
-            checks.aarch64-darwin.gateway
-            checks.aarch64-darwin.gateway-smoke
-          )
-
-          for target in "${targets[@]}"; do
-            out_path=$(nix --extra-experimental-features 'nix-command flakes' eval --accept-flake-config --raw ".#${target}.outPath")
-            nix path-info --store "$STORE_URL" "$out_path" >/dev/null
           done

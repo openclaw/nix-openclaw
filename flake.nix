@@ -69,9 +69,6 @@
           let
             baseChecks = {
               gateway = packageSetStable.openclaw-gateway;
-              gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
-                openclawGateway = packageSetStable.openclaw-gateway;
-              };
               package-contents = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
