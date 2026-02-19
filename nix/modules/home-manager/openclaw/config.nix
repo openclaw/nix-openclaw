@@ -102,14 +102,16 @@ let
       # Determine config source: external file or nix-generated
       configFromExternal = inst.externalConfig != null;
 
-      # For external config, read as-is; for nix config, generate from options
-      # Note: externalConfig can be either a path (readFile) or a string (content directly)
+      # Validate: cannot use both config and externalConfig
+      configUsed = inst.config != {};
+      configValidation = if configFromExternal && configUsed then
+        throw "Cannot use both 'config' and 'externalConfig' options simultaneously. Use only one."
+      else true;
+
+      # For external config, use string directly; for nix config, generate from options
       configJson =
         if configFromExternal then
-          (if lib.isPath inst.externalConfig then
-            builtins.readFile inst.externalConfig
-          else
-            inst.externalConfig)  # already a string
+          inst.externalConfig  # already a string (from builtins.readFile or builtins.toJSON)
         else
           let
             mergedConfig0 = stripNulls (
