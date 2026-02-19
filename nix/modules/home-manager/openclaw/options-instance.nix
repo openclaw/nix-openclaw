@@ -91,6 +91,12 @@
       description = "OpenClaw config (schema-typed).";
     };
 
+    externalConfig = lib.mkOption {
+      type = lib.types.nullOr (lib.types.either lib.types.path lib.types.str);
+      default = null;
+      description = "Path to an external openclaw.json file, or its content as a string (use builtins.readFile to read from a file). When set, this file will be used directly instead of generating config from the 'config' option.";
+    };
+
     launchd.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
