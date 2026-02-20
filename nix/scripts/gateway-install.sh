@@ -44,6 +44,9 @@ log_step "move build outputs" mv dist node_modules package.json "$out/lib/opencl
 if [ -d extensions ]; then
   log_step "copy extensions" cp -r extensions "$out/lib/openclaw/"
 fi
+if [ -d assets ]; then
+  log_step "copy assets" cp -r assets "$out/lib/openclaw/"
+fi
 
 if [ -d docs/reference/templates ]; then
   mkdir -p "$out/lib/openclaw/docs/reference"
