@@ -15,6 +15,8 @@ require_path() {
   fi
 }
 
+require_path "${root}/assets/chrome-extension"
+require_path "${root}/assets/chrome-extension/manifest.json"
 require_path "${root}/extensions"
 require_path "${root}/extensions/memory-core"
 require_path "${root}/docs/reference/templates"
