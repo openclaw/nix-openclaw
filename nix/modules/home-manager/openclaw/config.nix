@@ -98,22 +98,39 @@ let
           inst.package;
       pluginPackages = plugins.pluginPackagesFor name;
       pluginEnvAll = plugins.pluginEnvAllFor name;
-      mergedConfig0 = stripNulls (
-        lib.recursiveUpdate (lib.recursiveUpdate baseConfig cfg.config) inst.config
-      );
-      existingWorkspace = (((mergedConfig0.agents or { }).defaults or { }).workspace or null);
-      mergedConfig =
-        if (cfg.workspace.pinAgentDefaults or true) && existingWorkspace == null then
-          lib.recursiveUpdate mergedConfig0 {
-            agents = {
-              defaults = {
-                workspace = inst.workspaceDir;
-              };
-            };
-          }
+
+      # Determine config source: external file or nix-generated
+      configFromExternal = inst.externalConfig != null;
+
+      # Validate: cannot use both config and externalConfig
+      configUsed = inst.config != {};
+      configValidation = if configFromExternal && configUsed then
+        throw "Cannot use both 'config' and 'externalConfig' options simultaneously. Use only one."
+      else true;
+
+      # For external config, use string directly; for nix config, generate from options
+      configJson =
+        if configFromExternal then
+          inst.externalConfig  # already a string (from builtins.readFile or builtins.toJSON)
         else
-          mergedConfig0;
-      configJson = builtins.toJSON mergedConfig;
+          let
+            mergedConfig0 = stripNulls (
+              lib.recursiveUpdate (lib.recursiveUpdate baseConfig cfg.config) inst.config
+            );
+            existingWorkspace = (((mergedConfig0.agents or { }).defaults or { }).workspace or null);
+            mergedConfig =
+              if (cfg.workspace.pinAgentDefaults or true) && existingWorkspace == null then
+                lib.recursiveUpdate mergedConfig0 {
+                  agents = {
+                    defaults = {
+                      workspace = inst.workspaceDir;
+                    };
+                  };
+                }
+              else
+                mergedConfig0;
+          in builtins.toJSON mergedConfig;
+
       configFile = pkgs.writeText "openclaw-${name}.json" configJson;
       gatewayWrapper = pkgs.writeShellScriptBin "openclaw-gateway-${name}" ''
         set -euo pipefail
