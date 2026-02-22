@@ -37,7 +37,10 @@ let
   ];
 
   pluginCatalog = import ../modules/home-manager/openclaw/plugin-catalog.nix;
-  bundledToolNames = lib.unique (map (plugin: plugin.tool) (builtins.attrValues pluginCatalog));
+  bundledToolNames = lib.unique (
+    builtins.filter (name: name != "bird")
+      (map (plugin: plugin.tool) (builtins.attrValues pluginCatalog))
+  );
 
   extraNames = [
     "go"
