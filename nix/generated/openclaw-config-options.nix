@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev b817600533129771ace2801d7c05901c7f850fb8. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 819cec3c406a45d231057e37ace2f68cb6769255. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -808,6 +808,10 @@ in
             type = t.nullOr (t.number);
             default = null;
           };
+          dangerouslyAllowContainerNamespaceJoin = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
           dangerouslyAllowExternalBindSources = lib.mkOption {
             type = t.nullOr (t.bool);
             default = null;
@@ -1484,6 +1488,10 @@ in
           };
           cpus = lib.mkOption {
             type = t.nullOr (t.number);
+            default = null;
+          };
+          dangerouslyAllowContainerNamespaceJoin = lib.mkOption {
+            type = t.nullOr (t.bool);
             default = null;
           };
           dangerouslyAllowExternalBindSources = lib.mkOption {
@@ -3163,6 +3171,14 @@ in
           }; }));
             default = null;
           };
+          daveEncryption = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          decryptionFailureTolerance = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
           enabled = lib.mkOption {
             type = t.nullOr (t.bool);
             default = null;
@@ -3928,6 +3944,14 @@ in
             type = t.str;
           };
         }; }));
+          default = null;
+        };
+        daveEncryption = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        decryptionFailureTolerance = lib.mkOption {
+          type = t.nullOr (t.int);
           default = null;
         };
         enabled = lib.mkOption {
@@ -9527,7 +9551,7 @@ in
   meta = lib.mkOption {
     type = t.nullOr (t.submodule { options = {
     lastTouchedAt = lib.mkOption {
-      type = t.nullOr (t.str);
+      type = t.nullOr (t.oneOf [ (t.str) (t.anything) ]);
       default = null;
     };
     lastTouchedVersion = lib.mkOption {
@@ -10177,6 +10201,35 @@ in
     };
     outputFormat = lib.mkOption {
       type = t.nullOr (t.str);
+      default = null;
+    };
+    provider = lib.mkOption {
+      type = t.nullOr (t.str);
+      default = null;
+    };
+    providers = lib.mkOption {
+      type = t.nullOr (t.attrsOf (t.submodule { options = {
+      apiKey = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      modelId = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      outputFormat = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      voiceAliases = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.str));
+        default = null;
+      };
+      voiceId = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+    }; }));
       default = null;
     };
     voiceAliases = lib.mkOption {
