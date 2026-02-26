@@ -72,6 +72,20 @@ fi
 
 log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
 
+# rolldown was removed from upstream direct dependencies (v2026.2.21+) but
+# remains in the pnpm store as a transitive dep (via rolldown-plugin-dts).
+# Upstream's bundle-a2ui.sh falls back to `pnpm dlx` which needs network.
+# Put rolldown on PATH so the script finds it directly.
+if ! command -v rolldown >/dev/null 2>&1; then
+  _rolldown_pkg="$(find node_modules/.pnpm -maxdepth 4 -path '*/rolldown@*/node_modules/rolldown' -print -quit 2>/dev/null || true)"
+  if [ -n "$_rolldown_pkg" ] && [ -f "$_rolldown_pkg/bin/cli.mjs" ]; then
+    _rolldown_shim="$(mktemp -d)"
+    printf '#!/bin/sh\nexec node "%s/bin/cli.mjs" "$@"\n' "$_rolldown_pkg" > "$_rolldown_shim/rolldown"
+    chmod +x "$_rolldown_shim/rolldown"
+    export PATH="$_rolldown_shim:$PATH"
+  fi
+fi
+
 # Break down `pnpm build` (upstream package.json) so we can profile it.
 log_step "build: canvas:a2ui:bundle" pnpm canvas:a2ui:bundle
 log_step "build: tsdown" pnpm exec tsdown

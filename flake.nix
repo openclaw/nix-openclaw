@@ -48,6 +48,9 @@
           pkgs = pkgs;
           sourceInfo = sourceInfoStable;
           steipetePkgs = steipetePkgs;
+          # bird: upstream repo steipete/bird deleted, release assets 404.
+          # https://github.com/openclaw/nix-steipete-tools/issues/6
+          excludeToolNames = [ "bird" ];
         };
       in
       {
