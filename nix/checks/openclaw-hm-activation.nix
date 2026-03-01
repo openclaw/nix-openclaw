@@ -1,7 +1,10 @@
-{ pkgs, home-manager }:
+{ pkgs, home-manager, steipeteToolsInput }:
 
 let
-  openclawModule = ../modules/home-manager/openclaw.nix;
+  openclawModule = {
+    _module.args.steipeteToolsInput = steipeteToolsInput;
+    imports = [ ../modules/home-manager/openclaw ];
+  };
   testScript = builtins.readFile ../tests/hm-activation.py;
 
 in
