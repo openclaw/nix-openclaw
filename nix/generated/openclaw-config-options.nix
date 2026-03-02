@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 0f72000c96deaf385fc217811f29166ec8f2d815. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 92ad89da00e88abc1d1b7a1eddaf5735e463bc80. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -60,8 +60,32 @@ in
         type = t.nullOr (t.int);
         default = null;
       };
+      deliveryMode = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "live" ]) (t.enum [ "final_only" ]) ]);
+        default = null;
+      };
+      hiddenBoundarySeparator = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "none" ]) (t.enum [ "space" ]) (t.enum [ "newline" ]) (t.enum [ "paragraph" ]) ]);
+        default = null;
+      };
       maxChunkChars = lib.mkOption {
         type = t.nullOr (t.int);
+        default = null;
+      };
+      maxOutputChars = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      maxSessionUpdateChars = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      repeatSuppression = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
+      tagVisibility = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.bool));
         default = null;
       };
     }; });
@@ -289,6 +313,10 @@ in
             type = t.nullOr (t.bool);
             default = null;
           };
+          forceFlushTranscriptBytes = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.int) (t.str) ]);
+            default = null;
+          };
           prompt = lib.mkOption {
             type = t.nullOr (t.str);
             default = null;
@@ -456,6 +484,10 @@ in
           default = null;
         };
         includeReasoning = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        lightContext = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
         };
@@ -1067,7 +1099,7 @@ in
         default = null;
       };
       thinkingDefault = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "minimal" ]) (t.enum [ "low" ]) (t.enum [ "medium" ]) (t.enum [ "high" ]) (t.enum [ "xhigh" ]) ]);
+        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "minimal" ]) (t.enum [ "low" ]) (t.enum [ "medium" ]) (t.enum [ "high" ]) (t.enum [ "xhigh" ]) (t.enum [ "adaptive" ]) ]);
         default = null;
       };
       timeFormat = lib.mkOption {
@@ -1160,6 +1192,10 @@ in
           default = null;
         };
         includeReasoning = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        lightContext = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
         };
@@ -2523,6 +2559,10 @@ in
         type = t.nullOr (t.bool);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       dmHistoryLimit = lib.mkOption {
         type = t.nullOr (t.int);
         default = null;
@@ -2696,6 +2736,10 @@ in
         type = t.nullOr (t.attrsOf (t.submodule { options = {
         ackReaction = lib.mkOption {
           type = t.nullOr (t.str);
+          default = null;
+        };
+        ackReactionScope = lib.mkOption {
+          type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" "off" "none" ]);
           default = null;
         };
         actions = lib.mkOption {
@@ -2914,6 +2958,23 @@ in
         };
         enabled = lib.mkOption {
           type = t.nullOr (t.bool);
+          default = null;
+        };
+        eventQueue = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          listenerTimeout = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
+          maxConcurrency = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
+          maxQueueSize = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
+        }; });
           default = null;
         };
         execApprovals = lib.mkOption {
@@ -3481,6 +3542,10 @@ in
         type = t.nullOr (t.str);
         default = null;
       };
+      ackReactionScope = lib.mkOption {
+        type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" "off" "none" ]);
+        default = null;
+      };
       actions = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
         channelInfo = lib.mkOption {
@@ -3632,6 +3697,10 @@ in
         type = t.nullOr (t.bool);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -3697,6 +3766,23 @@ in
       };
       enabled = lib.mkOption {
         type = t.nullOr (t.bool);
+        default = null;
+      };
+      eventQueue = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        listenerTimeout = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        maxConcurrency = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        maxQueueSize = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+      }; });
         default = null;
       };
       execApprovals = lib.mkOption {
@@ -5019,6 +5105,10 @@ in
         type = t.nullOr (t.str);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -5454,6 +5544,10 @@ in
       };
       configWrites = lib.mkOption {
         type = t.nullOr (t.bool);
+        default = null;
+      };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
         default = null;
       };
       defaultTo = lib.mkOption {
@@ -6168,6 +6262,10 @@ in
         type = t.nullOr (t.bool);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -6856,6 +6954,10 @@ in
         type = t.nullOr (t.bool);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -7167,6 +7269,98 @@ in
         };
         defaultTo = lib.mkOption {
           type = t.nullOr (t.oneOf [ (t.str) (t.number) ]);
+          default = null;
+        };
+        direct = lib.mkOption {
+          type = t.nullOr (t.attrsOf (t.submodule { options = {
+          allowFrom = lib.mkOption {
+            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+            default = null;
+          };
+          dmPolicy = lib.mkOption {
+            type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
+            default = null;
+          };
+          enabled = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          requireTopic = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          skills = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          systemPrompt = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          tools = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+            alsoAllow = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+            deny = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+          toolsBySender = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.submodule { options = {
+            allow = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+            alsoAllow = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+            deny = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+          }; }));
+            default = null;
+          };
+          topics = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.submodule { options = {
+            allowFrom = lib.mkOption {
+              type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+              default = null;
+            };
+            enabled = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            groupPolicy = lib.mkOption {
+              type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
+              default = null;
+            };
+            requireMention = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            skills = lib.mkOption {
+              type = t.nullOr (t.listOf (t.str));
+              default = null;
+            };
+            systemPrompt = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; }));
+            default = null;
+          };
+        }; }));
           default = null;
         };
         dmHistoryLimit = lib.mkOption {
@@ -7546,8 +7740,104 @@ in
       }; }));
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.oneOf [ (t.str) (t.number) ]);
+        default = null;
+      };
+      direct = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.submodule { options = {
+        allowFrom = lib.mkOption {
+          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+          default = null;
+        };
+        dmPolicy = lib.mkOption {
+          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
+          default = null;
+        };
+        enabled = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        requireTopic = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        skills = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+        systemPrompt = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        tools = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          alsoAllow = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          deny = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+        }; });
+          default = null;
+        };
+        toolsBySender = lib.mkOption {
+          type = t.nullOr (t.attrsOf (t.submodule { options = {
+          allow = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          alsoAllow = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          deny = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+        }; }));
+          default = null;
+        };
+        topics = lib.mkOption {
+          type = t.nullOr (t.attrsOf (t.submodule { options = {
+          allowFrom = lib.mkOption {
+            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+            default = null;
+          };
+          enabled = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          groupPolicy = lib.mkOption {
+            type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
+            default = null;
+          };
+          requireMention = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          skills = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
+            default = null;
+          };
+          systemPrompt = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+        }; }));
+          default = null;
+        };
+      }; }));
         default = null;
       };
       dmHistoryLimit = lib.mkOption {
@@ -8110,6 +8400,10 @@ in
         type = t.nullOr (t.int);
         default = null;
       };
+      defaultAccount = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       defaultTo = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -8311,8 +8605,42 @@ in
       type = t.nullOr (t.bool);
       default = null;
     };
+    failureAlert = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      after = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      cooldownMs = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      enabled = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
+    }; });
+      default = null;
+    };
     maxConcurrentRuns = lib.mkOption {
       type = t.nullOr (t.int);
+      default = null;
+    };
+    retry = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      backoffMs = lib.mkOption {
+        type = t.nullOr (t.listOf (t.int));
+        default = null;
+      };
+      maxAttempts = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      retryOn = lib.mkOption {
+        type = t.nullOr (t.listOf (t.enum [ "rate_limit" "network" "timeout" "server_error" ]));
+        default = null;
+      };
+    }; });
       default = null;
     };
     runLog = lib.mkOption {
@@ -8426,6 +8754,10 @@ in
         default = null;
       };
     }; });
+      default = null;
+    };
+    stuckSessionWarnMs = lib.mkOption {
+      type = t.nullOr (t.int);
       default = null;
     };
   }; });
@@ -9404,7 +9736,7 @@ in
       default = null;
     };
     ackReactionScope = lib.mkOption {
-      type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" ]);
+      type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" "off" "none" ]);
       default = null;
     };
     groupChat = lib.mkOption {
