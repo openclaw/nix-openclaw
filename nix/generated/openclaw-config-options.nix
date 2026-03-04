@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 0566845b7133515bfc50ae0e770c8c55d5198cd4. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 965ce31d8472912d9eeeea3be87ce8b7d5ef5ed0. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -143,6 +143,10 @@ in
       };
       bootstrapMaxChars = lib.mkOption {
         type = t.nullOr (t.int);
+        default = null;
+      };
+      bootstrapPromptTruncationWarning = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "once" ]) (t.enum [ "always" ]) ]);
         default = null;
       };
       bootstrapTotalMaxChars = lib.mkOption {
@@ -2989,11 +2993,40 @@ in
           default = null;
         };
         allowBots = lib.mkOption {
-          type = t.nullOr (t.bool);
+          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "mentions" ]) ]);
           default = null;
         };
         allowFrom = lib.mkOption {
           type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+          default = null;
+        };
+        autoPresence = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          degradedText = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          enabled = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          exhaustedText = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          healthyText = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          intervalMs = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
+          minUpdateIntervalMs = lib.mkOption {
+            type = t.nullOr (t.int);
+            default = null;
+          };
+        }; });
           default = null;
         };
         blockStreaming = lib.mkOption {
@@ -3179,6 +3212,10 @@ in
               type = t.nullOr (t.bool);
               default = null;
             };
+            ignoreOtherMentions = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
             includeThreadStarter = lib.mkOption {
               type = t.nullOr (t.bool);
               default = null;
@@ -3238,6 +3275,10 @@ in
               default = null;
             };
           }; }));
+            default = null;
+          };
+          ignoreOtherMentions = lib.mkOption {
+            type = t.nullOr (t.bool);
             default = null;
           };
           reactionNotifications = lib.mkOption {
@@ -3913,11 +3954,40 @@ in
         default = null;
       };
       allowBots = lib.mkOption {
-        type = t.nullOr (t.bool);
+        type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "mentions" ]) ]);
         default = null;
       };
       allowFrom = lib.mkOption {
         type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
+        default = null;
+      };
+      autoPresence = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        degradedText = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        enabled = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        exhaustedText = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        healthyText = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        intervalMs = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        minUpdateIntervalMs = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+      }; });
         default = null;
       };
       blockStreaming = lib.mkOption {
@@ -4107,6 +4177,10 @@ in
             type = t.nullOr (t.bool);
             default = null;
           };
+          ignoreOtherMentions = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
           includeThreadStarter = lib.mkOption {
             type = t.nullOr (t.bool);
             default = null;
@@ -4166,6 +4240,10 @@ in
             default = null;
           };
         }; }));
+          default = null;
+        };
+        ignoreOtherMentions = lib.mkOption {
+          type = t.nullOr (t.bool);
           default = null;
         };
         reactionNotifications = lib.mkOption {
@@ -8146,6 +8224,10 @@ in
           };
           topics = lib.mkOption {
             type = t.nullOr (t.attrsOf (t.submodule { options = {
+            agentId = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
             allowFrom = lib.mkOption {
               type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
               default = null;
@@ -8292,6 +8374,10 @@ in
           };
           topics = lib.mkOption {
             type = t.nullOr (t.attrsOf (t.submodule { options = {
+            agentId = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
             allowFrom = lib.mkOption {
               type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
               default = null;
@@ -8695,6 +8781,10 @@ in
         };
         topics = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.submodule { options = {
+          agentId = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
           allowFrom = lib.mkOption {
             type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
             default = null;
@@ -8841,6 +8931,10 @@ in
         };
         topics = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.submodule { options = {
+          agentId = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
           allowFrom = lib.mkOption {
             type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
             default = null;
