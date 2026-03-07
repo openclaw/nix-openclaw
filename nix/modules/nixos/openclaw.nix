@@ -43,6 +43,38 @@ let
     inherit lib cfg defaultPackage;
   };
 
+  # Bundled plugin resolution (same pattern as home-manager lib.nix)
+  pluginCatalog = import ../home-manager/openclaw/plugin-catalog.nix;
+  linuxPluginCatalog = lib.filterAttrs (_: plugin: plugin.linux or false) pluginCatalog;
+
+  bundledPluginSources =
+    let
+      stepieteRev = "c110209720cbc6c87fccb6c1e1c2b79b1d719245";
+      stepieteNarHash = "sha256-1Vo7rcLGdKaqj39J3HhBKh8IbljSjgCUhinCFJbDPl8=";
+      stepiete =
+        tool:
+        "github:openclaw/nix-steipete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
+    in
+    lib.mapAttrs (_name: plugin: plugin.source or (stepiete plugin.tool)) linuxPluginCatalog;
+
+  bundledPlugins = lib.filter (p: p != null) (
+    lib.mapAttrsToList (
+      name: source:
+      let
+        pluginCfg = cfg.bundledPlugins.${name};
+      in
+      if (pluginCfg.enable or false) then
+        {
+          inherit source;
+          config = pluginCfg.config or { };
+        }
+      else
+        null
+    ) bundledPluginSources
+  );
+
+  effectivePlugins = cfg.customPlugins ++ bundledPlugins;
+
   # Default instance when no explicit instances are defined
   defaultInstance = {
     enable = cfg.enable;
@@ -54,7 +86,7 @@ let
     providers = cfg.providers;
     routing = cfg.routing;
     gateway = cfg.gateway;
-    plugins = cfg.plugins;
+    plugins = effectivePlugins;
     configOverrides = {};
     agent = {
       model = cfg.defaults.model;
@@ -67,6 +99,11 @@ let
     else lib.optionalAttrs cfg.enable { default = defaultInstance; };
 
   enabledInstances = lib.filterAttrs (_: inst: inst.enable) instances;
+
+  # Plugin resolution
+  plugins = import ./plugins.nix {
+    inherit lib pkgs cfg enabledInstances;
+  };
 
   # Config generation helpers (mirrored from home-manager)
   mkBaseConfig = workspaceDir: inst: {
@@ -109,6 +146,8 @@ let
     let
       gatewayPackage = inst.package;
       oauthTokenFile = inst.providers.anthropic.oauthTokenFile;
+      pluginPackages = plugins.pluginPackagesFor name;
+      pluginEnvAll = plugins.pluginEnvAllFor name;
 
       baseConfig = mkBaseConfig inst.workspaceDir inst;
       mergedConfig = lib.recursiveUpdate
@@ -181,6 +220,35 @@ let
         fi
         ''}
 
+        # Plugin environment variables
+        ${lib.concatStringsSep "\n" (
+          map (
+            entry:
+            let
+              isFile = lib.hasSuffix "_FILE" entry.key;
+            in
+            ''
+              if [ -f "${entry.value}" ]; then
+                if ${if isFile then "true" else "false"}; then
+                  export ${entry.key}="${entry.value}"
+                else
+                  rawValue="$("${lib.getExe' pkgs.coreutils "cat"}" "${entry.value}")"
+                  if [ "''${rawValue#${entry.key}=}" != "$rawValue" ]; then
+                    export ${entry.key}="''${rawValue#${entry.key}=}"
+                  else
+                    export ${entry.key}="$rawValue"
+                  fi
+                fi
+              else
+                export ${entry.key}="${entry.value}"
+              fi
+            ''
+          ) pluginEnvAll
+        )}
+
+        # Plugin env file guards
+        ${plugins.pluginGuardsFor name}
+
         exec "${gatewayPackage}/bin/openclaw" "$@"
       '';
 
@@ -188,7 +256,7 @@ let
         then "openclaw-gateway"
         else "openclaw-gateway-${name}";
     in {
-      inherit configFile configJson unitName gatewayWrapper;
+      inherit configFile configJson unitName gatewayWrapper pluginPackages;
       configPath = inst.configPath;
       stateDir = inst.stateDir;
       workspaceDir = inst.workspaceDir;
@@ -251,7 +319,9 @@ in {
   config = lib.mkIf (cfg.enable || cfg.instances != {}) {
     assertions = assertions
       ++ documentsSkills.documentsAssertions
-      ++ documentsSkills.skillAssertions;
+      ++ documentsSkills.skillAssertions
+      ++ plugins.pluginAssertions
+      ++ plugins.pluginSkillAssertions;
 
     # Create system user and group
     users.users.${cfg.user} = {
@@ -270,7 +340,7 @@ in {
       "d ${instCfg.stateDir} 0750 ${cfg.user} ${cfg.group} -"
       "d ${instCfg.workspaceDir} 0750 ${cfg.user} ${cfg.group} -"
       "d ${instCfg.workspaceDir}/skills 0750 ${cfg.user} ${cfg.group} -"
-    ]) instanceConfigs) ++ documentsSkills.tmpfilesRules;
+    ]) instanceConfigs) ++ documentsSkills.tmpfilesRules ++ plugins.pluginTmpfilesRules;
 
     # Systemd services with hardening
     systemd.services = lib.mapAttrs' (name: instCfg: lib.nameValuePair instCfg.unitName {
@@ -282,7 +352,7 @@ in {
       path = [
         pkgs.bash
         pkgs.coreutils
-      ] ++ instCfg.servicePath;
+      ] ++ instCfg.servicePath ++ instCfg.pluginPackages;
 
       serviceConfig = {
         Type = "simple";
