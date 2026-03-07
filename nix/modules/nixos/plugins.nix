@@ -66,14 +66,6 @@ let
   pluginPackagesFor =
     instName: lib.flatten (map (p: p.packages) (resolvedPluginsByInstance.${instName} or [ ]));
 
-  pluginStateDirsFor =
-    instName:
-    let
-      inst = enabledInstances.${instName};
-      dirs = lib.flatten (map (p: p.needs.stateDirs) (resolvedPluginsByInstance.${instName} or [ ]));
-    in
-    map (dir: "${inst.stateDir}/${dir}") dirs;
-
   pluginEnvFor =
     instName:
     let
@@ -138,17 +130,15 @@ let
   pluginSkillAssertions =
     let
       skillTargets = lib.flatten (
-        lib.concatLists (
-          lib.mapAttrsToList (
-            instName: inst:
-            let
-              plugins = resolvedPluginsByInstance.${instName} or [ ];
-            in
-            map (
-              p: map (skillPath: "${inst.workspaceDir}/skills/${builtins.baseNameOf skillPath}") p.skills
-            ) plugins
-          ) enabledInstances
-        )
+        lib.mapAttrsToList (
+          instName: inst:
+          let
+            plugins = resolvedPluginsByInstance.${instName} or [ ];
+          in
+          map (
+            p: map (skillPath: "${inst.workspaceDir}/skills/${builtins.baseNameOf skillPath}") p.skills
+          ) plugins
+        ) enabledInstances
       );
       counts = lib.foldl' (acc: path: acc // { "${path}" = (acc.${path} or 0) + 1; }) { } skillTargets;
       duplicates = lib.attrNames (lib.filterAttrs (_: v: v > 1) counts);
@@ -229,10 +219,7 @@ let
 in
 {
   inherit
-    resolvedPluginsByInstance
     pluginPackagesFor
-    pluginStateDirsFor
-    pluginEnvFor
     pluginEnvAllFor
     pluginAssertions
     pluginSkillAssertions
