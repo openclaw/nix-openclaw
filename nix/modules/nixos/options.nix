@@ -16,6 +16,8 @@
 
 let
   stateDir = "/var/lib/openclaw";
+  pluginCatalog = import ../home-manager/openclaw/plugin-catalog.nix;
+  linuxPluginCatalog = lib.filterAttrs (_: plugin: plugin.linux or false) pluginCatalog;
 
   instanceModule = { name, config, ... }: {
     options = {
@@ -302,12 +304,12 @@ in {
       description = "Declarative skills installed into workspace.";
     };
 
-    plugins = lib.mkOption {
+    customPlugins = lib.mkOption {
       type = lib.types.listOf (lib.types.submodule {
         options = {
           source = lib.mkOption {
             type = lib.types.str;
-            description = "Plugin source pointer.";
+            description = "Plugin source pointer (e.g., github:owner/repo).";
           };
           config = lib.mkOption {
             type = lib.types.attrs;
@@ -317,8 +319,24 @@ in {
         };
       });
       default = [];
-      description = "Plugins enabled for the default instance.";
+      description = "Custom/community plugins for the default instance.";
     };
+
+    bundledPlugins =
+      lib.mapAttrs
+        (name: plugin: {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = plugin.defaultEnable or false;
+            description = "Enable the ${name} plugin (bundled).";
+          };
+          config = lib.mkOption {
+            type = lib.types.attrs;
+            default = {};
+            description = "Bundled plugin configuration passed through to ${name} (env/settings).";
+          };
+        })
+        linuxPluginCatalog;
 
     defaults = {
       model = lib.mkOption {
