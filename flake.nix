@@ -74,6 +74,7 @@
               };
               config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
+                steipeteToolsInput = nix-steipete-tools;
               };
             }
             // (
@@ -84,10 +85,14 @@
                   };
                   config-options = pkgs.callPackage ./nix/checks/openclaw-config-options.nix {
                     sourceInfo = sourceInfoStable;
+                    steipeteToolsInput = nix-steipete-tools;
                   };
-                  default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
+                  default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+                    steipeteToolsInput = nix-steipete-tools;
+                  };
                   hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
                     inherit pkgs home-manager;
+                    steipeteToolsInput = nix-steipete-tools;
                   };
                 }
               else
@@ -121,7 +126,11 @@
     // {
       overlays.default = overlay;
       nixosModules.openclaw-gateway = import ./nix/modules/nixos/openclaw-gateway.nix;
-      homeManagerModules.openclaw = import ./nix/modules/home-manager/openclaw.nix;
-      darwinModules.openclaw = import ./nix/modules/darwin/openclaw.nix;
+      homeManagerModules.openclaw = {
+        _module.args.steipeteToolsInput = nix-steipete-tools;
+        imports = [ ./nix/modules/home-manager/openclaw ];
+      };
+      darwinModules.openclaw =
+        import ./nix/modules/darwin/openclaw.nix { inherit nix-steipete-tools; };
     };
 }

@@ -3,6 +3,7 @@
   pkgs,
   stdenv,
   fetchFromGitHub,
+  steipeteToolsInput,
   fetchurl,
   nodejs_22,
   pnpm_10,
@@ -76,7 +77,8 @@ let
   pluginEval = lib.evalModules {
     modules = [
       stubModule
-      ../modules/home-manager/openclaw.nix
+      { _module.args.steipeteToolsInput = steipeteToolsInput; }
+      ../modules/home-manager/openclaw
       (
         { lib, options, ... }:
         {

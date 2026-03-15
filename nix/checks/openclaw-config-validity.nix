@@ -4,6 +4,7 @@
   stdenv,
   nodejs_22,
   openclawGateway,
+  steipeteToolsInput,
 }:
 
 let
@@ -61,7 +62,8 @@ let
   moduleEval = lib.evalModules {
     modules = [
       stubModule
-      ../modules/home-manager/openclaw.nix
+      { _module.args.steipeteToolsInput = steipeteToolsInput; }
+      ../modules/home-manager/openclaw
       (
         { lib, ... }:
         {
