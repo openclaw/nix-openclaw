@@ -2,11 +2,12 @@
   config,
   lib,
   pkgs,
+  steipeteToolsInput,
   ...
 }:
 
 let
-  openclawLib = import ./lib.nix { inherit config lib pkgs; };
+  openclawLib = import ./lib.nix { inherit config lib pkgs steipeteToolsInput; };
   instanceModule = import ./options-instance.nix { inherit lib openclawLib; };
   pluginCatalog = import ./plugin-catalog.nix;
   mkSkillOption = lib.types.submodule {
