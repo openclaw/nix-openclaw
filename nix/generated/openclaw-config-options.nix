@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev fa6e6603fa538df87f9a2ab5fad251d5c28ce48d. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev c441db7e13cd822b32b4447bceb3e24d0c33cb68. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -5129,6 +5129,10 @@ in
             default = null;
           };
         }; });
+          default = null;
+        };
+        contextTokens = lib.mkOption {
+          type = t.nullOr (t.int);
           default = null;
         };
         contextWindow = lib.mkOption {
