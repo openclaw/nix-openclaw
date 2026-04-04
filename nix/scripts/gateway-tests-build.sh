@@ -69,3 +69,5 @@ if [ ! -f "$STDENV_SETUP" ]; then
 fi
 
 log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
+
+log_step "pnpm build:strict-smoke" pnpm build:strict-smoke

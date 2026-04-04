@@ -16,7 +16,11 @@ export OPENCLAW_LOG_DIR="${TMPDIR}/openclaw-logs"
 mkdir -p "$OPENCLAW_LOG_DIR"
 mkdir -p /tmp/openclaw || true
 chmod 700 /tmp/openclaw || true
-unset OPENCLAW_BUNDLED_PLUGINS_DIR
+if [ -d "$PWD/dist-runtime/extensions" ]; then
+  export OPENCLAW_BUNDLED_PLUGINS_DIR="$PWD/dist-runtime/extensions"
+else
+  unset OPENCLAW_BUNDLED_PLUGINS_DIR
+fi
 PATH="$PWD/node_modules/.bin:$PATH"
 vitest_cli="$PWD/node_modules/vitest/vitest.mjs"
 if [ ! -f "$vitest_cli" ]; then
