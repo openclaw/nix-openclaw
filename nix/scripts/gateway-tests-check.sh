@@ -17,18 +17,5 @@ mkdir -p "$OPENCLAW_LOG_DIR"
 mkdir -p /tmp/openclaw || true
 chmod 700 /tmp/openclaw || true
 unset OPENCLAW_BUNDLED_PLUGINS_DIR
-export VITEST_POOL="forks"
-export VITEST_MIN_WORKERS="2"
-export VITEST_MAX_WORKERS="2"
-
-vitest_cli="$PWD/node_modules/.bin/vitest"
-if [ ! -x "$vitest_cli" ] || [ ! -f "$PWD/node_modules/vitest/vitest.mjs" ]; then
-  vitest_cli="$(find "$PWD/node_modules" -path '*/vitest/vitest.mjs' -type f | head -n 1)"
-fi
-
-if [ -z "${vitest_cli:-}" ] || [ ! -f "$vitest_cli" ]; then
-  echo "vitest CLI not found under $PWD/node_modules" >&2
-  exit 1
-fi
-
-node "$vitest_cli" run --config vitest.gateway.config.ts --testTimeout=20000
+PATH="$PWD/node_modules/.bin:$PATH"
+pnpm exec vitest run --config vitest.gateway.config.ts --testTimeout=20000
