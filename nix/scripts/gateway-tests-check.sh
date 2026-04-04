@@ -22,4 +22,10 @@ export VITEST_POOL="forks"
 export VITEST_MIN_WORKERS="2"
 export VITEST_MAX_WORKERS="2"
 
-pnpm exec vitest run --config vitest.gateway.config.ts --testTimeout=20000
+vitest_cli="$PWD/node_modules/.bin/vitest"
+if [ ! -x "$vitest_cli" ]; then
+  echo "vitest CLI not found at $vitest_cli" >&2
+  exit 1
+fi
+
+"$vitest_cli" run --config vitest.gateway.config.ts --testTimeout=20000
