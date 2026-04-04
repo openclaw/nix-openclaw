@@ -56,6 +56,7 @@ ensure_root_package_link() {
 
 # Offline hoisted installs in Nix can leave the top-level package link missing
 # while the package still exists under node_modules/.pnpm.
+ensure_root_package_link "tsdown"
 ensure_root_package_link "tsx"
 ensure_root_package_link "vitest"
 
