@@ -22,4 +22,4 @@ export VITEST_POOL="forks"
 export VITEST_MIN_WORKERS="2"
 export VITEST_MAX_WORKERS="2"
 
-pnpm vitest run --config vitest.gateway.config.ts --testTimeout=20000
+pnpm exec vitest run --config vitest.gateway.config.ts --testTimeout=20000
