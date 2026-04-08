@@ -28,7 +28,7 @@ jobs:
           drv="$(nix eval --raw .#checks.x86_64-linux.gateway-tests.drvPath --accept-flake-config)"
           nix log "$drv" | tail -n 400 || true
 
-  macos:
+  macos-build:
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -39,6 +39,16 @@ jobs:
 
       - name: Build Darwin CI aggregator
         run: nix build .#checks.aarch64-darwin.ci --accept-flake-config
+
+  macos-hm-activation:
+    needs: macos-build
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
 
       - name: Run HM activation
         run: scripts/hm-activation-macos.sh
