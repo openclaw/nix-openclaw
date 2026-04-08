@@ -63,6 +63,28 @@ PY
   fi
 fi
 
+if [ -f src/gateway/server-methods/send.ts ]; then
+  if ! grep -q 'createDefaultDeps, createOutboundSendDeps' src/gateway/server-methods/send.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server-methods/send.ts")
+text = path.read_text()
+text = text.replace(
+    'import { createOutboundSendDeps } from "../../cli/deps.js";\n',
+    'import { createDefaultDeps, createOutboundSendDeps } from "../../cli/deps.js";\n',
+    1,
+)
+old = '        const outboundDeps = context.deps ? createOutboundSendDeps(context.deps) : undefined;\n'
+new = '        const outboundDeps = createOutboundSendDeps({ ...createDefaultDeps(), ...(context.deps ?? {}) });\n'
+if old not in text:
+    raise SystemExit("expected outboundDeps line not found")
+text = text.replace(old, new, 1)
+path.write_text(text)
+PY
+  fi
+fi
+
 if [ -f src/gateway/test-temp-config.ts ]; then
   if ! grep -q "resetConfigRuntimeState" src/gateway/test-temp-config.ts; then
     python3 - <<'PY'
@@ -85,6 +107,29 @@ old = """    if (prevConfigPath === undefined) {\n      delete process.env.OPENC
 new = """    if (prevConfigPath === undefined) {\n      delete process.env.OPENCLAW_CONFIG_PATH;\n    } else {\n      process.env.OPENCLAW_CONFIG_PATH = prevConfigPath;\n    }\n    resetConfigRuntimeState();\n    await rm(dir, { recursive: true, force: true });\n  }\n}\n"""
 if old not in text:
     raise SystemExit("expected withTempConfig cleanup block not found")
+text = text.replace(old, new, 1)
+path.write_text(text)
+PY
+  fi
+fi
+
+if [ -f src/gateway/server/ws-connection/message-handler.ts ]; then
+  if ! grep -q "skipLocalBackendBootstrapPairing" src/gateway/server/ws-connection/message-handler.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server/ws-connection/message-handler.ts")
+text = path.read_text()
+old = """        const skipPairing =\n          shouldSkipLocalBackendSelfPairing({\n            connectParams,\n            locality: pairingLocality,\n            hasBrowserOriginHeader,\n            sharedAuthOk,\n            authMethod,\n          }) ||\n          shouldSkipControlUiPairing(\n            controlUiAuthPolicy,\n            role,\n            trustedProxyAuthOk,\n            resolvedAuth.mode,\n          );\n        if (device && devicePublicKey && !skipPairing) {\n"""
+new = """        const skipLocalBackendBootstrapPairing = shouldSkipLocalBackendSelfPairing({\n          connectParams,\n          locality: pairingLocality,\n          hasBrowserOriginHeader,\n          sharedAuthOk,\n          authMethod,\n        });\n        const skipPairing = shouldSkipControlUiPairing(\n          controlUiAuthPolicy,\n          role,\n          trustedProxyAuthOk,\n          resolvedAuth.mode,\n        );\n        if (device && devicePublicKey && !skipPairing) {\n"""
+if old not in text:
+    raise SystemExit("expected skipPairing block not found")
+text = text.replace(old, new, 1)
+
+old = """          if (!isPaired) {\n            const ok = await requirePairing(\"not-paired\", paired);\n            if (!ok) {\n              return;\n            }\n          } else {\n"""
+new = """          if (!isPaired) {\n            if (!skipLocalBackendBootstrapPairing) {\n              const ok = await requirePairing(\"not-paired\", paired);\n              if (!ok) {\n                return;\n              }\n            }\n          } else {\n"""
+if old not in text:
+    raise SystemExit("expected not-paired branch not found")
 text = text.replace(old, new, 1)
 path.write_text(text)
 PY
