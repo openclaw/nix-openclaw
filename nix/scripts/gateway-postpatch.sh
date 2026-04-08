@@ -152,6 +152,12 @@ if old not in text:
     raise SystemExit("expected plugins/loader mock block not found")
 text = text.replace(old, new, 1)
 
+old = """vi.mock("../cli/deps.js", async () => {\n  const actual = await vi.importActual<typeof import("../cli/deps.js")>("../cli/deps.js");\n  const base = actual.createDefaultDeps();\n  return {\n    ...actual,\n    createDefaultDeps: () => ({\n      ...base,\n      sendMessageWhatsApp: (...args: unknown[]) =>\n        (hoisted.sendWhatsAppMock as (...args: unknown[]) => unknown)(...args),\n    }),\n  };\n});\n"""
+new = """vi.mock("../cli/deps.js", async () => {\n  const actual = await vi.importActual<typeof import("../cli/deps.js")>("../cli/deps.js");\n  const base = actual.createDefaultDeps();\n  return {\n    ...actual,\n    createDefaultDeps: () => ({\n      ...base,\n      whatsapp: (...args: unknown[]) =>\n        (hoisted.sendWhatsAppMock as (...args: unknown[]) => unknown)(...args),\n      sendMessageWhatsApp: (...args: unknown[]) =>\n        (hoisted.sendWhatsAppMock as (...args: unknown[]) => unknown)(...args),\n    }),\n  };\n});\n"""
+if old not in text:
+    raise SystemExit("expected cli/deps mock block not found")
+text = text.replace(old, new, 1)
+
 path.write_text(text)
 PY
   fi
