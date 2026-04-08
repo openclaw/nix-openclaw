@@ -245,3 +245,19 @@ path.write_text(text.replace(old, new, 1))
 PY
   fi
 fi
+
+if [ -f src/agents/tools/sessions-send-tool.ts ]; then
+  if grep -q 'const start = await startAgentRun' src/agents/tools/sessions-send-tool.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/agents/tools/sessions-send-tool.ts")
+text = path.read_text()
+old = """      const start = await startAgentRun({\n        callGateway: gatewayCall,\n        runId,\n        sendParams,\n        sessionKey: displayKey,\n      });\n      if (!start.ok) {\n        return start.result;\n      }\n      runId = start.runId;\n\n      const baselineReply = await readLatestAssistantReplySnapshot({\n        sessionKey: resolvedKey,\n        limit: SESSIONS_SEND_REPLY_HISTORY_LIMIT,\n        callGateway: gatewayCall,\n      });\n"""
+new = """      const baselineReply = await readLatestAssistantReplySnapshot({\n        sessionKey: resolvedKey,\n        limit: SESSIONS_SEND_REPLY_HISTORY_LIMIT,\n        callGateway: gatewayCall,\n      });\n\n      const start = await startAgentRun({\n        callGateway: gatewayCall,\n        runId,\n        sendParams,\n        sessionKey: displayKey,\n      });\n      if (!start.ok) {\n        return start.result;\n      }\n      runId = start.runId;\n"""
+if old not in text:
+    raise SystemExit("expected sessions_send start/baseline block not found")
+path.write_text(text.replace(old, new, 1))
+PY
+  fi
+fi
