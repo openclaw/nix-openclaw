@@ -13,6 +13,7 @@ export HOME="$(mktemp -d)"
 export TMPDIR="${HOME}/tmp"
 mkdir -p "$TMPDIR"
 export OPENCLAW_LOG_DIR="${TMPDIR}/openclaw-logs"
+export OPENCLAW_SKIP_PROVIDERS="${OPENCLAW_SKIP_PROVIDERS:-1}"
 mkdir -p "$OPENCLAW_LOG_DIR"
 mkdir -p /tmp/openclaw || true
 chmod 700 /tmp/openclaw || true

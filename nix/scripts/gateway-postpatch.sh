@@ -63,6 +63,31 @@ PY
   fi
 fi
 
+if [ -f src/plugins/provider-runtime.ts ]; then
+  if ! grep -q "shouldSkipProviderRuntimeForTest" src/plugins/provider-runtime.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/plugins/provider-runtime.ts")
+text = path.read_text()
+
+old = """function resolveProviderPluginsForHooks(params: {\n"""
+new = """function shouldSkipProviderRuntimeForTest(env: NodeJS.ProcessEnv = process.env): boolean {\n  if (!env.VITEST) {\n    return false;\n  }\n  const raw = env.OPENCLAW_SKIP_PROVIDERS?.trim().toLowerCase();\n  return raw === "1" || raw === "true";\n}\n\nfunction resolveProviderPluginsForHooks(params: {\n"""
+if old not in text:
+    raise SystemExit("expected resolveProviderPluginsForHooks definition not found")
+text = text.replace(old, new, 1)
+
+old = """  const env = params.env ?? process.env;\n  const cacheBucket = resolveHookProviderCacheBucket({\n"""
+new = """  const env = params.env ?? process.env;\n  if (shouldSkipProviderRuntimeForTest(env)) {\n    return [];\n  }\n  const cacheBucket = resolveHookProviderCacheBucket({\n"""
+if old not in text:
+    raise SystemExit("expected resolveProviderPluginsForHooks env block not found")
+text = text.replace(old, new, 1)
+
+path.write_text(text)
+PY
+  fi
+fi
+
 if [ -f src/gateway/server-methods/send.ts ]; then
   if ! grep -q 'createDefaultDeps, createOutboundSendDeps' src/gateway/server-methods/send.ts; then
     python3 - <<'PY'
