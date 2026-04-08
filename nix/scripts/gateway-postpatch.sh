@@ -310,6 +310,27 @@ PY
   fi
 fi
 
+if [ -f src/gateway/server.reload.test.ts ]; then
+  if ! grep -q 'resetConfigRuntimeState();' src/gateway/server.reload.test.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server.reload.test.ts")
+text = path.read_text()
+text = text.replace(
+    'import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";\n',
+    'import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";\nimport { resetConfigRuntimeState } from "../config/config.js";\n',
+    1,
+)
+old = '    await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\\n`, "utf8");\n'
+new = '    await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\\n`, "utf8");\n    resetConfigRuntimeState();\n'
+if old not in text:
+    raise SystemExit("expected server.reload writeConfigFile block not found")
+path.write_text(text.replace(old, new, 1))
+PY
+  fi
+fi
+
 if [ -f src/gateway/server.sessions.gateway-server-sessions-a.test.ts ]; then
   if ! grep -q "DEFAULT_MODEL" src/gateway/server.sessions.gateway-server-sessions-a.test.ts; then
     python3 - <<'PY'
@@ -326,6 +347,64 @@ old = """    expect(patched.payload?.resolved).toEqual({\n      modelProvider: \
 new = """    expect(patched.payload?.resolved).toEqual({\n      modelProvider: DEFAULT_PROVIDER,\n      model: DEFAULT_MODEL,\n    });\n"""
 if old not in text:
     raise SystemExit("expected session resolved default assertion not found")
+path.write_text(text.replace(old, new, 1))
+PY
+  fi
+fi
+
+if [ -f src/gateway/server.chat.gateway-server-chat.test.ts ]; then
+  if ! grep -q 'collectHistoryTextValues(historyRes.payload?.messages ?? \[\])' src/gateway/server.chat.gateway-server-chat.test.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server.chat.gateway-server-chat.test.ts")
+text = path.read_text()
+old = """      const historyRes = await rpcReq<{ messages?: unknown[] }>(ws, \"chat.history\", {\n        sessionKey: \"main\",\n      });\n      expect(historyRes.ok).toBe(true);\n      expect(historyRes.payload?.messages ?? []).toEqual([]);\n"""
+new = """      const historyRes = await rpcReq<{ messages?: unknown[] }>(ws, \"chat.history\", {\n        sessionKey: \"main\",\n      });\n      expect(historyRes.ok).toBe(true);\n      expect(collectHistoryTextValues(historyRes.payload?.messages ?? [])).toEqual([\n        \"/btw what is 17 * 19?\",\n      ]);\n"""
+if old not in text:
+    raise SystemExit("expected /btw history assertion block not found")
+path.write_text(text.replace(old, new, 1))
+PY
+  fi
+fi
+
+if [ -f src/gateway/openai-http.test.ts ]; then
+  if ! grep -q 'resetConfigRuntimeState();' src/gateway/openai-http.test.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/openai-http.test.ts")
+text = path.read_text()
+text = text.replace(
+    'import { afterAll, beforeAll, describe, expect, it } from "vitest";\n',
+    'import { afterAll, beforeAll, describe, expect, it } from "vitest";\nimport { resetConfigRuntimeState } from "../config/config.js";\n',
+    1,
+)
+old = '  await fs.writeFile(configPath, JSON.stringify(config, null, 2), "utf-8");\n'
+new = '  await fs.writeFile(configPath, JSON.stringify(config, null, 2), "utf-8");\n  resetConfigRuntimeState();\n'
+if old not in text:
+    raise SystemExit("expected openai-http writeGatewayConfig block not found")
+path.write_text(text.replace(old, new, 1))
+PY
+  fi
+fi
+
+if [ -f src/gateway/server.cron.test.ts ]; then
+  if ! grep -q 'resetConfigRuntimeState();' src/gateway/server.cron.test.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server.cron.test.ts")
+text = path.read_text()
+text = text.replace(
+    'import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";\n',
+    'import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";\nimport { resetConfigRuntimeState } from "../config/config.js";\n',
+    1,
+)
+old = '  await fs.writeFile(configPath as string, JSON.stringify(config, null, 2), "utf-8");\n'
+new = '  await fs.writeFile(configPath as string, JSON.stringify(config, null, 2), "utf-8");\n  resetConfigRuntimeState();\n'
+if old not in text:
+    raise SystemExit("expected server.cron writeCronConfig block not found")
 path.write_text(text.replace(old, new, 1))
 PY
   fi
