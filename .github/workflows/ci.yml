@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   linux:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-16vcpu-ubuntu-2404
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v13
 
       - name: Run Linux CI aggregator
-        run: nix build .#checks.x86_64-linux.ci --accept-flake-config --max-jobs 1
+        run: nix build .#checks.x86_64-linux.ci --accept-flake-config
 
       - name: Dump failing gateway test log
         if: failure()
