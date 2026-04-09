@@ -88,6 +88,56 @@ PY
   fi
 fi
 
+if [ -f src/plugins/providers.runtime.ts ]; then
+  if ! grep -q "shouldSkipProviderPluginsForTest" src/plugins/providers.runtime.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/plugins/providers.runtime.ts")
+text = path.read_text()
+
+old = """const log = createSubsystemLogger(\"plugins\");\n"""
+new = """const log = createSubsystemLogger(\"plugins\");\n\nfunction shouldSkipProviderPluginsForTest(env: NodeJS.ProcessEnv = process.env): boolean {\n  if (!env.VITEST) {\n    return false;\n  }\n  const raw = env.OPENCLAW_SKIP_PROVIDERS?.trim().toLowerCase();\n  return raw === \"1\" || raw === \"true\";\n}\n"""
+if old not in text:
+    raise SystemExit("expected providers.runtime logger definition not found")
+text = text.replace(old, new, 1)
+
+old = """  const env = params.env ?? process.env;\n  const modelOwnedPluginIds = params.modelRefs?.length\n"""
+new = """  const env = params.env ?? process.env;\n  if (shouldSkipProviderPluginsForTest(env)) {\n    return [];\n  }\n  const modelOwnedPluginIds = params.modelRefs?.length\n"""
+if old not in text:
+    raise SystemExit("expected resolvePluginProviders env block not found")
+text = text.replace(old, new, 1)
+
+path.write_text(text)
+PY
+  fi
+fi
+
+if [ -f src/gateway/server-methods/send.test.ts ]; then
+  if ! grep -q "listChannelPlugins: mocks.listChannelPlugins" src/gateway/server-methods/send.test.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+
+path = Path("src/gateway/server-methods/send.test.ts")
+text = path.read_text()
+
+old = """  sendPoll: vi.fn(async () => ({ messageId: \"poll-1\" })),\n  getChannelPlugin: vi.fn(),\n"""
+new = """  sendPoll: vi.fn(async () => ({ messageId: \"poll-1\" })),\n  getChannelPlugin: vi.fn(),\n  listChannelPlugins: vi.fn(() => []),\n"""
+if old not in text:
+    raise SystemExit("expected send.test hoisted mocks block not found")
+text = text.replace(old, new, 1)
+
+old = """vi.mock(\"../../channels/plugins/index.js\", () => ({\n  getChannelPlugin: mocks.getChannelPlugin,\n  normalizeChannelId: (value: string) => (value === \"webchat\" ? null : value),\n}));\n"""
+new = """vi.mock(\"../../channels/plugins/index.js\", () => ({\n  getChannelPlugin: mocks.getChannelPlugin,\n  listChannelPlugins: mocks.listChannelPlugins,\n  normalizeChannelId: (value: string) => (value === \"webchat\" ? null : value),\n}));\n"""
+if old not in text:
+    raise SystemExit("expected send.test channels/plugins mock block not found")
+text = text.replace(old, new, 1)
+
+path.write_text(text)
+PY
+  fi
+fi
+
 if [ -f src/gateway/server-methods/send.ts ]; then
   if ! grep -q 'createDefaultDeps, createOutboundSendDeps' src/gateway/server-methods/send.ts; then
     python3 - <<'PY'
