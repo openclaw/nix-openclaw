@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev abe7b2c49da95a47fc0fc01661cec9bfed6941fc. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 0512059dd4e6d2e582393828b837c376ddc4719c. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -283,6 +283,14 @@ in
           default = null;
         };
         systemPromptArg = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        systemPromptFileConfigArg = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        systemPromptFileConfigKey = lib.mkOption {
           type = t.nullOr (t.str);
           default = null;
         };
