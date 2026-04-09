@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify flake.lock owners
+        run: scripts/check-flake-lock-owners.sh
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Run Linux CI aggregator
+        run: nix build .#checks.x86_64-linux.ci --accept-flake-config
+
+      - name: Dump failing gateway test log
+        if: failure()
+        run: |
+          drv="$(nix eval --raw .#checks.x86_64-linux.gateway-tests.drvPath --accept-flake-config)"
+          nix log "$drv" | tail -n 400 || true
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Build Darwin CI aggregator
+        run: nix build .#checks.aarch64-darwin.ci --accept-flake-config
+
+      - name: Run HM activation
+        run: scripts/hm-activation-macos.sh

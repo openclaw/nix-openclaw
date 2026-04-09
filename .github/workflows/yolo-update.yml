@@ -1,29 +1,15 @@
 name: Yolo Update Pins
 
 on:
-  schedule:
-    - cron: "5 * * * *"
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  actions: read
+  contents: read
 
 jobs:
-  update:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v13
-
-      - name: Run updater
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "openclaw-ci"
-          git config user.email "ci@openclaw.local"
-          scripts/update-pins.sh
+      - name: Recovery freeze
+        run: echo "Yolo Update Pins is disabled during release recovery."
