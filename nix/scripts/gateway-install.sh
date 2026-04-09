@@ -45,6 +45,19 @@ if [ -d extensions ]; then
   log_step "copy extensions" cp -r extensions "$out/lib/openclaw/"
 fi
 
+# Gateway plugin discovery looks under dist/extensions/*/openclaw.plugin.json.
+# Upstream's build emits JS into dist/extensions but leaves manifests in extensions/.
+if [ -d "$out/lib/openclaw/extensions" ] && [ -d "$out/lib/openclaw/dist/extensions" ]; then
+  for manifest in "$out/lib/openclaw/extensions"/*/openclaw.plugin.json; do
+    [ -f "$manifest" ] || continue
+    name="$(basename "$(dirname "$manifest")")"
+    dist_ext="$out/lib/openclaw/dist/extensions/$name"
+    if [ -d "$dist_ext" ] && [ ! -f "$dist_ext/openclaw.plugin.json" ]; then
+      cp "$manifest" "$dist_ext/openclaw.plugin.json"
+    fi
+  done
+fi
+
 if [ -d docs/reference/templates ]; then
   mkdir -p "$out/lib/openclaw/docs/reference"
   log_step "copy reference templates" cp -r docs/reference/templates "$out/lib/openclaw/docs/reference/"
