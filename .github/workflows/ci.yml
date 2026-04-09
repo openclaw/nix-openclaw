@@ -24,7 +24,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v13
 
       - name: Run Linux CI aggregator
-        run: nix build .#checks.x86_64-linux.ci --accept-flake-config
+        run: nix build .#checks.x86_64-linux.ci --accept-flake-config --max-jobs 1
 
       - name: Dump failing gateway test log
         if: failure()
