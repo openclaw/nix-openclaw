@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 823a09acbefc893f4ca143d90898b41a482c7a36. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev abe7b2c49da95a47fc0fc01661cec9bfed6941fc. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -178,6 +178,10 @@ in
           type = t.nullOr (t.oneOf [ (t.enum [ "repeat" ]) (t.enum [ "list" ]) ]);
           default = null;
         };
+        imagePathScope = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.enum [ "temp" ]) (t.enum [ "workspace" ]) ]);
+          default = null;
+        };
         input = lib.mkOption {
           type = t.nullOr (t.oneOf [ (t.enum [ "arg" ]) (t.enum [ "stdin" ]) ]);
           default = null;
@@ -348,12 +352,20 @@ in
           type = t.nullOr (t.str);
           default = null;
         };
+        notifyUser = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         postCompactionSections = lib.mkOption {
           type = t.nullOr (t.listOf (t.str));
           default = null;
         };
         postIndexSync = lib.mkOption {
           type = t.nullOr (t.enum [ "off" "async" "await" ]);
+          default = null;
+        };
+        provider = lib.mkOption {
+          type = t.nullOr (t.str);
           default = null;
         };
         qualityGuard = lib.mkOption {
@@ -386,6 +398,10 @@ in
           default = null;
         };
       }; });
+        default = null;
+      };
+      contextInjection = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "always" ]) (t.enum [ "continuation-skip" ]) ]);
         default = null;
       };
       contextPruning = lib.mkOption {
@@ -528,6 +544,10 @@ in
           type = t.nullOr (t.bool);
           default = null;
         };
+        includeSystemPromptSection = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         isolatedSession = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
@@ -610,8 +630,22 @@ in
       }; }) ]);
         default = null;
       };
+      llm = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        idleTimeoutSeconds = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+          description = "Idle timeout for LLM streaming responses in seconds. If no token is received within this time, the request is aborted. Set to 0 to disable. Default: 60 seconds.";
+        };
+      }; });
+        default = null;
+      };
       maxConcurrent = lib.mkOption {
         type = t.nullOr (t.int);
+        default = null;
+      };
+      mediaGenerationAutoProviderFallback = lib.mkOption {
+        type = t.nullOr (t.bool);
         default = null;
       };
       mediaMaxMb = lib.mkOption {
@@ -664,7 +698,7 @@ in
           default = null;
         };
         fallback = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "gemini" ]) (t.enum [ "local" ]) (t.enum [ "voyage" ]) (t.enum [ "mistral" ]) (t.enum [ "ollama" ]) (t.enum [ "none" ]) ]);
+          type = t.nullOr (t.str);
           default = null;
         };
         local = lib.mkOption {
@@ -706,7 +740,28 @@ in
           default = null;
         };
         provider = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "local" ]) (t.enum [ "gemini" ]) (t.enum [ "voyage" ]) (t.enum [ "mistral" ]) (t.enum [ "ollama" ]) ]);
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        qmd = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          extraCollections = lib.mkOption {
+            type = t.nullOr (t.listOf (t.submodule { options = {
+            name = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            path = lib.mkOption {
+              type = t.str;
+            };
+            pattern = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; }));
+            default = null;
+          };
+        }; });
           default = null;
         };
         query = lib.mkOption {
@@ -851,6 +906,15 @@ in
             type = t.nullOr (t.enum [ "sqlite" ]);
             default = null;
           };
+          fts = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            tokenizer = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.enum [ "unicode61" ]) (t.enum [ "trigram" ]) ]);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
           path = lib.mkOption {
             type = t.nullOr (t.str);
             default = null;
@@ -944,6 +1008,23 @@ in
           default = null;
         };
       }; }));
+        default = null;
+      };
+      musicGenerationModel = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.str) (t.submodule { options = {
+        fallbacks = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+        primary = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+      }; }) ]);
+        default = null;
+      };
+      params = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.anything));
         default = null;
       };
       pdfMaxBytesMb = lib.mkOption {
@@ -1148,10 +1229,6 @@ in
           type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "non-main" ]) (t.enum [ "all" ]) ]);
           default = null;
         };
-        perSession = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
         prune = lib.mkOption {
           type = t.nullOr (t.submodule { options = {
           idleHours = lib.mkOption {
@@ -1323,12 +1400,20 @@ in
       }; });
         default = null;
       };
+      skills = lib.mkOption {
+        type = t.nullOr (t.listOf (t.str));
+        default = null;
+      };
       skipBootstrap = lib.mkOption {
         type = t.nullOr (t.bool);
         default = null;
       };
       subagents = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
+        allowAgents = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
         announceTimeoutMs = lib.mkOption {
           type = t.nullOr (t.int);
           default = null;
@@ -1364,6 +1449,10 @@ in
         }; }) ]);
           default = null;
         };
+        requireAgentId = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         runTimeoutSeconds = lib.mkOption {
           type = t.nullOr (t.int);
           default = null;
@@ -1373,6 +1462,10 @@ in
           default = null;
         };
       }; });
+        default = null;
+      };
+      systemPromptOverride = lib.mkOption {
+        type = t.nullOr (t.str);
         default = null;
       };
       thinkingDefault = lib.mkOption {
@@ -1403,6 +1496,19 @@ in
         type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "on" ]) (t.enum [ "full" ]) ]);
         default = null;
       };
+      videoGenerationModel = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.str) (t.submodule { options = {
+        fallbacks = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+        primary = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+      }; }) ]);
+        default = null;
+      };
       workspace = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -1417,6 +1523,10 @@ in
         default = null;
       };
       default = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
+      fastModeDefault = lib.mkOption {
         type = t.nullOr (t.bool);
         default = null;
       };
@@ -1469,6 +1579,10 @@ in
           default = null;
         };
         includeReasoning = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        includeSystemPromptSection = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
         };
@@ -1594,7 +1708,7 @@ in
           default = null;
         };
         fallback = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "gemini" ]) (t.enum [ "local" ]) (t.enum [ "voyage" ]) (t.enum [ "mistral" ]) (t.enum [ "ollama" ]) (t.enum [ "none" ]) ]);
+          type = t.nullOr (t.str);
           default = null;
         };
         local = lib.mkOption {
@@ -1636,7 +1750,28 @@ in
           default = null;
         };
         provider = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "local" ]) (t.enum [ "gemini" ]) (t.enum [ "voyage" ]) (t.enum [ "mistral" ]) (t.enum [ "ollama" ]) ]);
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        qmd = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          extraCollections = lib.mkOption {
+            type = t.nullOr (t.listOf (t.submodule { options = {
+            name = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            path = lib.mkOption {
+              type = t.str;
+            };
+            pattern = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; }));
+            default = null;
+          };
+        }; });
           default = null;
         };
         query = lib.mkOption {
@@ -1781,6 +1916,15 @@ in
             type = t.nullOr (t.enum [ "sqlite" ]);
             default = null;
           };
+          fts = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            tokenizer = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.enum [ "unicode61" ]) (t.enum [ "trigram" ]) ]);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
           path = lib.mkOption {
             type = t.nullOr (t.str);
             default = null;
@@ -1865,6 +2009,10 @@ in
       };
       params = lib.mkOption {
         type = t.nullOr (t.attrsOf (t.anything));
+        default = null;
+      };
+      reasoningDefault = lib.mkOption {
+        type = t.nullOr (t.enum [ "on" "off" "stream" ]);
         default = null;
       };
       runtime = lib.mkOption {
@@ -2077,10 +2225,6 @@ in
           type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "non-main" ]) (t.enum [ "all" ]) ]);
           default = null;
         };
-        perSession = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
         prune = lib.mkOption {
           type = t.nullOr (t.submodule { options = {
           idleHours = lib.mkOption {
@@ -2275,11 +2419,23 @@ in
         }; }) ]);
           default = null;
         };
+        requireAgentId = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         thinking = lib.mkOption {
           type = t.nullOr (t.str);
           default = null;
         };
       }; });
+        default = null;
+      };
+      systemPromptOverride = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      thinkingDefault = lib.mkOption {
+        type = t.nullOr (t.enum [ "off" "minimal" "low" "medium" "high" "xhigh" "adaptive" ]);
         default = null;
       };
       tools = lib.mkOption {
@@ -2366,7 +2522,7 @@ in
             default = null;
           };
           host = lib.mkOption {
-            type = t.nullOr (t.enum [ "sandbox" "gateway" "node" ]);
+            type = t.nullOr (t.enum [ "auto" "sandbox" "gateway" "node" ]);
             default = null;
           };
           node = lib.mkOption {
@@ -2416,6 +2572,10 @@ in
           };
           security = lib.mkOption {
             type = t.nullOr (t.enum [ "deny" "allowlist" "full" ]);
+            default = null;
+          };
+          strictInlineEval = lib.mkOption {
+            type = t.nullOr (t.bool);
             default = null;
           };
           timeoutSec = lib.mkOption {
@@ -2558,6 +2718,46 @@ in
     }; });
       default = null;
     };
+    plugin = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      agentFilter = lib.mkOption {
+        type = t.nullOr (t.listOf (t.str));
+        default = null;
+      };
+      enabled = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
+      mode = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "session" ]) (t.enum [ "targets" ]) (t.enum [ "both" ]) ]);
+        default = null;
+      };
+      sessionFilter = lib.mkOption {
+        type = t.nullOr (t.listOf (t.str));
+        default = null;
+      };
+      targets = lib.mkOption {
+        type = t.nullOr (t.listOf (t.submodule { options = {
+        accountId = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        channel = lib.mkOption {
+          type = t.str;
+        };
+        threadId = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.str) (t.number) ]);
+          default = null;
+        };
+        to = lib.mkOption {
+          type = t.str;
+        };
+      }; }));
+        default = null;
+      };
+    }; });
+      default = null;
+    };
   }; });
     default = null;
   };
@@ -2584,6 +2784,14 @@ in
     type = t.nullOr (t.submodule { options = {
     cooldowns = lib.mkOption {
       type = t.nullOr (t.submodule { options = {
+      authPermanentBackoffMinutes = lib.mkOption {
+        type = t.nullOr (t.number);
+        default = null;
+      };
+      authPermanentMaxMinutes = lib.mkOption {
+        type = t.nullOr (t.number);
+        default = null;
+      };
       billingBackoffHours = lib.mkOption {
         type = t.nullOr (t.number);
         default = null;
@@ -2600,6 +2808,18 @@ in
         type = t.nullOr (t.number);
         default = null;
       };
+      overloadedBackoffMs = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      overloadedProfileRotations = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+      rateLimitedProfileRotations = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
     }; });
       default = null;
     };
@@ -2609,6 +2829,10 @@ in
     };
     profiles = lib.mkOption {
       type = t.nullOr (t.attrsOf (t.submodule { options = {
+      displayName = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       email = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -2846,10 +3070,6 @@ in
     };
     ssrfPolicy = lib.mkOption {
       type = t.nullOr (t.submodule { options = {
-      allowPrivateNetwork = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
       allowedHostnames = lib.mkOption {
         type = t.nullOr (t.listOf (t.str));
         default = null;
@@ -2892,7777 +3112,7 @@ in
   };
 
   channels = lib.mkOption {
-    type = t.nullOr (t.submodule { options = {
-    bluebubbles = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaLocalRoots = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        password = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        sendReadReceipts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        serverUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        webhookPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        addParticipant = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        edit = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        leaveGroup = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        removeParticipant = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        renameGroup = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reply = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sendAttachment = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sendWithEffect = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        setGroupIcon = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        unsend = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaLocalRoots = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      password = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      sendReadReceipts = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      serverUrl = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      webhookPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    defaults = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    discord = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        ackReaction = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        ackReactionScope = lib.mkOption {
-          type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" "off" "none" ]);
-          default = null;
-        };
-        actions = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          channelInfo = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          channels = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          emojiUploads = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          events = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          memberInfo = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          messages = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          moderation = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          permissions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          pins = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          polls = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          presence = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          reactions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          roleInfo = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          roles = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          search = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          stickerUploads = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          stickers = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          threads = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          voiceStatus = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        activity = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        activityType = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ 0 ]) (t.enum [ 1 ]) (t.enum [ 2 ]) (t.enum [ 3 ]) (t.enum [ 4 ]) (t.enum [ 5 ]) ]);
-          default = null;
-        };
-        activityUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        agentComponents = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowBots = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "mentions" ]) ]);
-          default = null;
-        };
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        autoPresence = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          degradedText = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          exhaustedText = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          healthyText = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          intervalMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minUpdateIntervalMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        commands = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          native = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-          nativeSkills = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dangerouslyAllowNameMatching = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dm = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          groupChannels = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          groupEnabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          policy = lib.mkOption {
-            type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        draftChunk = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          breakPreference = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "paragraph" ]) (t.enum [ "newline" ]) (t.enum [ "sentence" ]) ]);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        eventQueue = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          listenerTimeout = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxConcurrency = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxQueueSize = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        execApprovals = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          agentFilter = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          approvers = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          cleanupAfterResolve = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          sessionFilter = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          target = lib.mkOption {
-            type = t.nullOr (t.enum [ "dm" "channel" "both" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        guilds = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          channels = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            autoArchiveDuration = lib.mkOption {
-              type = t.nullOr (t.oneOf [ (t.enum [ "60" "1440" "4320" "10080" ]) (t.enum [ 60 ]) (t.enum [ 1440 ]) (t.enum [ 4320 ]) (t.enum [ 10080 ]) ]);
-              default = null;
-            };
-            autoThread = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            ignoreOtherMentions = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            includeThreadStarter = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            requireMention = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            roles = lib.mkOption {
-              type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-              default = null;
-            };
-            skills = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            systemPrompt = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            tools = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              allow = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-              alsoAllow = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-              deny = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            toolsBySender = lib.mkOption {
-              type = t.nullOr (t.attrsOf (t.submodule { options = {
-              allow = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-              alsoAllow = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-              deny = lib.mkOption {
-                type = t.nullOr (t.listOf (t.str));
-                default = null;
-              };
-            }; }));
-              default = null;
-            };
-            users = lib.mkOption {
-              type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          ignoreOtherMentions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          reactionNotifications = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          roles = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          slug = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          users = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        inboundWorker = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          runTimeoutMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        intents = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          guildMembers = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          presence = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        maxLinesPerMessage = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        pluralkit = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          token = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        proxy = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        replyToMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        retry = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          attempts = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          jitter = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          maxDelayMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minDelayMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        slashCommand = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          ephemeral = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        status = lib.mkOption {
-          type = t.nullOr (t.enum [ "online" "dnd" "idle" "invisible" ]);
-          default = null;
-        };
-        streamMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "partial" "block" "off" ]);
-          default = null;
-        };
-        streaming = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        threadBindings = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          idleHours = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          maxAgeHours = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          spawnAcpSessions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          spawnSubagentSessions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        token = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        ui = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          components = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            accentColor = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        voice = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          autoJoin = lib.mkOption {
-            type = t.nullOr (t.listOf (t.submodule { options = {
-            channelId = lib.mkOption {
-              type = t.str;
-            };
-            guildId = lib.mkOption {
-              type = t.str;
-            };
-          }; }));
-            default = null;
-          };
-          daveEncryption = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          decryptionFailureTolerance = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tts = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            auto = lib.mkOption {
-              type = t.nullOr (t.enum [ "off" "always" "inbound" "tagged" ]);
-              default = null;
-            };
-            edge = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              enabled = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              lang = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              outputFormat = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              pitch = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              proxy = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              rate = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              saveSubtitles = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              timeoutMs = lib.mkOption {
-                type = t.nullOr (t.int);
-                default = null;
-              };
-              voice = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              volume = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            elevenlabs = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              apiKey = lib.mkOption {
-                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "env" ];
-                };
-              }; }) (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "file" ];
-                };
-              }; }) (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "exec" ];
-                };
-              }; }) ]) ]);
-                default = null;
-              };
-              applyTextNormalization = lib.mkOption {
-                type = t.nullOr (t.enum [ "auto" "on" "off" ]);
-                default = null;
-              };
-              baseUrl = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              languageCode = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              modelId = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              seed = lib.mkOption {
-                type = t.nullOr (t.int);
-                default = null;
-              };
-              voiceId = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              voiceSettings = lib.mkOption {
-                type = t.nullOr (t.submodule { options = {
-                similarityBoost = lib.mkOption {
-                  type = t.nullOr (t.number);
-                  default = null;
-                };
-                speed = lib.mkOption {
-                  type = t.nullOr (t.number);
-                  default = null;
-                };
-                stability = lib.mkOption {
-                  type = t.nullOr (t.number);
-                  default = null;
-                };
-                style = lib.mkOption {
-                  type = t.nullOr (t.number);
-                  default = null;
-                };
-                useSpeakerBoost = lib.mkOption {
-                  type = t.nullOr (t.bool);
-                  default = null;
-                };
-              }; });
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            maxTextLength = lib.mkOption {
-              type = t.nullOr (t.int);
-              default = null;
-            };
-            microsoft = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              enabled = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              lang = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              outputFormat = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              pitch = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              proxy = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              rate = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              saveSubtitles = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              timeoutMs = lib.mkOption {
-                type = t.nullOr (t.int);
-                default = null;
-              };
-              voice = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              volume = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            mode = lib.mkOption {
-              type = t.nullOr (t.enum [ "final" "all" ]);
-              default = null;
-            };
-            modelOverrides = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              allowModelId = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowNormalization = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowProvider = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowSeed = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowText = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowVoice = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              allowVoiceSettings = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-              enabled = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            openai = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              apiKey = lib.mkOption {
-                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "env" ];
-                };
-              }; }) (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "file" ];
-                };
-              }; }) (t.submodule { options = {
-                id = lib.mkOption {
-                  type = t.str;
-                };
-                provider = lib.mkOption {
-                  type = t.str;
-                };
-                source = lib.mkOption {
-                  type = t.enum [ "exec" ];
-                };
-              }; }) ]) ]);
-                default = null;
-              };
-              baseUrl = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              instructions = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              model = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-              speed = lib.mkOption {
-                type = t.nullOr (t.number);
-                default = null;
-              };
-              voice = lib.mkOption {
-                type = t.nullOr (t.str);
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-            prefsPath = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            provider = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            summaryModel = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            timeoutMs = lib.mkOption {
-              type = t.nullOr (t.int);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      ackReaction = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      ackReactionScope = lib.mkOption {
-        type = t.nullOr (t.enum [ "group-mentions" "group-all" "direct" "all" "off" "none" ]);
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        channelInfo = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        channels = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        emojiUploads = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        events = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        memberInfo = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        messages = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        moderation = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        permissions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        pins = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        polls = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        presence = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        roleInfo = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        roles = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        search = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        stickerUploads = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        stickers = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        threads = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        voiceStatus = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      activity = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      activityType = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ 0 ]) (t.enum [ 1 ]) (t.enum [ 2 ]) (t.enum [ 3 ]) (t.enum [ 4 ]) (t.enum [ 5 ]) ]);
-        default = null;
-      };
-      activityUrl = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      agentComponents = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowBots = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "mentions" ]) ]);
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      autoPresence = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        degradedText = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        exhaustedText = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        healthyText = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        intervalMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minUpdateIntervalMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      commands = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        native = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-        nativeSkills = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      dangerouslyAllowNameMatching = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dm = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupChannels = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupEnabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        policy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      draftChunk = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        breakPreference = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "paragraph" ]) (t.enum [ "newline" ]) (t.enum [ "sentence" ]) ]);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      eventQueue = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        listenerTimeout = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxConcurrency = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxQueueSize = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      execApprovals = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        agentFilter = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        approvers = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        cleanupAfterResolve = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sessionFilter = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        target = lib.mkOption {
-          type = t.nullOr (t.enum [ "dm" "channel" "both" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      guilds = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        channels = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          autoArchiveDuration = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "60" "1440" "4320" "10080" ]) (t.enum [ 60 ]) (t.enum [ 1440 ]) (t.enum [ 4320 ]) (t.enum [ 10080 ]) ]);
-            default = null;
-          };
-          autoThread = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          ignoreOtherMentions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          includeThreadStarter = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          roles = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          users = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        ignoreOtherMentions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactionNotifications = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        roles = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        slug = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        users = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      inboundWorker = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        runTimeoutMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      intents = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        guildMembers = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        presence = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      maxLinesPerMessage = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      pluralkit = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        token = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      proxy = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      replyToMode = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      retry = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        attempts = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        jitter = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        maxDelayMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minDelayMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      slashCommand = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        ephemeral = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      status = lib.mkOption {
-        type = t.nullOr (t.enum [ "online" "dnd" "idle" "invisible" ]);
-        default = null;
-      };
-      streamMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "partial" "block" "off" ]);
-        default = null;
-      };
-      streaming = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      threadBindings = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        idleHours = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        maxAgeHours = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        spawnAcpSessions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        spawnSubagentSessions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      token = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      ui = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        components = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          accentColor = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      voice = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        autoJoin = lib.mkOption {
-          type = t.nullOr (t.listOf (t.submodule { options = {
-          channelId = lib.mkOption {
-            type = t.str;
-          };
-          guildId = lib.mkOption {
-            type = t.str;
-          };
-        }; }));
-          default = null;
-        };
-        daveEncryption = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        decryptionFailureTolerance = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tts = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          auto = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "always" "inbound" "tagged" ]);
-            default = null;
-          };
-          edge = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            lang = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            outputFormat = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            pitch = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            proxy = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            rate = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            saveSubtitles = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            timeoutMs = lib.mkOption {
-              type = t.nullOr (t.int);
-              default = null;
-            };
-            voice = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            volume = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          elevenlabs = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            apiKey = lib.mkOption {
-              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "env" ];
-              };
-            }; }) (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "file" ];
-              };
-            }; }) (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "exec" ];
-              };
-            }; }) ]) ]);
-              default = null;
-            };
-            applyTextNormalization = lib.mkOption {
-              type = t.nullOr (t.enum [ "auto" "on" "off" ]);
-              default = null;
-            };
-            baseUrl = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            languageCode = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            modelId = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            seed = lib.mkOption {
-              type = t.nullOr (t.int);
-              default = null;
-            };
-            voiceId = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            voiceSettings = lib.mkOption {
-              type = t.nullOr (t.submodule { options = {
-              similarityBoost = lib.mkOption {
-                type = t.nullOr (t.number);
-                default = null;
-              };
-              speed = lib.mkOption {
-                type = t.nullOr (t.number);
-                default = null;
-              };
-              stability = lib.mkOption {
-                type = t.nullOr (t.number);
-                default = null;
-              };
-              style = lib.mkOption {
-                type = t.nullOr (t.number);
-                default = null;
-              };
-              useSpeakerBoost = lib.mkOption {
-                type = t.nullOr (t.bool);
-                default = null;
-              };
-            }; });
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          maxTextLength = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          microsoft = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            lang = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            outputFormat = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            pitch = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            proxy = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            rate = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            saveSubtitles = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            timeoutMs = lib.mkOption {
-              type = t.nullOr (t.int);
-              default = null;
-            };
-            voice = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            volume = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          mode = lib.mkOption {
-            type = t.nullOr (t.enum [ "final" "all" ]);
-            default = null;
-          };
-          modelOverrides = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allowModelId = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowNormalization = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowProvider = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowSeed = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowText = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowVoice = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            allowVoiceSettings = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          openai = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            apiKey = lib.mkOption {
-              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "env" ];
-              };
-            }; }) (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "file" ];
-              };
-            }; }) (t.submodule { options = {
-              id = lib.mkOption {
-                type = t.str;
-              };
-              provider = lib.mkOption {
-                type = t.str;
-              };
-              source = lib.mkOption {
-                type = t.enum [ "exec" ];
-              };
-            }; }) ]) ]);
-              default = null;
-            };
-            baseUrl = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            instructions = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            model = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            speed = lib.mkOption {
-              type = t.nullOr (t.number);
-              default = null;
-            };
-            voice = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          prefsPath = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          provider = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          summaryModel = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          timeoutMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    googlechat = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        actions = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          reactions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowBots = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        appPrincipal = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        audience = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        audienceType = lib.mkOption {
-          type = t.nullOr (t.enum [ "app-url" "project-number" ]);
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        botUser = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dangerouslyAllowNameMatching = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dm = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          policy = lib.mkOption {
-            type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          users = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        replyToMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        serviceAccount = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.attrsOf (t.anything)) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        serviceAccountFile = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        serviceAccountRef = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]);
-          default = null;
-        };
-        streamMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "replace" "status_final" "append" ]);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        typingIndicator = lib.mkOption {
-          type = t.nullOr (t.enum [ "none" "message" "reaction" ]);
-          default = null;
-        };
-        webhookPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        webhookUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowBots = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      appPrincipal = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      audience = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      audienceType = lib.mkOption {
-        type = t.nullOr (t.enum [ "app-url" "project-number" ]);
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      botUser = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      dangerouslyAllowNameMatching = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dm = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        policy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allow = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        systemPrompt = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        users = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      replyToMode = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-        default = null;
-      };
-      requireMention = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      serviceAccount = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.attrsOf (t.anything)) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      serviceAccountFile = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      serviceAccountRef = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]);
-        default = null;
-      };
-      streamMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "replace" "status_final" "append" ]);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      typingIndicator = lib.mkOption {
-        type = t.nullOr (t.enum [ "none" "message" "reaction" ]);
-        default = null;
-      };
-      webhookPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      webhookUrl = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    imessage = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        attachmentRoots = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        cliPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dbPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        includeAttachments = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        region = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        remoteAttachmentRoots = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        remoteHost = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        service = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "imessage" ]) (t.enum [ "sms" ]) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      attachmentRoots = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      cliPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      dbPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      includeAttachments = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      region = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      remoteAttachmentRoots = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      remoteHost = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      service = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "imessage" ]) (t.enum [ "sms" ]) (t.enum [ "auto" ]) ]);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    irc = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        channels = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        host = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        mentionPatterns = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        nick = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        nickserv = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          password = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          passwordFile = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          register = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          registerEmail = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          service = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        password = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        passwordFile = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        port = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        realname = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        tls = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        username = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      channels = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        skills = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        systemPrompt = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      host = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      mentionPatterns = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      nick = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      nickserv = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        password = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        passwordFile = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        register = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        registerEmail = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        service = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      password = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      passwordFile = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      port = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      realname = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      tls = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      username = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    modelByChannel = lib.mkOption {
-      type = t.nullOr (t.attrsOf (t.attrsOf (t.str)));
-      default = null;
-    };
-    msteams = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      appId = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      appPassword = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      dangerouslyAllowNameMatching = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaAllowHosts = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      mediaAuthAllowHosts = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      replyStyle = lib.mkOption {
-        type = t.nullOr (t.enum [ "thread" "top-level" ]);
-        default = null;
-      };
-      requireMention = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      sharePointSiteId = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      teams = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        channels = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          replyStyle = lib.mkOption {
-            type = t.nullOr (t.enum [ "thread" "top-level" ]);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        replyStyle = lib.mkOption {
-          type = t.nullOr (t.enum [ "thread" "top-level" ]);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      tenantId = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      webhook = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        path = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        port = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    signal = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      account = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      accountUuid = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        account = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        accountUuid = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        actions = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          reactions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        autoStart = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        cliPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        httpHost = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        httpPort = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        httpUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        ignoreAttachments = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        ignoreStories = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        reactionAllowlist = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        reactionLevel = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "ack" "minimal" "extensive" ]);
-          default = null;
-        };
-        reactionNotifications = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-          default = null;
-        };
-        receiveMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "on-start" ]) (t.enum [ "manual" ]) ]);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        sendReadReceipts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        startupTimeoutMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      autoStart = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      cliPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      httpHost = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      httpPort = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      httpUrl = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      ignoreAttachments = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      ignoreStories = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      reactionAllowlist = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      reactionLevel = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "ack" "minimal" "extensive" ]);
-        default = null;
-      };
-      reactionNotifications = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-        default = null;
-      };
-      receiveMode = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "on-start" ]) (t.enum [ "manual" ]) ]);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      sendReadReceipts = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      startupTimeoutMs = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    slack = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        ackReaction = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        actions = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          channelInfo = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          emojiList = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          memberInfo = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          messages = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          permissions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          pins = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          reactions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          search = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowBots = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        appToken = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        botToken = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.listOf (t.str)) (t.submodule { options = {
-          interactiveReplies = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; }) ]);
-          default = null;
-        };
-        channels = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          allowBots = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          users = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        commands = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          native = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-          nativeSkills = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dangerouslyAllowNameMatching = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dm = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          groupChannels = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          groupEnabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          policy = lib.mkOption {
-            type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-            default = null;
-          };
-          replyToMode = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        mode = lib.mkOption {
-          type = t.nullOr (t.enum [ "socket" "http" ]);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        nativeStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactionAllowlist = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        reactionNotifications = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-          default = null;
-        };
-        replyToMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        replyToModeByChatType = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          channel = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-            default = null;
-          };
-          direct = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-            default = null;
-          };
-          group = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        signingSecret = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        slashCommand = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          ephemeral = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          name = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          sessionPrefix = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        streamMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "replace" "status_final" "append" ]);
-          default = null;
-        };
-        streaming = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        thread = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          historyScope = lib.mkOption {
-            type = t.nullOr (t.enum [ "thread" "channel" ]);
-            default = null;
-          };
-          inheritParent = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          initialHistoryLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        typingReaction = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        userToken = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        userTokenReadOnly = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        webhookPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      ackReaction = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        channelInfo = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        emojiList = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        memberInfo = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        messages = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        permissions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        pins = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        search = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowBots = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      appToken = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      botToken = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.listOf (t.str)) (t.submodule { options = {
-        interactiveReplies = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; }) ]);
-        default = null;
-      };
-      channels = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allow = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        allowBots = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        skills = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        systemPrompt = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        users = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      commands = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        native = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-        nativeSkills = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      dangerouslyAllowNameMatching = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dm = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupChannels = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupEnabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        policy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        replyToMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      mode = lib.mkOption {
-        type = t.nullOr (t.enum [ "socket" "http" ]);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      nativeStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      reactionAllowlist = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      reactionNotifications = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "own" "all" "allowlist" ]);
-        default = null;
-      };
-      replyToMode = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-        default = null;
-      };
-      replyToModeByChatType = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        channel = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        direct = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        group = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      requireMention = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      signingSecret = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      slashCommand = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        ephemeral = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        sessionPrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      streamMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "replace" "status_final" "append" ]);
-        default = null;
-      };
-      streaming = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      thread = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        historyScope = lib.mkOption {
-          type = t.nullOr (t.enum [ "thread" "channel" ]);
-          default = null;
-        };
-        inheritParent = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        initialHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      typingReaction = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      userToken = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      userTokenReadOnly = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      webhookPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-    telegram = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        ackReaction = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        actions = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          createForumTopic = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          deleteMessage = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          editForumTopic = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          editMessage = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          poll = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          reactions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          sendMessage = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          sticker = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        botToken = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.listOf (t.str)) (t.submodule { options = {
-          inlineButtons = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "dm" "group" "all" "allowlist" ]);
-            default = null;
-          };
-        }; }) ]);
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        commands = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          native = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-          nativeSkills = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        customCommands = lib.mkOption {
-          type = t.nullOr (t.listOf (t.submodule { options = {
-          command = lib.mkOption {
-            type = t.str;
-          };
-          description = lib.mkOption {
-            type = t.str;
-          };
-        }; }));
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.number) ]);
-          default = null;
-        };
-        direct = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          dmPolicy = lib.mkOption {
-            type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          requireTopic = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          topics = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            agentId = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            allowFrom = lib.mkOption {
-              type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-              default = null;
-            };
-            disableAudioPreflight = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            groupPolicy = lib.mkOption {
-              type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-              default = null;
-            };
-            requireMention = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            skills = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            systemPrompt = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        draftChunk = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          breakPreference = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "paragraph" ]) (t.enum [ "newline" ]) (t.enum [ "sentence" ]) ]);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        execApprovals = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          agentFilter = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          approvers = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          sessionFilter = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          target = lib.mkOption {
-            type = t.nullOr (t.enum [ "dm" "channel" "both" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          disableAudioPreflight = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          groupPolicy = lib.mkOption {
-            type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-          topics = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            agentId = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-            allowFrom = lib.mkOption {
-              type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-              default = null;
-            };
-            disableAudioPreflight = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            enabled = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            groupPolicy = lib.mkOption {
-              type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-              default = null;
-            };
-            requireMention = lib.mkOption {
-              type = t.nullOr (t.bool);
-              default = null;
-            };
-            skills = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            systemPrompt = lib.mkOption {
-              type = t.nullOr (t.str);
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        linkPreview = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        network = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          autoSelectFamily = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          dnsResultOrder = lib.mkOption {
-            type = t.nullOr (t.enum [ "ipv4first" "verbatim" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        proxy = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        reactionLevel = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "ack" "minimal" "extensive" ]);
-          default = null;
-        };
-        reactionNotifications = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "own" "all" ]);
-          default = null;
-        };
-        replyToMode = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        retry = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          attempts = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          jitter = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          maxDelayMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minDelayMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        silentErrorReplies = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        streamMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "partial" "block" ]);
-          default = null;
-        };
-        streaming = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        threadBindings = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          idleHours = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          maxAgeHours = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          spawnAcpSessions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          spawnSubagentSessions = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        timeoutSeconds = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        tokenFile = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        webhookCertPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-          description = "Path to the self-signed certificate (PEM) to upload to Telegram during webhook registration. Required for self-signed certs (direct IP or no domain).";
-        };
-        webhookHost = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-          description = "Local bind host for the webhook listener. Defaults to 127.0.0.1; keep loopback unless you intentionally expose direct ingress.";
-        };
-        webhookPath = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-          description = "Local webhook route path served by the gateway listener. Defaults to /telegram-webhook.";
-        };
-        webhookPort = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-          description = "Local bind port for the webhook listener. Defaults to 8787; set to 0 to let the OS assign an ephemeral port.";
-        };
-        webhookSecret = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-          description = "Secret token sent to Telegram during webhook registration and verified on inbound webhook requests. Telegram returns this value for verification; this is not the gateway auth token and not the bot token.";
-        };
-        webhookUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-          description = "Public HTTPS webhook URL registered with Telegram for inbound updates. This must be internet-reachable and requires channels.telegram.webhookSecret.";
-        };
-      }; }));
-        default = null;
-      };
-      ackReaction = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        createForumTopic = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        deleteMessage = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        editForumTopic = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        editMessage = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        poll = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sendMessage = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sticker = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      botToken = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.listOf (t.str)) (t.submodule { options = {
-        inlineButtons = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "dm" "group" "all" "allowlist" ]);
-          default = null;
-        };
-      }; }) ]);
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      commands = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        native = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-        nativeSkills = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "auto" ]) ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      customCommands = lib.mkOption {
-        type = t.nullOr (t.listOf (t.submodule { options = {
-        command = lib.mkOption {
-          type = t.str;
-        };
-        description = lib.mkOption {
-          type = t.str;
-        };
-      }; }));
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.number) ]);
-        default = null;
-      };
-      direct = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        requireTopic = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        skills = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        systemPrompt = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        topics = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          agentId = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          disableAudioPreflight = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          groupPolicy = lib.mkOption {
-            type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      draftChunk = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        breakPreference = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.enum [ "paragraph" ]) (t.enum [ "newline" ]) (t.enum [ "sentence" ]) ]);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      execApprovals = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        agentFilter = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        approvers = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sessionFilter = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        target = lib.mkOption {
-          type = t.nullOr (t.enum [ "dm" "channel" "both" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-          default = null;
-        };
-        disableAudioPreflight = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        skills = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        systemPrompt = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        topics = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          agentId = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          allowFrom = lib.mkOption {
-            type = t.nullOr (t.listOf (t.oneOf [ (t.str) (t.number) ]));
-            default = null;
-          };
-          disableAudioPreflight = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          groupPolicy = lib.mkOption {
-            type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-            default = null;
-          };
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          skills = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          systemPrompt = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      linkPreview = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.number);
-        default = null;
-      };
-      name = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      network = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        autoSelectFamily = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        dnsResultOrder = lib.mkOption {
-          type = t.nullOr (t.enum [ "ipv4first" "verbatim" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      proxy = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      reactionLevel = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "ack" "minimal" "extensive" ]);
-        default = null;
-      };
-      reactionNotifications = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "own" "all" ]);
-        default = null;
-      };
-      replyToMode = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "first" ]) (t.enum [ "all" ]) ]);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      retry = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        attempts = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        jitter = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        maxDelayMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minDelayMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      silentErrorReplies = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      streamMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "off" "partial" "block" ]);
-        default = null;
-      };
-      streaming = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.bool) (t.enum [ "off" "partial" "block" "progress" ]) ]);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      threadBindings = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        idleHours = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        maxAgeHours = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        spawnAcpSessions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        spawnSubagentSessions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      timeoutSeconds = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      tokenFile = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      webhookCertPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-        description = "Path to the self-signed certificate (PEM) to upload to Telegram during webhook registration. Required for self-signed certs (direct IP or no domain).";
-      };
-      webhookHost = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-        description = "Local bind host for the webhook listener. Defaults to 127.0.0.1; keep loopback unless you intentionally expose direct ingress.";
-      };
-      webhookPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-        description = "Local webhook route path served by the gateway listener. Defaults to /telegram-webhook.";
-      };
-      webhookPort = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-        description = "Local bind port for the webhook listener. Defaults to 8787; set to 0 to let the OS assign an ephemeral port.";
-      };
-      webhookSecret = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "env" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "file" ];
-        };
-      }; }) (t.submodule { options = {
-        id = lib.mkOption {
-          type = t.str;
-        };
-        provider = lib.mkOption {
-          type = t.str;
-        };
-        source = lib.mkOption {
-          type = t.enum [ "exec" ];
-        };
-      }; }) ]) ]);
-        default = null;
-        description = "Secret token sent to Telegram during webhook registration and verified on inbound webhook requests. Telegram returns this value for verification; this is not the gateway auth token and not the bot token.";
-      };
-      webhookUrl = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-        description = "Public HTTPS webhook URL registered with Telegram for inbound updates. This must be internet-reachable and requires channels.telegram.webhookSecret.";
-      };
-    }; });
-      default = null;
-    };
-    whatsapp = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      accounts = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        ackReaction = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          direct = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          emoji = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          group = lib.mkOption {
-            type = t.nullOr (t.enum [ "always" "mentions" "never" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        allowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        authDir = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        blockStreaming = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        blockStreamingCoalesce = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          idleMs = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          maxChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-          minChars = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        capabilities = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        chunkMode = lib.mkOption {
-          type = t.nullOr (t.enum [ "length" "newline" ]);
-          default = null;
-        };
-        configWrites = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        debounceMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        defaultTo = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        dmHistoryLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        dmPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-          default = null;
-        };
-        dms = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          historyLimit = lib.mkOption {
-            type = t.nullOr (t.int);
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        groupAllowFrom = lib.mkOption {
-          type = t.nullOr (t.listOf (t.str));
-          default = null;
-        };
-        groupPolicy = lib.mkOption {
-          type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-          default = null;
-        };
-        groups = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          requireMention = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          tools = lib.mkOption {
-            type = t.nullOr (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; });
-            default = null;
-          };
-          toolsBySender = lib.mkOption {
-            type = t.nullOr (t.attrsOf (t.submodule { options = {
-            allow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            alsoAllow = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-            deny = lib.mkOption {
-              type = t.nullOr (t.listOf (t.str));
-              default = null;
-            };
-          }; }));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-        healthMonitor = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          enabled = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        heartbeat = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          showAlerts = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          showOk = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          useIndicator = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        markdown = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          tables = lib.mkOption {
-            type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        mediaMaxMb = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        messagePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        name = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        responsePrefix = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        selfChatMode = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sendReadReceipts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        textChunkLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      ackReaction = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        direct = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        emoji = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        group = lib.mkOption {
-          type = t.nullOr (t.enum [ "always" "mentions" "never" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      actions = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        polls = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        reactions = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        sendMessage = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      allowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      blockStreaming = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      blockStreamingCoalesce = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        idleMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        maxChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        minChars = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      capabilities = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      chunkMode = lib.mkOption {
-        type = t.nullOr (t.enum [ "length" "newline" ]);
-        default = null;
-      };
-      configWrites = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      debounceMs = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      defaultAccount = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      defaultTo = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      dmHistoryLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      dmPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "pairing" "allowlist" "open" "disabled" ]);
-        default = null;
-      };
-      dms = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        historyLimit = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      groupAllowFrom = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      groupPolicy = lib.mkOption {
-        type = t.nullOr (t.enum [ "open" "disabled" "allowlist" ]);
-        default = null;
-      };
-      groups = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.submodule { options = {
-        requireMention = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        tools = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        toolsBySender = lib.mkOption {
-          type = t.nullOr (t.attrsOf (t.submodule { options = {
-          allow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          alsoAllow = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-          deny = lib.mkOption {
-            type = t.nullOr (t.listOf (t.str));
-            default = null;
-          };
-        }; }));
-          default = null;
-        };
-      }; }));
-        default = null;
-      };
-      healthMonitor = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      heartbeat = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        showAlerts = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        showOk = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        useIndicator = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      historyLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      markdown = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        tables = lib.mkOption {
-          type = t.nullOr (t.enum [ "off" "bullets" "code" ]);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      mediaMaxMb = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      messagePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      responsePrefix = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      selfChatMode = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      sendReadReceipts = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      textChunkLimit = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
-  }; });
+    type = t.nullOr (t.anything);
     default = null;
   };
 
@@ -11586,6 +4036,15 @@ in
       type = t.nullOr (t.listOf (t.str));
       default = null;
     };
+    webchat = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      chatHistoryMaxChars = lib.mkOption {
+        type = t.nullOr (t.int);
+        default = null;
+      };
+    }; });
+      default = null;
+    };
   }; });
     default = null;
   };
@@ -11735,6 +4194,22 @@ in
       };
       installs = lib.mkOption {
         type = t.nullOr (t.attrsOf (t.submodule { options = {
+        clawhubChannel = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.enum [ "official" ]) (t.enum [ "community" ]) (t.enum [ "private" ]) ]);
+          default = null;
+        };
+        clawhubFamily = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.enum [ "code-plugin" ]) (t.enum [ "bundle-plugin" ]) ]);
+          default = null;
+        };
+        clawhubPackage = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        clawhubUrl = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
         hooks = lib.mkOption {
           type = t.nullOr (t.listOf (t.str));
           default = null;
@@ -11772,7 +4247,7 @@ in
           default = null;
         };
         source = lib.mkOption {
-          type = t.oneOf [ (t.enum [ "npm" ]) (t.enum [ "archive" ]) (t.enum [ "path" ]) ];
+          type = t.oneOf [ (t.enum [ "npm" ]) (t.enum [ "archive" ]) (t.enum [ "path" ]) (t.enum [ "clawhub" ]) ];
         };
         sourcePath = lib.mkOption {
           type = t.nullOr (t.str);
@@ -11816,7 +4291,7 @@ in
         default = null;
       };
       channel = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "last" ]) (t.enum [ "whatsapp" ]) (t.enum [ "telegram" ]) (t.enum [ "discord" ]) (t.enum [ "irc" ]) (t.enum [ "slack" ]) (t.enum [ "signal" ]) (t.enum [ "imessage" ]) (t.enum [ "msteams" ]) ]);
+        type = t.nullOr (t.str);
         default = null;
       };
       deliver = lib.mkOption {
@@ -11969,6 +4444,10 @@ in
         type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ]));
         default = null;
       };
+      headers = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ]));
+        default = null;
+      };
       url = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -12112,6 +4591,10 @@ in
       };
       searchMode = lib.mkOption {
         type = t.nullOr (t.oneOf [ (t.enum [ "query" ]) (t.enum [ "search" ]) (t.enum [ "vsearch" ]) ]);
+        default = null;
+      };
+      searchTool = lib.mkOption {
+        type = t.nullOr (t.str);
         default = null;
       };
       sessions = lib.mkOption {
@@ -12378,190 +4861,12 @@ in
         type = t.nullOr (t.enum [ "off" "always" "inbound" "tagged" ]);
         default = null;
       };
-      edge = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        lang = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        outputFormat = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        pitch = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        proxy = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        rate = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        saveSubtitles = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        timeoutMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        voice = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        volume = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      elevenlabs = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        apiKey = lib.mkOption {
-          type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "env" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "file" ];
-          };
-        }; }) (t.submodule { options = {
-          id = lib.mkOption {
-            type = t.str;
-          };
-          provider = lib.mkOption {
-            type = t.str;
-          };
-          source = lib.mkOption {
-            type = t.enum [ "exec" ];
-          };
-        }; }) ]) ]);
-          default = null;
-        };
-        applyTextNormalization = lib.mkOption {
-          type = t.nullOr (t.enum [ "auto" "on" "off" ]);
-          default = null;
-        };
-        baseUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        languageCode = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        modelId = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        seed = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        voiceId = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        voiceSettings = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          similarityBoost = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          speed = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          stability = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          style = lib.mkOption {
-            type = t.nullOr (t.number);
-            default = null;
-          };
-          useSpeakerBoost = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-      }; });
-        default = null;
-      };
       enabled = lib.mkOption {
         type = t.nullOr (t.bool);
         default = null;
       };
       maxTextLength = lib.mkOption {
         type = t.nullOr (t.int);
-        default = null;
-      };
-      microsoft = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
-        enabled = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        lang = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        outputFormat = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        pitch = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        proxy = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        rate = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        saveSubtitles = lib.mkOption {
-          type = t.nullOr (t.bool);
-          default = null;
-        };
-        timeoutMs = lib.mkOption {
-          type = t.nullOr (t.int);
-          default = null;
-        };
-        voice = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        volume = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; });
         default = null;
       };
       mode = lib.mkOption {
@@ -12605,8 +4910,16 @@ in
       }; });
         default = null;
       };
-      openai = lib.mkOption {
-        type = t.nullOr (t.submodule { options = {
+      prefsPath = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      provider = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      providers = lib.mkOption {
+        type = t.nullOr (t.attrsOf (t.submodule { options = {
         apiKey = lib.mkOption {
           type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
           id = lib.mkOption {
@@ -12641,35 +4954,7 @@ in
         }; }) ]) ]);
           default = null;
         };
-        baseUrl = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        instructions = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        model = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-        speed = lib.mkOption {
-          type = t.nullOr (t.number);
-          default = null;
-        };
-        voice = lib.mkOption {
-          type = t.nullOr (t.str);
-          default = null;
-        };
-      }; });
-        default = null;
-      };
-      prefsPath = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      provider = lib.mkOption {
-        type = t.nullOr (t.str);
+      }; }));
         default = null;
       };
       summaryModel = lib.mkOption {
@@ -12703,35 +4988,6 @@ in
 
   models = lib.mkOption {
     type = t.nullOr (t.submodule { options = {
-    bedrockDiscovery = lib.mkOption {
-      type = t.nullOr (t.submodule { options = {
-      defaultContextWindow = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      defaultMaxTokens = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      enabled = lib.mkOption {
-        type = t.nullOr (t.bool);
-        default = null;
-      };
-      providerFilter = lib.mkOption {
-        type = t.nullOr (t.listOf (t.str));
-        default = null;
-      };
-      refreshInterval = lib.mkOption {
-        type = t.nullOr (t.int);
-        default = null;
-      };
-      region = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-    }; });
-      default = null;
-    };
     mode = lib.mkOption {
       type = t.nullOr (t.oneOf [ (t.enum [ "merge" ]) (t.enum [ "replace" ]) ]);
       default = null;
@@ -12739,7 +4995,7 @@ in
     providers = lib.mkOption {
       type = t.nullOr (t.attrsOf (t.submodule { options = {
       api = lib.mkOption {
-        type = t.nullOr (t.enum [ "openai-completions" "openai-responses" "openai-codex-responses" "anthropic-messages" "google-generative-ai" "github-copilot" "bedrock-converse-stream" "ollama" ]);
+        type = t.nullOr (t.enum [ "openai-completions" "openai-responses" "openai-codex-responses" "anthropic-messages" "google-generative-ai" "github-copilot" "bedrock-converse-stream" "ollama" "azure-openai-responses" ]);
         default = null;
       };
       apiKey = lib.mkOption {
@@ -12828,7 +5084,7 @@ in
       models = lib.mkOption {
         type = t.listOf (t.submodule { options = {
         api = lib.mkOption {
-          type = t.nullOr (t.enum [ "openai-completions" "openai-responses" "openai-codex-responses" "anthropic-messages" "google-generative-ai" "github-copilot" "bedrock-converse-stream" "ollama" ]);
+          type = t.nullOr (t.enum [ "openai-completions" "openai-responses" "openai-codex-responses" "anthropic-messages" "google-generative-ai" "github-copilot" "bedrock-converse-stream" "ollama" "azure-openai-responses" ]);
           default = null;
         };
         compat = lib.mkOption {
@@ -12850,6 +5106,10 @@ in
             default = null;
           };
           requiresOpenAiAnthropicToolPayload = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          requiresStringContent = lib.mkOption {
             type = t.nullOr (t.bool);
             default = null;
           };
@@ -12886,18 +5146,26 @@ in
             default = null;
           };
           thinkingFormat = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "zai" ]) (t.enum [ "qwen" ]) (t.enum [ "qwen-chat-template" ]) ]);
+            type = t.nullOr (t.oneOf [ (t.enum [ "openai" ]) (t.enum [ "openrouter" ]) (t.enum [ "zai" ]) (t.enum [ "qwen" ]) (t.enum [ "qwen-chat-template" ]) ]);
             default = null;
           };
           toolCallArgumentsEncoding = lib.mkOption {
-            type = t.nullOr (t.enum [ "html-entities" ]);
+            type = t.nullOr (t.str);
             default = null;
           };
           toolSchemaProfile = lib.mkOption {
-            type = t.nullOr (t.enum [ "xai" ]);
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          unsupportedToolSchemaKeywords = lib.mkOption {
+            type = t.nullOr (t.listOf (t.str));
             default = null;
           };
         }; });
+          default = null;
+        };
+        contextTokens = lib.mkOption {
+          type = t.nullOr (t.int);
           default = null;
         };
         contextWindow = lib.mkOption {
@@ -12948,6 +5216,596 @@ in
           default = null;
         };
       }; });
+      };
+      request = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        auth = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.submodule { options = {
+          mode = lib.mkOption {
+            type = t.enum [ "provider-default" ];
+          };
+        }; }) (t.submodule { options = {
+          mode = lib.mkOption {
+            type = t.enum [ "authorization-bearer" ];
+          };
+          token = lib.mkOption {
+            type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ];
+          };
+        }; }) (t.submodule { options = {
+          headerName = lib.mkOption {
+            type = t.str;
+          };
+          mode = lib.mkOption {
+            type = t.enum [ "header" ];
+          };
+          prefix = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          value = lib.mkOption {
+            type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ];
+          };
+        }; }) ]);
+          default = null;
+        };
+        headers = lib.mkOption {
+          type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+          id = lib.mkOption {
+            type = t.str;
+          };
+          provider = lib.mkOption {
+            type = t.str;
+          };
+          source = lib.mkOption {
+            type = t.enum [ "env" ];
+          };
+        }; }) (t.submodule { options = {
+          id = lib.mkOption {
+            type = t.str;
+          };
+          provider = lib.mkOption {
+            type = t.str;
+          };
+          source = lib.mkOption {
+            type = t.enum [ "file" ];
+          };
+        }; }) (t.submodule { options = {
+          id = lib.mkOption {
+            type = t.str;
+          };
+          provider = lib.mkOption {
+            type = t.str;
+          };
+          source = lib.mkOption {
+            type = t.enum [ "exec" ];
+          };
+        }; }) ]) ]));
+          default = null;
+        };
+        proxy = lib.mkOption {
+          type = t.nullOr (t.oneOf [ (t.submodule { options = {
+          mode = lib.mkOption {
+            type = t.enum [ "env-proxy" ];
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+        }; }) (t.submodule { options = {
+          mode = lib.mkOption {
+            type = t.enum [ "explicit-proxy" ];
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+          url = lib.mkOption {
+            type = t.str;
+          };
+        }; }) ]);
+          default = null;
+        };
+        tls = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          ca = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]);
+            default = null;
+          };
+          cert = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]);
+            default = null;
+          };
+          insecureSkipVerify = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          key = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]);
+            default = null;
+          };
+          passphrase = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]);
+            default = null;
+          };
+          serverName = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+        }; });
+          default = null;
+        };
+      }; });
+        default = null;
       };
     }; }));
       default = null;
@@ -13026,6 +5884,22 @@ in
     };
     installs = lib.mkOption {
       type = t.nullOr (t.attrsOf (t.submodule { options = {
+      clawhubChannel = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "official" ]) (t.enum [ "community" ]) (t.enum [ "private" ]) ]);
+        default = null;
+      };
+      clawhubFamily = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "code-plugin" ]) (t.enum [ "bundle-plugin" ]) ]);
+        default = null;
+      };
+      clawhubPackage = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+      clawhubUrl = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
       installPath = lib.mkOption {
         type = t.nullOr (t.str);
         default = null;
@@ -13071,7 +5945,7 @@ in
         default = null;
       };
       source = lib.mkOption {
-        type = t.oneOf [ (t.oneOf [ (t.enum [ "npm" ]) (t.enum [ "archive" ]) (t.enum [ "path" ]) ]) (t.enum [ "marketplace" ]) ];
+        type = t.oneOf [ (t.oneOf [ (t.enum [ "npm" ]) (t.enum [ "archive" ]) (t.enum [ "path" ]) (t.enum [ "clawhub" ]) ]) (t.enum [ "marketplace" ]) ];
       };
       sourcePath = lib.mkOption {
         type = t.nullOr (t.str);
@@ -13604,50 +6478,8 @@ in
 
   talk = lib.mkOption {
     type = t.nullOr (t.submodule { options = {
-    apiKey = lib.mkOption {
-      type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-      id = lib.mkOption {
-        type = t.str;
-      };
-      provider = lib.mkOption {
-        type = t.str;
-      };
-      source = lib.mkOption {
-        type = t.enum [ "env" ];
-      };
-    }; }) (t.submodule { options = {
-      id = lib.mkOption {
-        type = t.str;
-      };
-      provider = lib.mkOption {
-        type = t.str;
-      };
-      source = lib.mkOption {
-        type = t.enum [ "file" ];
-      };
-    }; }) (t.submodule { options = {
-      id = lib.mkOption {
-        type = t.str;
-      };
-      provider = lib.mkOption {
-        type = t.str;
-      };
-      source = lib.mkOption {
-        type = t.enum [ "exec" ];
-      };
-    }; }) ]) ]);
-      default = null;
-    };
     interruptOnSpeech = lib.mkOption {
       type = t.nullOr (t.bool);
-      default = null;
-    };
-    modelId = lib.mkOption {
-      type = t.nullOr (t.str);
-      default = null;
-    };
-    outputFormat = lib.mkOption {
-      type = t.nullOr (t.str);
       default = null;
     };
     provider = lib.mkOption {
@@ -13690,35 +6522,11 @@ in
       }; }) ]) ]);
         default = null;
       };
-      modelId = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      outputFormat = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
-      voiceAliases = lib.mkOption {
-        type = t.nullOr (t.attrsOf (t.str));
-        default = null;
-      };
-      voiceId = lib.mkOption {
-        type = t.nullOr (t.str);
-        default = null;
-      };
     }; }));
       default = null;
     };
     silenceTimeoutMs = lib.mkOption {
       type = t.nullOr (t.int);
-      default = null;
-    };
-    voiceAliases = lib.mkOption {
-      type = t.nullOr (t.attrsOf (t.str));
-      default = null;
-    };
-    voiceId = lib.mkOption {
-      type = t.nullOr (t.str);
       default = null;
     };
   }; });
@@ -13818,7 +6626,7 @@ in
         default = null;
       };
       host = lib.mkOption {
-        type = t.nullOr (t.enum [ "sandbox" "gateway" "node" ]);
+        type = t.nullOr (t.enum [ "auto" "sandbox" "gateway" "node" ]);
         default = null;
       };
       node = lib.mkOption {
@@ -13870,8 +6678,21 @@ in
         type = t.nullOr (t.enum [ "deny" "allowlist" "full" ]);
         default = null;
       };
+      strictInlineEval = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
       timeoutSec = lib.mkOption {
         type = t.nullOr (t.int);
+        default = null;
+      };
+    }; });
+      default = null;
+    };
+    experimental = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      planTool = lib.mkOption {
+        type = t.nullOr (t.bool);
         default = null;
       };
     }; });
@@ -14148,6 +6969,596 @@ in
             type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
             default = null;
           };
+          request = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            auth = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "provider-default" ];
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "authorization-bearer" ];
+              };
+              token = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) (t.submodule { options = {
+              headerName = lib.mkOption {
+                type = t.str;
+              };
+              mode = lib.mkOption {
+                type = t.enum [ "header" ];
+              };
+              prefix = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+              value = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) ]);
+              default = null;
+            };
+            headers = lib.mkOption {
+              type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]));
+              default = null;
+            };
+            proxy = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "env-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "explicit-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+              url = lib.mkOption {
+                type = t.str;
+              };
+            }; }) ]);
+              default = null;
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; });
+            default = null;
+          };
           timeoutSeconds = lib.mkOption {
             type = t.nullOr (t.int);
             default = null;
@@ -14165,6 +7576,596 @@ in
         };
         providerOptions = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
+          default = null;
+        };
+        request = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          auth = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "provider-default" ];
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "authorization-bearer" ];
+            };
+            token = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) (t.submodule { options = {
+            headerName = lib.mkOption {
+              type = t.str;
+            };
+            mode = lib.mkOption {
+              type = t.enum [ "header" ];
+            };
+            prefix = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            value = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) ]);
+            default = null;
+          };
+          headers = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]));
+            default = null;
+          };
+          proxy = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "env-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "explicit-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+            url = lib.mkOption {
+              type = t.str;
+            };
+          }; }) ]);
+            default = null;
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+        }; });
           default = null;
         };
         scope = lib.mkOption {
@@ -14359,6 +8360,596 @@ in
             type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
             default = null;
           };
+          request = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            auth = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "provider-default" ];
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "authorization-bearer" ];
+              };
+              token = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) (t.submodule { options = {
+              headerName = lib.mkOption {
+                type = t.str;
+              };
+              mode = lib.mkOption {
+                type = t.enum [ "header" ];
+              };
+              prefix = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+              value = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) ]);
+              default = null;
+            };
+            headers = lib.mkOption {
+              type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]));
+              default = null;
+            };
+            proxy = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "env-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "explicit-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+              url = lib.mkOption {
+                type = t.str;
+              };
+            }; }) ]);
+              default = null;
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; });
+            default = null;
+          };
           timeoutSeconds = lib.mkOption {
             type = t.nullOr (t.int);
             default = null;
@@ -14376,6 +8967,596 @@ in
         };
         providerOptions = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
+          default = null;
+        };
+        request = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          auth = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "provider-default" ];
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "authorization-bearer" ];
+            };
+            token = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) (t.submodule { options = {
+            headerName = lib.mkOption {
+              type = t.str;
+            };
+            mode = lib.mkOption {
+              type = t.enum [ "header" ];
+            };
+            prefix = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            value = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) ]);
+            default = null;
+          };
+          headers = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]));
+            default = null;
+          };
+          proxy = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "env-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "explicit-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+            url = lib.mkOption {
+              type = t.str;
+            };
+          }; }) ]);
+            default = null;
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+        }; });
           default = null;
         };
         scope = lib.mkOption {
@@ -14496,6 +9677,596 @@ in
         };
         providerOptions = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
+          default = null;
+        };
+        request = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          auth = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "provider-default" ];
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "authorization-bearer" ];
+            };
+            token = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) (t.submodule { options = {
+            headerName = lib.mkOption {
+              type = t.str;
+            };
+            mode = lib.mkOption {
+              type = t.enum [ "header" ];
+            };
+            prefix = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            value = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) ]);
+            default = null;
+          };
+          headers = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]));
+            default = null;
+          };
+          proxy = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "env-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "explicit-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+            url = lib.mkOption {
+              type = t.str;
+            };
+          }; }) ]);
+            default = null;
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+        }; });
           default = null;
         };
         timeoutSeconds = lib.mkOption {
@@ -14652,6 +10423,596 @@ in
             type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
             default = null;
           };
+          request = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            auth = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "provider-default" ];
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "authorization-bearer" ];
+              };
+              token = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) (t.submodule { options = {
+              headerName = lib.mkOption {
+                type = t.str;
+              };
+              mode = lib.mkOption {
+                type = t.enum [ "header" ];
+              };
+              prefix = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+              value = lib.mkOption {
+                type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ];
+              };
+            }; }) ]);
+              default = null;
+            };
+            headers = lib.mkOption {
+              type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]));
+              default = null;
+            };
+            proxy = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "env-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+            }; }) (t.submodule { options = {
+              mode = lib.mkOption {
+                type = t.enum [ "explicit-proxy" ];
+              };
+              tls = lib.mkOption {
+                type = t.nullOr (t.submodule { options = {
+                ca = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                cert = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                insecureSkipVerify = lib.mkOption {
+                  type = t.nullOr (t.bool);
+                  default = null;
+                };
+                key = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                passphrase = lib.mkOption {
+                  type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "env" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "file" ];
+                  };
+                }; }) (t.submodule { options = {
+                  id = lib.mkOption {
+                    type = t.str;
+                  };
+                  provider = lib.mkOption {
+                    type = t.str;
+                  };
+                  source = lib.mkOption {
+                    type = t.enum [ "exec" ];
+                  };
+                }; }) ]) ]);
+                  default = null;
+                };
+                serverName = lib.mkOption {
+                  type = t.nullOr (t.str);
+                  default = null;
+                };
+              }; });
+                default = null;
+              };
+              url = lib.mkOption {
+                type = t.str;
+              };
+            }; }) ]);
+              default = null;
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; });
+            default = null;
+          };
           timeoutSeconds = lib.mkOption {
             type = t.nullOr (t.int);
             default = null;
@@ -14669,6 +11030,596 @@ in
         };
         providerOptions = lib.mkOption {
           type = t.nullOr (t.attrsOf (t.attrsOf (t.oneOf [ (t.str) (t.number) (t.bool) ])));
+          default = null;
+        };
+        request = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          auth = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "provider-default" ];
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "authorization-bearer" ];
+            };
+            token = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) (t.submodule { options = {
+            headerName = lib.mkOption {
+              type = t.str;
+            };
+            mode = lib.mkOption {
+              type = t.enum [ "header" ];
+            };
+            prefix = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+            value = lib.mkOption {
+              type = t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ];
+            };
+          }; }) ]);
+            default = null;
+          };
+          headers = lib.mkOption {
+            type = t.nullOr (t.attrsOf (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "env" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "file" ];
+            };
+          }; }) (t.submodule { options = {
+            id = lib.mkOption {
+              type = t.str;
+            };
+            provider = lib.mkOption {
+              type = t.str;
+            };
+            source = lib.mkOption {
+              type = t.enum [ "exec" ];
+            };
+          }; }) ]) ]));
+            default = null;
+          };
+          proxy = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "env-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+          }; }) (t.submodule { options = {
+            mode = lib.mkOption {
+              type = t.enum [ "explicit-proxy" ];
+            };
+            tls = lib.mkOption {
+              type = t.nullOr (t.submodule { options = {
+              ca = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              cert = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              insecureSkipVerify = lib.mkOption {
+                type = t.nullOr (t.bool);
+                default = null;
+              };
+              key = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              passphrase = lib.mkOption {
+                type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "env" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "file" ];
+                };
+              }; }) (t.submodule { options = {
+                id = lib.mkOption {
+                  type = t.str;
+                };
+                provider = lib.mkOption {
+                  type = t.str;
+                };
+                source = lib.mkOption {
+                  type = t.enum [ "exec" ];
+                };
+              }; }) ]) ]);
+                default = null;
+              };
+              serverName = lib.mkOption {
+                type = t.nullOr (t.str);
+                default = null;
+              };
+            }; });
+              default = null;
+            };
+            url = lib.mkOption {
+              type = t.str;
+            };
+          }; }) ]);
+            default = null;
+          };
+          tls = lib.mkOption {
+            type = t.nullOr (t.submodule { options = {
+            ca = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            cert = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            insecureSkipVerify = lib.mkOption {
+              type = t.nullOr (t.bool);
+              default = null;
+            };
+            key = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            passphrase = lib.mkOption {
+              type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "env" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "file" ];
+              };
+            }; }) (t.submodule { options = {
+              id = lib.mkOption {
+                type = t.str;
+              };
+              provider = lib.mkOption {
+                type = t.str;
+              };
+              source = lib.mkOption {
+                type = t.enum [ "exec" ];
+              };
+            }; }) ]) ]);
+              default = null;
+            };
+            serverName = lib.mkOption {
+              type = t.nullOr (t.str);
+              default = null;
+            };
+          }; });
+            default = null;
+          };
+        }; });
           default = null;
         };
         scope = lib.mkOption {
@@ -14937,6 +11888,14 @@ in
           type = t.nullOr (t.int);
           default = null;
         };
+        maxResponseBytes = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        provider = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
         readability = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
@@ -14988,57 +11947,6 @@ in
         }; }) ]) ]);
           default = null;
         };
-        brave = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          mode = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
         cacheTtlMinutes = lib.mkOption {
           type = t.nullOr (t.number);
           default = null;
@@ -15047,250 +11955,65 @@ in
           type = t.nullOr (t.bool);
           default = null;
         };
-        firecrawl = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        gemini = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        grok = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          inlineCitations = lib.mkOption {
-            type = t.nullOr (t.bool);
-            default = null;
-          };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
-        kimi = lib.mkOption {
-          type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
-            default = null;
-          };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
-            default = null;
-          };
-        }; });
-          default = null;
-        };
         maxResults = lib.mkOption {
           type = t.nullOr (t.int);
           default = null;
         };
-        perplexity = lib.mkOption {
+        openaiCodex = lib.mkOption {
           type = t.nullOr (t.submodule { options = {
-          apiKey = lib.mkOption {
-            type = t.nullOr (t.oneOf [ (t.str) (t.oneOf [ (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "env" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "file" ];
-            };
-          }; }) (t.submodule { options = {
-            id = lib.mkOption {
-              type = t.str;
-            };
-            provider = lib.mkOption {
-              type = t.str;
-            };
-            source = lib.mkOption {
-              type = t.enum [ "exec" ];
-            };
-          }; }) ]) ]);
+          allowedDomains = lib.mkOption {
+            type = t.nullOr (t.anything);
             default = null;
           };
-          baseUrl = lib.mkOption {
-            type = t.nullOr (t.str);
+          contextSize = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.enum [ "low" ]) (t.enum [ "medium" ]) (t.enum [ "high" ]) ]);
             default = null;
           };
-          model = lib.mkOption {
-            type = t.nullOr (t.str);
+          enabled = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
+          mode = lib.mkOption {
+            type = t.nullOr (t.oneOf [ (t.enum [ "cached" ]) (t.enum [ "live" ]) ]);
+            default = null;
+          };
+          userLocation = lib.mkOption {
+            type = t.nullOr (t.anything);
             default = null;
           };
         }; });
           default = null;
         };
         provider = lib.mkOption {
+          type = t.nullOr (t.str);
+          default = null;
+        };
+        timeoutSeconds = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+      }; });
+        default = null;
+      };
+      x_search = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        cacheTtlMinutes = lib.mkOption {
+          type = t.nullOr (t.number);
+          default = null;
+        };
+        enabled = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        inlineCitations = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        maxTurns = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        model = lib.mkOption {
           type = t.nullOr (t.str);
           default = null;
         };
