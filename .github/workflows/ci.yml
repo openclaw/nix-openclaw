@@ -21,7 +21,7 @@ jobs:
         run: scripts/check-flake-lock-owners.sh
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v13
+        uses: cachix/install-nix-action@v31
 
       - name: Run Linux CI aggregator
         run: nix build .#checks.x86_64-linux.ci --accept-flake-config
