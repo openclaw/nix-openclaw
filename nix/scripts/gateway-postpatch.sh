@@ -47,21 +47,59 @@ if [ -f src/docker-setup.test.ts ]; then
   fi
 fi
 
-if [ -f src/gateway/test-helpers.server.ts ]; then
-  if ! grep -q 'OPENCLAW_DISABLE_BUNDLED_PLUGINS = "1"' src/gateway/test-helpers.server.ts; then
+if [ -f src/gateway/test-helpers.mocks.ts ]; then
+  if ! grep -q 'augmentModelCatalogWithProviderPlugins: async () => \[\]' src/gateway/test-helpers.mocks.ts; then
     python3 - <<'PY'
 from pathlib import Path
-path = Path("src/gateway/test-helpers.server.ts")
+path = Path("src/gateway/test-helpers.mocks.ts")
 text = path.read_text()
-needle = '  process.env.OPENCLAW_SKIP_PROVIDERS = "1";\n'
-replacement = (
-    '  process.env.OPENCLAW_SKIP_PROVIDERS = "1";\n'
-    '  process.env.OPENCLAW_DISABLE_BUNDLED_PLUGINS = "1";\n'
-    '  process.env.OPENCLAW_DISABLE_PLUGIN_DISCOVERY_CACHE = "1";\n'
-    '  process.env.OPENCLAW_DISABLE_PLUGIN_MANIFEST_CACHE = "1";\n'
-)
+needle = '''vi.mock("../plugins/loader.js", async () => {
+  const actual =
+    await vi.importActual<typeof import("../plugins/loader.js")>("../plugins/loader.js");
+  return {
+    ...actual,
+    loadOpenClawPlugins: () => getTestPluginRegistry(),
+  };
+});
+'''
+replacement = needle + '''
+vi.mock("../plugins/provider-runtime.runtime.js", async () => {
+  const actual = await vi.importActual<typeof import("../plugins/provider-runtime.runtime.js")>(
+    "../plugins/provider-runtime.runtime.js",
+  );
+  return {
+    ...actual,
+    augmentModelCatalogWithProviderPlugins: async () => [],
+  };
+});
+vi.mock("../plugins/web-search-providers.runtime.js", () => ({
+  resolvePluginWebSearchProviders: () => [],
+  resolveRuntimeWebSearchProviders: () => [],
+  __testing: {
+    resetWebSearchProviderSnapshotCacheForTests: () => {},
+  },
+}));
+vi.mock("../plugins/web-fetch-providers.runtime.js", () => ({
+  resolvePluginWebFetchProviders: () => [],
+  resolveRuntimeWebFetchProviders: () => [],
+  __testing: {
+    resetWebFetchProviderSnapshotCacheForTests: () => {},
+  },
+}));
+vi.mock("../plugins/web-provider-public-artifacts.explicit.js", async () => {
+  const actual =
+    await vi.importActual<typeof import("../plugins/web-provider-public-artifacts.explicit.js")>(
+      "../plugins/web-provider-public-artifacts.explicit.js",
+    );
+  return {
+    ...actual,
+    resolveBundledExplicitWebSearchProvidersFromPublicArtifacts: () => [],
+    resolveBundledExplicitWebFetchProvidersFromPublicArtifacts: () => [],
+  };
+});
+'''
 if needle not in text:
-    raise SystemExit("gateway test skip env marker not found")
+    raise SystemExit("gateway test mocks loader marker not found")
 path.write_text(text.replace(needle, replacement, 1))
 PY
   fi
