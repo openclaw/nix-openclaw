@@ -46,3 +46,23 @@ if [ -f src/docker-setup.test.ts ]; then
     sed -i 's|if \[\[ "${1:-}" == "compose" \]\]; then|if [ "${1:-}" = "compose" ]; then|' src/docker-setup.test.ts
   fi
 fi
+
+if [ -f src/gateway/test-helpers.server.ts ]; then
+  if ! grep -q 'OPENCLAW_DISABLE_BUNDLED_PLUGINS = "1"' src/gateway/test-helpers.server.ts; then
+    python3 - <<'PY'
+from pathlib import Path
+path = Path("src/gateway/test-helpers.server.ts")
+text = path.read_text()
+needle = '  process.env.OPENCLAW_SKIP_PROVIDERS = "1";\n'
+replacement = (
+    '  process.env.OPENCLAW_SKIP_PROVIDERS = "1";\n'
+    '  process.env.OPENCLAW_DISABLE_BUNDLED_PLUGINS = "1";\n'
+    '  process.env.OPENCLAW_DISABLE_PLUGIN_DISCOVERY_CACHE = "1";\n'
+    '  process.env.OPENCLAW_DISABLE_PLUGIN_MANIFEST_CACHE = "1";\n'
+)
+if needle not in text:
+    raise SystemExit("gateway test skip env marker not found")
+path.write_text(text.replace(needle, replacement, 1))
+PY
+  fi
+fi
