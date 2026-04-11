@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  steipeteToolsInput,
 }:
 
 let
@@ -26,11 +27,10 @@ let
 
   bundledPluginSources =
     let
-      stepieteRev = "c110209720cbc6c87fccb6c1e1c2b79b1d719245";
-      stepieteNarHash = "sha256-1Vo7rcLGdKaqj39J3HhBKh8IbljSjgCUhinCFJbDPl8=";
-      stepiete =
-        tool:
-        "github:openclaw/nix-steipete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
+      # Use a "bundled:" URI scheme that plugins.nix resolves by importing the
+      # sub-flake directly from the nix-steipete-tools source tree, avoiding
+      # builtins.getFlake and its lockfile warnings.
+      stepiete = tool: "bundled:steipete/${tool}";
     in
     lib.mapAttrs (_name: plugin: plugin.source or (stepiete plugin.tool)) pluginCatalog;
 

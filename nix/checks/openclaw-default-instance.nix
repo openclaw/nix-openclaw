@@ -2,6 +2,7 @@
   lib,
   pkgs,
   stdenv,
+  steipeteToolsInput,
 }:
 
 let
@@ -59,7 +60,8 @@ let
   eval = lib.evalModules {
     modules = [
       stubModule
-      ../modules/home-manager/openclaw.nix
+      { _module.args.steipeteToolsInput = steipeteToolsInput; }
+      ../modules/home-manager/openclaw
       (
         { lib, ... }:
         {

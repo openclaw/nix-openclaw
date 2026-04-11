@@ -3,16 +3,37 @@
   pkgs,
   openclawLib,
   enabledInstances,
+  steipeteToolsInput,
 }:
 
 let
   resolvePath = openclawLib.resolvePath;
   toRelative = openclawLib.toRelative;
 
+  # Resolve a "bundled:steipete/<tool>" source by importing the sub-flake
+  # directly from the steipeteToolsInput source tree instead of calling
+  # builtins.getFlake with a URL (which requires a committed flake.lock in
+  # every sub-flake directory to avoid warnings).
+  resolveBundledFlake =
+    source:
+    let
+      tool = lib.removePrefix "bundled:steipete/" source;
+      subFlakeNix = import "${steipeteToolsInput}/tools/${tool}/flake.nix";
+    in
+    subFlakeNix.outputs {
+      self = { };
+      nixpkgs = { inherit lib; };
+      root = steipeteToolsInput;
+    };
+
   resolvePlugin =
     plugin:
     let
-      flake = builtins.getFlake plugin.source;
+      flake =
+        if lib.hasPrefix "bundled:" plugin.source then
+          resolveBundledFlake plugin.source
+        else
+          builtins.getFlake plugin.source;
       system = pkgs.stdenv.hostPlatform.system;
       openclawPluginRaw =
         if flake ? openclawPlugin then
