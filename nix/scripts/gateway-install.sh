@@ -44,6 +44,9 @@ log_step "move build outputs" mv dist node_modules package.json "$out/lib/opencl
 if [ -d extensions ]; then
   log_step "copy extensions" cp -r extensions "$out/lib/openclaw/"
 fi
+if [ -d assets ]; then
+  log_step "copy assets" cp -r assets "$out/lib/openclaw/"
+fi
 
 # Gateway plugin discovery looks under dist/extensions/*/openclaw.plugin.json.
 # Upstream's build emits JS into dist/extensions but leaves manifests in extensions/.
