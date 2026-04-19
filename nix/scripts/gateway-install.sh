@@ -128,6 +128,23 @@ if [ -n "$hasown_src" ]; then
   fi
 fi
 
+# Work around missing 'long' dependency for @whiskeysockets/baileys in pnpm layout.
+# messages-recv.js has a top-level `import Long from 'long'` but baileys does not
+# declare 'long' in its package.json, so pnpm strict mode never creates the symlink
+# in baileys' virtual node_modules directory.
+long_src="$(find "$out/lib/openclaw/node_modules/.pnpm" -path "*/long@4*/node_modules/long" -print | head -n 1)"
+if [ -n "$long_src" ]; then
+  baileys_pkgs="$(find "$out/lib/openclaw/node_modules/.pnpm" -path "*/@whiskeysockets+baileys*/node_modules" -maxdepth 3 -type d -print)"
+  if [ -n "$baileys_pkgs" ]; then
+    for pkg in $baileys_pkgs; do
+      if [ ! -e "$pkg/long" ]; then
+        mkdir -p "$pkg"
+        ln -s "$long_src" "$pkg/long"
+      fi
+    done
+  fi
+fi
+
 log_step "validate node_modules symlinks" check_no_broken_symlinks "$out/lib/openclaw/node_modules"
 
 bash -e -c '. "$STDENV_SETUP"; makeWrapper "$NODE_BIN" "$out/bin/openclaw" --add-flags "$out/lib/openclaw/dist/index.js" --set-default OPENCLAW_NIX_MODE "1"'
