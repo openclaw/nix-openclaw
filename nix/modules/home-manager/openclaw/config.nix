@@ -28,6 +28,7 @@ let
     appDefaults = {
       enable = true;
       attachExistingOnly = true;
+      nixMode = true;
     };
     app = {
       install = {
