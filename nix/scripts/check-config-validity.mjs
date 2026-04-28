@@ -17,6 +17,7 @@ if (!srcRoot) {
 }
 
 const legacyValidationPath = path.join(srcRoot, "dist", "config", "validation.js");
+const stableConfigPath = path.join(srcRoot, "dist", "config", "config.js");
 const distDir = path.join(srcRoot, "dist");
 
 let validateConfigObject = null;
@@ -25,6 +26,11 @@ if (fs.existsSync(legacyValidationPath)) {
   const moduleUrl = pathToFileURL(legacyValidationPath).href;
   const legacyModule = await import(moduleUrl);
   validateConfigObject = legacyModule.validateConfigObject;
+} else if (fs.existsSync(stableConfigPath)) {
+  const moduleUrl = pathToFileURL(stableConfigPath).href;
+  const configModule = await import(moduleUrl);
+  validateConfigObject =
+    configModule.validateConfigObject ?? configModule.validateConfigObjectWithPlugins;
 } else if (fs.existsSync(distDir)) {
   const candidates = fs.readdirSync(distDir)
     .filter((name) => name.startsWith("config-") && name.endsWith(".js"));
