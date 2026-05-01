@@ -29,6 +29,7 @@
       sourceInfoStable = import ./nix/sources/openclaw-source.nix;
       systems = [
         "x86_64-linux"
+        "aarch64-linux"
         "aarch64-darwin"
       ];
     in
@@ -82,12 +83,18 @@
                   gateway-tests = pkgs.callPackage ./nix/checks/openclaw-gateway-tests.nix {
                     sourceInfo = sourceInfoStable;
                   };
-                  config-options = pkgs.callPackage ./nix/checks/openclaw-config-options.nix {
-                    sourceInfo = sourceInfoStable;
-                  };
                   default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
                   hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
                     inherit pkgs home-manager;
+                  };
+                }
+                # config-options enables every plugin marked `linux = true` in the catalog,
+                # but nix-steipete-tools doesn't yet publish `sag` for aarch64-linux, which
+                # makes the eval throw. Restrict this check to systems where every Linux
+                # bundled plugin actually resolves.
+                // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
+                  config-options = pkgs.callPackage ./nix/checks/openclaw-config-options.nix {
+                    sourceInfo = sourceInfoStable;
                   };
                 }
               else
