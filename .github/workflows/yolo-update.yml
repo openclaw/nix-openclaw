@@ -167,6 +167,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: write
       contents: write
     steps:
       - name: Checkout
@@ -252,3 +253,5 @@ jobs:
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
+
+          gh workflow run ci.yml --ref main
