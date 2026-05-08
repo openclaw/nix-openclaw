@@ -8,6 +8,9 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - `openclaw-gateway` is the source-built runnable gateway for Linux and macOS.
 - `openclaw-app` is the Darwin-only desktop app from upstream's public app artifact.
 - Component outputs exist for modules, checks, and debugging. They are not separate product tracks.
+- `openclaw-dogfood` and `openclaw-gateway-dogfood` are temporary maintainer
+  artifacts for testing a specific upstream commit before the next stable
+  release. They must not become the documented consumer default.
 - Do not split the repo into separate desktop and server tracks.
 
 ## Nix Ownership

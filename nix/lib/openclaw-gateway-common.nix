@@ -38,6 +38,9 @@ let
     "pnpmDepsHash"
     "releaseTag"
     "releaseVersion"
+    "applyPublicSurfaceHardlinksPatch"
+    "applySkipPluginAutoEnableNixModePatch"
+    "fsSafeSource"
   ];
 
   # Prefer nixpkgs' platform mapping instead of hand-rolled arch/platform.
@@ -54,6 +57,8 @@ let
       gatewaySrc
     else
       fetchFromGitHub sourceFetch;
+
+  fsSafeSource = if sourceInfo ? fsSafeSource then fetchFromGitHub sourceInfo.fsSafeSource else null;
 
   nodeAddonApi = import ../packages/node-addon-api.nix { inherit stdenv fetchurl; };
 
@@ -81,11 +86,22 @@ let
     NODE_GYP_WRAPPER_SH = "${../scripts/node-gyp-wrapper.sh}";
     GATEWAY_PREBUILD_SH = "${../scripts/gateway-prebuild.sh}";
     PATCH_BUNDLED_RUNTIME_DEPS_SCRIPT = "${../patches/stage-bundled-plugin-runtime-deps.mjs}";
-    PATCH_PUBLIC_SURFACE_HARDLINKS = "${../patches/allow-package-public-surface-hardlinks.patch}";
-    PATCH_SKIP_PLUGIN_AUTO_ENABLE_NIX_MODE = "${../patches/skip-plugin-auto-enable-persist-in-nix-mode.patch}";
+    PATCH_PUBLIC_SURFACE_HARDLINKS =
+      if sourceInfo.applyPublicSurfaceHardlinksPatch or true then
+        "${../patches/allow-package-public-surface-hardlinks.patch}"
+      else
+        "";
+    PATCH_SKIP_PLUGIN_AUTO_ENABLE_NIX_MODE =
+      if sourceInfo.applySkipPluginAutoEnableNixModePatch or true then
+        "${../patches/skip-plugin-auto-enable-persist-in-nix-mode.patch}"
+      else
+        "";
     PROMOTE_PNPM_INTEGRITY_SH = "${../scripts/promote-pnpm-integrity.sh}";
     REMOVE_PACKAGE_MANAGER_FIELD_SH = "${../scripts/remove-package-manager-field.sh}";
     STDENV_SETUP = "${stdenv}/setup";
+  }
+  // lib.optionalAttrs (fsSafeSource != null) {
+    OPENCLAW_FS_SAFE_SOURCE = fsSafeSource;
   };
 
 in

@@ -72,16 +72,29 @@ fi
 
 log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
 
+# Git tarball dependencies do not get their npm prepack output in offline Nix
+# builds. OpenClaw currently depends on @openclaw/fs-safe this way.
+if [ -n "${OPENCLAW_FS_SAFE_SOURCE:-}" ] && [ ! -d "node_modules/@openclaw/fs-safe/dist" ]; then
+  rm -rf node_modules/@openclaw/fs-safe
+  mkdir -p node_modules/@openclaw
+  cp -R "$OPENCLAW_FS_SAFE_SOURCE" node_modules/@openclaw/fs-safe
+  chmod -R u+w node_modules/@openclaw/fs-safe
+  log_step "build dependency: @openclaw/fs-safe" pnpm exec tsc -p node_modules/@openclaw/fs-safe/tsconfig.json
+fi
+
 # Ensure rolldown is found from workspace bins in offline/sandbox builds.
 if [ -d "node_modules/.pnpm/node_modules/.bin" ]; then
   export PATH="$PWD/node_modules/.pnpm/node_modules/.bin:$PATH"
 fi
 
-# Break down `pnpm build` (upstream package.json) so we can profile it.
-# Upstream's bundle-a2ui script shells back out through pnpm-runner.
-# In Nix builds that nested spawn can fail silently, so run the same steps directly.
-log_step "build: canvas:a2ui:tsc" pnpm exec tsc -p vendor/a2ui/renderers/lit/tsconfig.json
-log_step "build: canvas:a2ui:rolldown" node node_modules/rolldown/bin/cli.mjs -c apps/shared/OpenClawKit/Tools/CanvasA2UI/rolldown.config.mjs
+# Break down `pnpm build` (upstream package.json) so we can profile it while
+# still using upstream's asset hooks. v2026.5.7 has the older canvas-only helper;
+# newer OpenClaw has the generic bundled-plugin asset runner.
+if [ -f "scripts/bundled-plugin-assets.mjs" ]; then
+  log_step "build: plugins:assets:build" node scripts/bundled-plugin-assets.mjs --phase build
+else
+  log_step "build: canvas:a2ui:bundle" node scripts/bundle-a2ui.mjs
+fi
 log_step "build: tsdown" pnpm exec tsdown
 log_step "build: runtime-postbuild" node scripts/runtime-postbuild.mjs
 if [ -f "scripts/stage-bundled-plugin-runtime.mjs" ]; then
@@ -95,7 +108,11 @@ fi
 if [ -f "scripts/copy-bundled-plugin-metadata.mjs" ]; then
   log_step "build: copy-bundled-plugin-metadata" node scripts/copy-bundled-plugin-metadata.mjs
 fi
-log_step "build: canvas-a2ui-copy" node --import tsx scripts/canvas-a2ui-copy.ts
+if [ -f "scripts/bundled-plugin-assets.mjs" ]; then
+  log_step "build: plugins:assets:copy" node scripts/bundled-plugin-assets.mjs --phase copy
+else
+  log_step "build: canvas-a2ui-copy" node --import tsx scripts/canvas-a2ui-copy.ts
+fi
 log_step "build: copy-hook-metadata" node --import tsx scripts/copy-hook-metadata.ts
 log_step "build: write-build-info" node --import tsx scripts/write-build-info.ts
 log_step "build: write-cli-compat" node --import tsx scripts/write-cli-compat.ts

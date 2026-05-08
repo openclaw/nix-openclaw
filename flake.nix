@@ -45,6 +45,7 @@
           qmdPkgs = qmdPkgsFor prev.stdenv.hostPlatform.system;
         } final prev;
       sourceInfoStable = import ./nix/sources/openclaw-source.nix;
+      sourceInfoDogfood = import ./nix/sources/openclaw-dogfood-source.nix;
       systems = [
         "x86_64-linux"
         "aarch64-darwin"
@@ -70,6 +71,12 @@
           openclawToolPkgs = openclawToolPkgs;
           inherit qmdPackage;
         };
+        packageSetDogfood = import ./nix/packages {
+          pkgs = pkgs;
+          sourceInfo = sourceInfoDogfood;
+          openclawToolPkgs = openclawToolPkgs;
+          inherit qmdPackage;
+        };
       in
       {
         formatter = pkgs.nixfmt-tree.override {
@@ -80,6 +87,8 @@
 
         packages = packageSetStable // {
           default = packageSetStable.openclaw;
+          openclaw-dogfood = packageSetDogfood.openclaw;
+          openclaw-gateway-dogfood = packageSetDogfood.openclaw-gateway;
         };
 
         apps = {

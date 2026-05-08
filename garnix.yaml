@@ -6,6 +6,10 @@ builds:
     # User-facing/component packages must also be top-level Garnix artifacts,
     # otherwise downstream machines can see green CI but miss the binary cache.
     - "packages.aarch64-darwin.openclaw"
+    - "packages.aarch64-darwin.openclaw-dogfood"
     - "packages.aarch64-darwin.openclaw-gateway"
+    - "packages.aarch64-darwin.openclaw-gateway-dogfood"
     - "packages.x86_64-linux.openclaw"
+    - "packages.x86_64-linux.openclaw-dogfood"
     - "packages.x86_64-linux.openclaw-gateway"
+    - "packages.x86_64-linux.openclaw-gateway-dogfood"
