@@ -36,6 +36,15 @@ current_field() {
   awk -F'"' -v key="$key" '$0 ~ key" =" { print $2; exit }' "$file"
 }
 
+set_pnpm_deps_hash() {
+  local hash="$1"
+
+  perl -0pi -e "s|pnpmDepsHash = \"[^\"]*\";|pnpmDepsHash = \"${hash}\";|" "$source_file"
+  if grep -q 'pnpmDepsHashBySystem = {' "$source_file"; then
+    perl -pi -e "if (/pnpmDepsHashBySystem = \\{/) { \$in_pnpm_hash_map = 1; } if (\$in_pnpm_hash_map && /= \"/) { s{= \"[^\"]*\";}{= \"${hash}\";}; } if (\$in_pnpm_hash_map && /^\\s*\\};/) { \$in_pnpm_hash_map = 0; }" "$source_file"
+  fi
+}
+
 resolve_release_tag_sha() {
   local tag="$1"
   local tag_refs
@@ -119,7 +128,7 @@ refresh_pnpm_hash() {
       return 1
     fi
     log "pnpmDepsHash mismatch detected: $pnpm_hash"
-    perl -0pi -e "s|pnpmDepsHash = \"[^\"]*\";|pnpmDepsHash = \"${pnpm_hash}\";|" "$source_file"
+    set_pnpm_deps_hash "$pnpm_hash"
     nix build .#openclaw-gateway --accept-flake-config >"$build_log" 2>&1 || {
       tail -n 200 "$build_log" >&2 || true
       rm -f "$build_log"
@@ -379,7 +388,7 @@ apply_release() {
   set_source_public_surface_hardlinks_patch "$public_surface_hardlinks_patch"
   set_source_skip_plugin_auto_enable_nix_mode_patch "$apply_skip_plugin_auto_enable_patch"
   perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${source_hash}\";|" "$source_file"
-  perl -0pi -e 's|pnpmDepsHash = "[^"]*";|pnpmDepsHash = "";|' "$source_file"
+  set_pnpm_deps_hash ""
 
   if [[ -n "${app_version:-}" ]]; then
     perl -0pi -e "s|version = \"[^\"]+\";|version = \"${app_version}\";|" "$app_file"

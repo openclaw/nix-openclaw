@@ -83,9 +83,15 @@ let
     pnpm = selectedPnpm;
     hash = if pnpmDepsHash != null then pnpmDepsHash else lib.fakeHash;
     fetcherVersion = 3;
+    preFixup = lib.optionalString (pnpmMajor == "11") ''
+      ${nodejs_22}/bin/node --no-warnings ${../scripts/normalize-pnpm-store-index.js} "$storePath"
+    '';
     npm_config_arch = pnpmArch;
     npm_config_platform = pnpmPlatform;
-    nativeBuildInputs = [ git ];
+    nativeBuildInputs = [
+      git
+      nodejs_22
+    ];
   };
 
   envBase = {
