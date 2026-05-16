@@ -184,7 +184,19 @@ log_step "build: copy-hook-metadata" node --import tsx scripts/copy-hook-metadat
 log_step "build: write-build-info" node --import tsx scripts/write-build-info.ts
 log_step "build: write-cli-compat" node --import tsx scripts/write-cli-compat.ts
 
-log_step "ui:build" pnpm ui:build
+vite_cli="ui/node_modules/vite/bin/vite.js"
+if [ ! -f "$vite_cli" ]; then
+  vite_cli="$(find ui/node_modules node_modules -path '*/vite/bin/vite.js' -type f | head -n 1)"
+fi
+if [ -z "${vite_cli:-}" ] || [ ! -f "$vite_cli" ]; then
+  echo "Vite CLI not found under ./ui/node_modules or ./node_modules" >&2
+  exit 1
+fi
+case "$vite_cli" in
+  /*) vite_cli_abs="$vite_cli" ;;
+  *) vite_cli_abs="$PWD/$vite_cli" ;;
+esac
+log_step "ui:build" bash -e -c 'cd ui; node "$1" build' _ "$vite_cli_abs"
 
 log_step "pnpm prune --prod" env \
   CI=true \
