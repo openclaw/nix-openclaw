@@ -71,8 +71,7 @@ let
     "10" = pnpm_10;
     "11" = pnpm_11;
   };
-  selectedPnpm =
-    pnpmByMajor.${pnpmMajor} or (throw "Unsupported OpenClaw pnpm major ${pnpmMajor}");
+  selectedPnpm = pnpmByMajor.${pnpmMajor} or (throw "Unsupported OpenClaw pnpm major ${pnpmMajor}");
 
   pnpmDeps = fetchPnpmDeps {
     pname = pnpmDepsPname;

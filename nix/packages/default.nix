@@ -9,8 +9,7 @@
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   pnpm_11 = pkgs.callPackage ./pnpm-11.nix { };
-  pnpmForOpenClaw =
-    if toString (sourceInfo.pnpmMajor or "10") == "11" then pnpm_11 else pkgs.pnpm_10;
+  pnpmForOpenClaw = if toString (sourceInfo.pnpmMajor or "10") == "11" then pnpm_11 else pkgs.pnpm_10;
   toolPkgs = openclawToolPkgs // {
     pnpm = pnpmForOpenClaw;
     inherit pnpm_11;

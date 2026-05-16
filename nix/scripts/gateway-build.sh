@@ -54,6 +54,12 @@ rm -rf node_modules/.pnpm/sharp@*/node_modules/sharp/src/build
 # node-llama-cpp postinstall attempts to download/compile llama.cpp (network blocked in Nix).
 # Also defensively disable other common downloaders.
 rebuild_list="$(jq -r '.pnpm.onlyBuiltDependencies // [] | .[]' package.json 2>/dev/null || true)"
+if [ -z "$rebuild_list" ]; then
+  allow_builds_json="$(pnpm config get --json allowBuilds 2>/dev/null || true)"
+  if [ -n "$allow_builds_json" ] && [ "$allow_builds_json" != "null" ]; then
+    rebuild_list="$(printf '%s' "$allow_builds_json" | jq -r 'to_entries[] | select(.value == true) | .key' 2>/dev/null || true)"
+  fi
+fi
 if [ -n "$rebuild_list" ]; then
   log_step "pnpm rebuild (onlyBuiltDependencies)" env \
     NODE_LLAMA_CPP_SKIP_DOWNLOAD=1 \
@@ -95,7 +101,16 @@ if [ -f "scripts/bundled-plugin-assets.mjs" ]; then
 else
   log_step "build: canvas:a2ui:bundle" node scripts/bundle-a2ui.mjs
 fi
-log_step "build: tsdown" pnpm exec tsdown
+tsdown_node_options="${NODE_OPTIONS:-}"
+case "$tsdown_node_options" in
+  *--max-old-space-size*) ;;
+  *) tsdown_node_options="${tsdown_node_options:+$tsdown_node_options }--max-old-space-size=${OPENCLAW_NIX_TSDOWN_MAX_OLD_SPACE_MB:-8192}" ;;
+esac
+if [ -f "scripts/tsdown-build.mjs" ]; then
+  log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" node scripts/tsdown-build.mjs
+else
+  log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" pnpm exec tsdown
+fi
 log_step "build: runtime-postbuild" node scripts/runtime-postbuild.mjs
 if [ -f "scripts/stage-bundled-plugin-runtime.mjs" ]; then
   log_step "build: stage bundled plugin runtime" node scripts/stage-bundled-plugin-runtime.mjs
@@ -119,7 +134,12 @@ log_step "build: write-cli-compat" node --import tsx scripts/write-cli-compat.ts
 
 log_step "ui:build" pnpm ui:build
 
-log_step "pnpm prune --prod" env CI=true pnpm prune --prod
+log_step "pnpm prune --prod" env \
+  CI=true \
+  PNPM_CONFIG_OFFLINE=true \
+  PNPM_CONFIG_STORE_DIR="$store_path" \
+  NPM_CONFIG_STORE_DIR="$store_path" \
+  pnpm prune --prod
 
 # Reduce output size (pnpm implementation detail; safe to remove)
 rm -rf node_modules/.pnpm/node_modules

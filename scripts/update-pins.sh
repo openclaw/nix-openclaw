@@ -167,6 +167,64 @@ pnpm_shell_package() {
   esac
 }
 
+source_public_surface_hardlinks_patch() {
+  local source_path="$1"
+  local loader="$source_path/src/plugins/public-surface-loader.ts"
+  if [[ ! -f "$loader" ]]; then
+    printf '%s\n' ""
+    return 0
+  fi
+
+  if grep -q 'openRootFileSync' "$loader"; then
+    printf '%s\n' "../patches/allow-package-public-surface-hardlinks-open-root.patch"
+  else
+    printf '%s\n' ""
+  fi
+}
+
+set_source_public_surface_hardlinks_patch() {
+  local patch_path="$1"
+  if [[ -n "$patch_path" ]]; then
+    if grep -q 'publicSurfaceHardlinksPatch = ' "$source_file"; then
+      perl -0pi -e "s|publicSurfaceHardlinksPatch = [^;]+;|publicSurfaceHardlinksPatch = ${patch_path};|" "$source_file"
+    else
+      perl -0pi -e "s|pnpmMajor = \"([^\"]+)\";|pnpmMajor = \"\$1\";\n  publicSurfaceHardlinksPatch = ${patch_path};|" "$source_file"
+    fi
+  else
+    perl -0pi -e 's|  publicSurfaceHardlinksPatch = [^;]+;\n||g' "$source_file"
+  fi
+}
+
+source_needs_skip_plugin_auto_enable_nix_mode_patch() {
+  local source_path="$1"
+  local startup_config="$source_path/src/gateway/server-startup-config.ts"
+  if [[ ! -f "$startup_config" ]]; then
+    printf '%s\n' "true"
+    return 0
+  fi
+
+  if grep -q 'replaceConfigFile' "$startup_config"; then
+    printf '%s\n' "true"
+  else
+    printf '%s\n' "false"
+  fi
+}
+
+set_source_skip_plugin_auto_enable_nix_mode_patch() {
+  local enabled="$1"
+  if [[ "$enabled" == "false" ]]; then
+    if grep -q 'applySkipPluginAutoEnableNixModePatch = ' "$source_file"; then
+      perl -0pi -e 's|applySkipPluginAutoEnableNixModePatch = [^;]+;|applySkipPluginAutoEnableNixModePatch = false;|' "$source_file"
+    elif grep -q 'publicSurfaceHardlinksPatch = ' "$source_file"; then
+      perl -0pi -e 's|publicSurfaceHardlinksPatch = ([^;]+);|publicSurfaceHardlinksPatch = $1;\n  applySkipPluginAutoEnableNixModePatch = false;|' "$source_file"
+    else
+      perl -0pi -e 's|pnpmMajor = "([^"]+)";|pnpmMajor = "$1";\n  applySkipPluginAutoEnableNixModePatch = false;|' "$source_file"
+    fi
+  else
+    perl -0pi -e 's|  applySkipPluginAutoEnableNixModePatch = [^;]+;\n||g' "$source_file"
+  fi
+}
+
 regenerate_config_options() {
   local selected_sha="$1"
   local source_store_path="$2"
@@ -264,7 +322,7 @@ apply_release() {
   local selected_sha="$2"
   local app_tag="$3"
   local app_url="$4"
-  local source_version source_url source_prefetch source_hash source_store_path selected_pnpm_major app_version app_hash
+  local source_version source_url source_prefetch source_hash source_store_path selected_pnpm_major public_surface_hardlinks_patch apply_skip_plugin_auto_enable_patch app_version app_hash
   local backup_dir success
 
   source_version="${source_tag#v}"
@@ -278,6 +336,8 @@ apply_release() {
     exit 1
   fi
   selected_pnpm_major=$(source_pnpm_major "$source_store_path")
+  public_surface_hardlinks_patch=$(source_public_surface_hardlinks_patch "$source_store_path")
+  apply_skip_plugin_auto_enable_patch=$(source_needs_skip_plugin_auto_enable_nix_mode_patch "$source_store_path")
 
   if [[ -n "$app_tag" || -n "$app_url" ]]; then
     if [[ -z "$app_tag" || -z "$app_url" ]]; then
@@ -316,6 +376,8 @@ apply_release() {
   else
     perl -0pi -e "s|releaseVersion = \"[^\"]+\";|releaseVersion = \"${source_version}\";\n  pnpmMajor = \"${selected_pnpm_major}\";|" "$source_file"
   fi
+  set_source_public_surface_hardlinks_patch "$public_surface_hardlinks_patch"
+  set_source_skip_plugin_auto_enable_nix_mode_patch "$apply_skip_plugin_auto_enable_patch"
   perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${source_hash}\";|" "$source_file"
   perl -0pi -e 's|pnpmDepsHash = "[^"]*";|pnpmDepsHash = "";|' "$source_file"
 
