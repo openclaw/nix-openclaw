@@ -15,7 +15,7 @@ Answer `YES` only when:
 - `openclaw-gateway` matches the newest stable upstream source release.
 - `openclaw-app` matches the newest stable upstream release with a published public `OpenClaw-*.zip`.
 
-If both tracks are current and yolo/CI are healthy, stop with a short CTO-level report:
+If both tracks are current and stable pin automation/CI are healthy, stop with a short CTO-level report:
 
 - current gateway
 - latest upstream gateway
@@ -30,7 +30,7 @@ If the desired state is not true, keep working until it is true or until the exa
 Diagnose across:
 
 - upstream release data
-- yolo selection
+- stable release selection
 - pin materialization
 - generated config options
 - package builds

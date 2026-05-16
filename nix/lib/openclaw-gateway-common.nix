@@ -5,6 +5,7 @@
   fetchurl,
   nodejs_22,
   pnpm_10,
+  pnpm_11,
   fetchPnpmDeps,
   pkg-config,
   jq,
@@ -36,6 +37,7 @@
 let
   sourceFetch = lib.removeAttrs sourceInfo [
     "pnpmDepsHash"
+    "pnpmMajor"
     "releaseTag"
     "releaseVersion"
     "applyPublicSurfaceHardlinksPatch"
@@ -64,12 +66,19 @@ let
     sourceInfo.publicSurfaceHardlinksPatch or ../patches/allow-package-public-surface-hardlinks.patch;
 
   nodeAddonApi = import ../packages/node-addon-api.nix { inherit stdenv fetchurl; };
+  pnpmMajor = toString (sourceInfo.pnpmMajor or "10");
+  pnpmByMajor = {
+    "10" = pnpm_10;
+    "11" = pnpm_11;
+  };
+  selectedPnpm =
+    pnpmByMajor.${pnpmMajor} or (throw "Unsupported OpenClaw pnpm major ${pnpmMajor}");
 
   pnpmDeps = fetchPnpmDeps {
     pname = pnpmDepsPname;
     inherit version;
     src = resolvedSrc;
-    pnpm = pnpm_10;
+    pnpm = selectedPnpm;
     hash = if pnpmDepsHash != null then pnpmDepsHash else lib.fakeHash;
     fetcherVersion = 3;
     npm_config_arch = pnpmArch;
@@ -112,15 +121,17 @@ in
   inherit
     version
     pnpmDeps
+    pnpmMajor
     resolvedSrc
     pnpmPlatform
     pnpmArch
     nodeAddonApi
+    selectedPnpm
     ;
 
   nativeBuildInputs = [
     nodejs_22
-    pnpm_10
+    selectedPnpm
     pkg-config
     jq
     python3
@@ -134,7 +145,12 @@ in
   env = envBase // (lib.optionalAttrs enableSharp { SHARP_IGNORE_GLOBAL_LIBVIPS = "1"; }) // extraEnv;
 
   passthru = {
-    inherit sourceInfo pnpmDeps;
+    inherit
+      sourceInfo
+      pnpmDeps
+      pnpmMajor
+      selectedPnpm
+      ;
     pinnedRev = sourceInfo.rev;
   };
 }

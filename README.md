@@ -676,12 +676,12 @@ Pins live in:
 
 ### Automated pipeline
 
-1) Hourly **Yolo Update Pins** polls upstream stable OpenClaw releases.
+1) Hourly **Pin Stable OpenClaw Version** polls upstream stable OpenClaw releases.
 2) It selects the newest stable source release and newest stable public macOS app zip independently.
 3) Newer source releases that lack public macOS app assets are reported as app lag, not skipped.
-4) Yolo materializes the source pin from the newest source tag ref, updates the app asset pin from the newest public app zip, and regenerates config options from the selected source.
-5) Yolo validates that source/app pin set on the same Linux + macOS contract as repository `CI`.
-6) Only after both validations pass does yolo push one release-mirroring commit to `main`.
+4) The stable pin workflow materializes the source pin from the newest source tag ref, updates the app asset pin from the newest public app zip, and regenerates config options from the selected source.
+5) The stable pin workflow validates that source/app pin set on the same Linux + macOS contract as repository `CI`.
+6) Only after both validations pass does the workflow push one release-mirroring commit to `main`.
 
 ---
 

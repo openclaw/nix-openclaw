@@ -6,6 +6,7 @@
   fetchurl,
   nodejs_22,
   pnpm_10,
+  pnpm_11,
   fetchPnpmDeps,
   pkg-config,
   jq,
@@ -116,6 +117,7 @@ let
           fetchurl
           nodejs_22
           pnpm_10
+          pnpm_11
           fetchPnpmDeps
           pkg-config
           jq

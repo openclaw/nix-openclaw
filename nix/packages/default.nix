@@ -8,13 +8,21 @@
 }:
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
+  pnpm_11 = pkgs.callPackage ./pnpm-11.nix { };
+  pnpmForOpenClaw =
+    if toString (sourceInfo.pnpmMajor or "10") == "11" then pnpm_11 else pkgs.pnpm_10;
+  toolPkgs = openclawToolPkgs // {
+    pnpm = pnpmForOpenClaw;
+    inherit pnpm_11;
+  };
   toolSets = import ../tools/extended.nix {
     pkgs = pkgs;
-    openclawToolPkgs = openclawToolPkgs;
+    openclawToolPkgs = toolPkgs;
     inherit toolNamesOverride excludeToolNames;
   };
   openclawGateway = pkgs.callPackage ./openclaw-gateway.nix {
     inherit sourceInfo;
+    inherit pnpm_11;
     pnpmDepsHash = sourceInfo.pnpmDepsHash or null;
   };
   openclawApp = if isDarwin then pkgs.callPackage ./openclaw-app.nix { } else null;
@@ -27,6 +35,7 @@ let
   };
 in
 {
+  inherit pnpm_11;
   openclaw-gateway = openclawGateway;
   openclaw = openclawBundle;
 }

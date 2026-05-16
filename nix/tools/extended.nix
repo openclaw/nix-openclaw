@@ -26,7 +26,7 @@ let
 
   baseNames = [
     "nodejs_22"
-    "pnpm_10"
+    "pnpm"
     "git"
     "curl"
     "jq"

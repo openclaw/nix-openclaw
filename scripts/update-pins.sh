@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
-  echo "This script is intended to run in GitHub Actions (see .github/workflows/yolo-update.yml). Refusing to run locally." >&2
+  echo "This script is intended to run in GitHub Actions (see .github/workflows/pin-stable-openclaw-version.yml). Refusing to run locally." >&2
   exit 1
 fi
 
@@ -129,9 +129,49 @@ refresh_pnpm_hash() {
   rm -f "$build_log"
 }
 
+source_pnpm_major() {
+  local source_path="$1"
+  local package_manager major
+  package_manager=$(jq -r '.packageManager // empty' "$source_path/package.json")
+  if [[ "$package_manager" =~ ^pnpm@([0-9]+)\. ]]; then
+    major="${BASH_REMATCH[1]}"
+  else
+    echo "Failed to resolve pnpm major from packageManager in $source_path/package.json" >&2
+    return 1
+  fi
+
+  case "$major" in
+    10 | 11)
+      printf '%s\n' "$major"
+      ;;
+    *)
+      echo "Unsupported OpenClaw pnpm major $major from $package_manager" >&2
+      return 1
+      ;;
+  esac
+}
+
+pnpm_shell_package() {
+  local major="$1"
+  case "$major" in
+    10)
+      printf '%s\n' "nixpkgs#pnpm_10"
+      ;;
+    11)
+      printf '%s\n' "$repo_root#pnpm_11"
+      ;;
+    *)
+      echo "Unsupported OpenClaw pnpm major $major" >&2
+      return 1
+      ;;
+  esac
+}
+
 regenerate_config_options() {
   local selected_sha="$1"
   local source_store_path="$2"
+  local pnpm_major="$3"
+  local pnpm_pkg
   local tmp_src
   tmp_src=$(mktemp -d)
 
@@ -147,12 +187,15 @@ regenerate_config_options() {
   fi
 
   chmod -R u+w "$tmp_src/src"
+  pnpm_pkg=$(pnpm_shell_package "$pnpm_major")
 
-  nix shell --extra-experimental-features "nix-command flakes" nixpkgs#nodejs_22 nixpkgs#pnpm_10 -c \
-    bash -c "cd '$tmp_src/src' && pnpm install --frozen-lockfile --ignore-scripts"
+  nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
+    nixpkgs#nodejs_22 "$pnpm_pkg" -c \
+    bash -c "cd '$tmp_src/src' && PNPM_CONFIG_MANAGE_PACKAGE_MANAGER_VERSIONS=false pnpm install --frozen-lockfile --ignore-scripts"
 
-  nix shell --extra-experimental-features "nix-command flakes" nixpkgs#nodejs_22 nixpkgs#pnpm_10 -c \
-    bash -c "cd '$tmp_src/src' && OPENCLAW_SCHEMA_REV='${selected_sha}' pnpm exec tsx '$repo_root/nix/scripts/generate-config-options.ts' --repo . --out '$config_options_file'"
+  nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
+    nixpkgs#nodejs_22 "$pnpm_pkg" -c \
+    bash -c "cd '$tmp_src/src' && PNPM_CONFIG_MANAGE_PACKAGE_MANAGER_VERSIONS=false OPENCLAW_SCHEMA_REV='${selected_sha}' pnpm exec tsx '$repo_root/nix/scripts/generate-config-options.ts' --repo . --out '$config_options_file'"
 
   rm -rf "$tmp_src"
 }
@@ -221,7 +264,7 @@ apply_release() {
   local selected_sha="$2"
   local app_tag="$3"
   local app_url="$4"
-  local source_version source_url source_prefetch source_hash source_store_path app_version app_hash
+  local source_version source_url source_prefetch source_hash source_store_path selected_pnpm_major app_version app_hash
   local backup_dir success
 
   source_version="${source_tag#v}"
@@ -234,6 +277,7 @@ apply_release() {
     echo "Failed to resolve source hash/path for $selected_sha" >&2
     exit 1
   fi
+  selected_pnpm_major=$(source_pnpm_major "$source_store_path")
 
   if [[ -n "$app_tag" || -n "$app_url" ]]; then
     if [[ -z "$app_tag" || -z "$app_url" ]]; then
@@ -267,6 +311,11 @@ apply_release() {
 
   perl -0pi -e 's|  releaseTag = "[^"]+";\n||g; s|  releaseVersion = "[^"]+";\n||g;' "$source_file"
   perl -0pi -e "s|rev = \"[^\"]+\";|releaseTag = \"${source_tag}\";\n  releaseVersion = \"${source_version}\";\n  rev = \"${selected_sha}\";|" "$source_file"
+  if grep -q 'pnpmMajor = ' "$source_file"; then
+    perl -0pi -e "s|pnpmMajor = \"[^\"]+\";|pnpmMajor = \"${selected_pnpm_major}\";|" "$source_file"
+  else
+    perl -0pi -e "s|releaseVersion = \"[^\"]+\";|releaseVersion = \"${source_version}\";\n  pnpmMajor = \"${selected_pnpm_major}\";|" "$source_file"
+  fi
   perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${source_hash}\";|" "$source_file"
   perl -0pi -e 's|pnpmDepsHash = "[^"]*";|pnpmDepsHash = "";|' "$source_file"
 
@@ -277,7 +326,7 @@ apply_release() {
   fi
 
   refresh_pnpm_hash
-  regenerate_config_options "$selected_sha" "$source_store_path"
+  regenerate_config_options "$selected_sha" "$source_store_path" "$selected_pnpm_major"
 
   success=1
 }

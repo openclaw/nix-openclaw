@@ -1,4 +1,4 @@
-name: Yolo Update Pins
+name: Pin Stable OpenClaw Version
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: yolo-update-pins
+  group: pin-stable-openclaw-version
   cancel-in-progress: false
 
 permissions:
