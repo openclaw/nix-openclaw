@@ -18,9 +18,7 @@
   zstd,
   sourceInfo,
   gatewaySrc ? null,
-  pnpmDepsHash ? (
-    sourceInfo.pnpmDepsHashBySystem.${stdenv.hostPlatform.system} or (sourceInfo.pnpmDepsHash or null)
-  ),
+  pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
 }:
 
 assert gatewaySrc == null || pnpmDepsHash != null;

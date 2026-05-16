@@ -88,7 +88,7 @@ if [ -n "${OPENCLAW_FS_SAFE_SOURCE:-}" ] && [ ! -d "node_modules/@openclaw/fs-sa
   log_step "build dependency: @openclaw/fs-safe" pnpm exec tsc -p node_modules/@openclaw/fs-safe/tsconfig.json
 fi
 
-# Ensure rolldown is found from workspace bins in offline/sandbox builds.
+# Expose workspace packages that direct Node CLI entrypoints resolve from the root.
 ensure_root_package_link() {
   pkg="$1"
   root_path="node_modules/$pkg"
@@ -106,24 +106,8 @@ ensure_root_package_link() {
   ln -s "$pkg_dir" "$root_path"
 }
 
-ensure_root_bin_link() {
-  bin_name="$1"
-  target_rel="$2"
-  bin_path="node_modules/.bin/$bin_name"
-
-  mkdir -p "$(dirname "$bin_path")"
-  rm -f "$bin_path"
-  ln -s "$target_rel" "$bin_path"
-}
-
 ensure_root_package_link "tsdown"
 ensure_root_package_link "tsx"
-ensure_root_package_link "@typescript/native-preview"
-ensure_root_bin_link "tsdown" "../tsdown/dist/run.mjs"
-ensure_root_bin_link "tsx" "../tsx/dist/cli.mjs"
-ensure_root_bin_link "tsgo" "../@typescript/native-preview/bin/tsgo.js"
-
-log_step "patchShebangs node_modules/.bin (root links)" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
 
 if [ -d "node_modules/.bin" ]; then
   export PATH="$PWD/node_modules/.bin:$PATH"

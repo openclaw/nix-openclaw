@@ -31,15 +31,12 @@
   extraNativeBuildInputs ? [ ],
   extraBuildInputs ? [ ],
   extraEnv ? { },
-  pnpmDepsHash ? (
-    sourceInfo.pnpmDepsHashBySystem.${stdenv.hostPlatform.system} or (sourceInfo.pnpmDepsHash or null)
-  ),
+  pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
 }:
 
 let
   sourceFetch = lib.removeAttrs sourceInfo [
     "pnpmDepsHash"
-    "pnpmDepsHashBySystem"
     "pnpmMajor"
     "releaseTag"
     "releaseVersion"

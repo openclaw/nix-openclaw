@@ -10,8 +10,4 @@
   rev = "f066dd2f31c231f38fbcaacd6f6dfce0801143b3";
   hash = "sha256-URuoljISNcDLuWUwOpZoFjPNVOmbThC9r00uShPR4Co=";
   pnpmDepsHash = "sha256-c2q59h1uZg31prWklcBJ87WnB0Bac4Qrp1TJA4/nB+8=";
-  pnpmDepsHashBySystem = {
-    aarch64-darwin = "sha256-c2q59h1uZg31prWklcBJ87WnB0Bac4Qrp1TJA4/nB+8=";
-    x86_64-linux = "sha256-c2q59h1uZg31prWklcBJ87WnB0Bac4Qrp1TJA4/nB+8=";
-  };
 }

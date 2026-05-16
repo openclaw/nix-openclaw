@@ -23,11 +23,14 @@ Usage:
 EOF
 }
 
-require_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "$1 is required but not installed." >&2
-    exit 1
-  fi
+require_cmds() {
+  local cmd
+  for cmd in "$@"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "$cmd is required but not installed." >&2
+      exit 1
+    fi
+  done
 }
 
 current_field() {
@@ -40,9 +43,6 @@ set_pnpm_deps_hash() {
   local hash="$1"
 
   perl -0pi -e "s|pnpmDepsHash = \"[^\"]*\";|pnpmDepsHash = \"${hash}\";|" "$source_file"
-  if grep -q 'pnpmDepsHashBySystem = {' "$source_file"; then
-    perl -pi -e "if (/pnpmDepsHashBySystem = \\{/) { \$in_pnpm_hash_map = 1; } if (\$in_pnpm_hash_map && /= \"/) { s{= \"[^\"]*\";}{= \"${hash}\";}; } if (\$in_pnpm_hash_map && /^\\s*\\};/) { \$in_pnpm_hash_map = 0; }" "$source_file"
-  fi
 }
 
 resolve_release_tag_sha() {
@@ -70,16 +70,11 @@ prefetch_json() {
   nix --extra-experimental-features "nix-command flakes" store prefetch-file --unpack --json "$url"
 }
 
-prefetch_file_json() {
-  local url="$1"
-  nix --extra-experimental-features "nix-command flakes" store prefetch-file --json "$url"
-}
-
 unpacked_zip_hash() {
   local url="$1"
   local archive_prefetch archive_path unpack_dir app_list app_count app_path app_hash
 
-  archive_prefetch=$(prefetch_file_json "$url")
+  archive_prefetch=$(nix --extra-experimental-features "nix-command flakes" store prefetch-file --json "$url")
   archive_path=$(printf '%s' "$archive_prefetch" | jq -r '.path // .storePath // empty')
   if [[ -z "$archive_path" || ! -f "$archive_path" ]]; then
     echo "Failed to prefetch app archive for $url" >&2
@@ -87,30 +82,28 @@ unpacked_zip_hash() {
   fi
 
   unpack_dir=$(mktemp -d)
+  fail_zip() { rm -rf "$unpack_dir"; echo "$1" >&2; }
+
   if ! unzip -q "$archive_path" -d "$unpack_dir"; then
-    rm -rf "$unpack_dir"
-    echo "Failed to unzip app archive: $archive_path" >&2
+    fail_zip "Failed to unzip app archive: $archive_path"
     return 1
   fi
 
   app_list=$(find "$unpack_dir" -maxdepth 3 -type d -name '*.app' -print)
   app_count=$(printf '%s\n' "$app_list" | sed '/^$/d' | wc -l | tr -d ' ')
   if [[ "$app_count" != "1" ]]; then
-    rm -rf "$unpack_dir"
-    echo "Expected exactly one .app in app archive; found $app_count" >&2
+    fail_zip "Expected exactly one .app in app archive; found $app_count"
     return 1
   fi
 
   app_path=$(printf '%s\n' "$app_list" | sed -n '1p')
   if [[ ! -d "$app_path/Contents" ]]; then
-    rm -rf "$unpack_dir"
-    echo "App archive contains an invalid app bundle: $app_path" >&2
+    fail_zip "App archive contains an invalid app bundle: $app_path"
     return 1
   fi
 
   if ! app_hash=$(nix --extra-experimental-features "nix-command flakes" hash path "$unpack_dir"); then
-    rm -rf "$unpack_dir"
-    echo "Failed to hash unpacked app archive: $archive_path" >&2
+    fail_zip "Failed to hash unpacked app archive: $archive_path"
     return 1
   fi
   rm -rf "$unpack_dir"
@@ -142,17 +135,15 @@ source_pnpm_major() {
   local source_path="$1"
   local package_manager major
   package_manager=$(jq -r '.packageManager // empty' "$source_path/package.json")
-  if [[ "$package_manager" =~ ^pnpm@([0-9]+)\. ]]; then
-    major="${BASH_REMATCH[1]}"
-  else
+
+  if [[ ! "$package_manager" =~ ^pnpm@([0-9]+)\. ]]; then
     echo "Failed to resolve pnpm major from packageManager in $source_path/package.json" >&2
     return 1
   fi
+  major="${BASH_REMATCH[1]}"
 
   case "$major" in
-    10 | 11)
-      printf '%s\n' "$major"
-      ;;
+    10 | 11) printf '%s\n' "$major" ;;
     *)
       echo "Unsupported OpenClaw pnpm major $major from $package_manager" >&2
       return 1
@@ -163,12 +154,8 @@ source_pnpm_major() {
 pnpm_shell_package() {
   local major="$1"
   case "$major" in
-    10)
-      printf '%s\n' "nixpkgs#pnpm_10"
-      ;;
-    11)
-      printf '%s\n' "$repo_root#pnpm_11"
-      ;;
+    10) printf '%s\n' "nixpkgs#pnpm_10" ;;
+    11) printf '%s\n' "$repo_root#pnpm_11" ;;
     *)
       echo "Unsupported OpenClaw pnpm major $major" >&2
       return 1
@@ -179,16 +166,12 @@ pnpm_shell_package() {
 source_public_surface_hardlinks_patch() {
   local source_path="$1"
   local loader="$source_path/src/plugins/public-surface-loader.ts"
-  if [[ ! -f "$loader" ]]; then
-    printf '%s\n' ""
+
+  if [[ -f "$loader" ]] && grep -q 'openRootFileSync' "$loader"; then
+    printf '%s\n' "../patches/allow-package-public-surface-hardlinks-open-root.patch"
     return 0
   fi
-
-  if grep -q 'openRootFileSync' "$loader"; then
-    printf '%s\n' "../patches/allow-package-public-surface-hardlinks-open-root.patch"
-  else
-    printf '%s\n' ""
-  fi
+  printf '%s\n' ""
 }
 
 set_source_public_surface_hardlinks_patch() {
@@ -207,12 +190,8 @@ set_source_public_surface_hardlinks_patch() {
 source_needs_skip_plugin_auto_enable_nix_mode_patch() {
   local source_path="$1"
   local startup_config="$source_path/src/gateway/server-startup-config.ts"
-  if [[ ! -f "$startup_config" ]]; then
-    printf '%s\n' "true"
-    return 0
-  fi
 
-  if grep -q 'replaceConfigFile' "$startup_config"; then
+  if [[ ! -f "$startup_config" ]] || grep -q 'replaceConfigFile' "$startup_config"; then
     printf '%s\n' "true"
   else
     printf '%s\n' "false"
@@ -405,29 +384,14 @@ apply_release() {
 mode="${1:-}"
 case "$mode" in
   select)
-    if [[ $# -ne 1 ]]; then
-      usage
-      exit 1
-    fi
-    require_cmd jq
-    require_cmd gh
-    require_cmd node
+    [[ $# -eq 1 ]] || { usage; exit 1; }
+    require_cmds jq gh node
     select_release
     ;;
   apply)
-    if [[ $# -ne 5 ]]; then
-      usage
-      exit 1
-    fi
-    require_cmd jq
-    require_cmd nix
-    require_cmd perl
-    require_cmd unzip
-    require_cmd find
+    [[ $# -eq 5 ]] || { usage; exit 1; }
+    require_cmds jq nix perl unzip find
     apply_release "$2" "$3" "$4" "$5"
     ;;
-  *)
-    usage
-    exit 1
-    ;;
+  *) usage; exit 1 ;;
 esac
