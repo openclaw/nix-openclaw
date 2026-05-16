@@ -66,8 +66,10 @@ ensure_root_bin_link() {
 
 ensure_root_package_link "tsdown"
 ensure_root_package_link "tsx"
+ensure_root_package_link "@typescript/native-preview"
 ensure_root_bin_link "tsdown" "../tsdown/dist/run.mjs"
 ensure_root_bin_link "tsx" "../tsx/dist/cli.mjs"
+ensure_root_bin_link "tsgo" "../@typescript/native-preview/bin/tsgo.js"
 
 tsdown_cli="node_modules/tsdown/dist/run.mjs"
 if [ ! -f "$tsdown_cli" ]; then
