@@ -3,8 +3,12 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches:
+      - "**"
   workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,6 +16,12 @@ concurrency:
 
 jobs:
   linux:
+    if: >-
+      ${{
+        github.repository == 'openclaw/nix-openclaw' &&
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+        contains(fromJSON('["Asleep123","asleep123","badlogic","bjesuiter","christianklotz","cpojer","Evizero","evizero","gumadeiras","joshp123","mbelinky","mukhtharcm","obviyus","onutc","pasogott","sebslight","sergiopesch","shakkernerd","steipete","Takhoffman","takhoffman","thewilloftheshadow","tyler6204","vignesh07","github-actions[bot]"]'), github.actor)
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -34,6 +44,12 @@ jobs:
           nix log "$drv" | tail -n 400 || true
 
   macos:
+    if: >-
+      ${{
+        github.repository == 'openclaw/nix-openclaw' &&
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+        contains(fromJSON('["Asleep123","asleep123","badlogic","bjesuiter","christianklotz","cpojer","Evizero","evizero","gumadeiras","joshp123","mbelinky","mukhtharcm","obviyus","onutc","pasogott","sebslight","sergiopesch","shakkernerd","steipete","Takhoffman","takhoffman","thewilloftheshadow","tyler6204","vignesh07","github-actions[bot]"]'), github.actor)
+      }}
     runs-on: macos-14
     timeout-minutes: 40
     steps:
