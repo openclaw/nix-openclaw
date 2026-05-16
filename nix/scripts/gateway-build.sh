@@ -154,14 +154,20 @@ if [ -z "${tsdown_cli:-}" ] || [ ! -f "$tsdown_cli" ]; then
   echo "tsdown CLI not found under ./node_modules" >&2
   exit 1
 fi
+tsc_cli="node_modules/typescript/bin/tsc"
+if [ ! -f "$tsc_cli" ]; then
+  tsc_cli="$(find node_modules -path '*/typescript/bin/tsc' -type f | head -n 1)"
+fi
+if [ -z "${tsc_cli:-}" ] || [ ! -f "$tsc_cli" ]; then
+  echo "TypeScript CLI not found under ./node_modules" >&2
+  exit 1
+fi
 log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" node "$tsdown_cli" --config-loader unrun --logLevel warn
 log_step "build: runtime-postbuild" node scripts/runtime-postbuild.mjs
 if [ -f "scripts/stage-bundled-plugin-runtime.mjs" ]; then
   log_step "build: stage bundled plugin runtime" node scripts/stage-bundled-plugin-runtime.mjs
 fi
-ensure_root_package_link "@typescript/native-preview"
-ensure_root_bin_link "tsgo" "../@typescript/native-preview/bin/tsgo.js"
-log_step "build: plugin-sdk dts" node scripts/run-tsgo.mjs -p tsconfig.plugin-sdk.dts.json --declaration true
+log_step "build: plugin-sdk dts" node "$tsc_cli" -p tsconfig.plugin-sdk.dts.json
 log_step "build: write-plugin-sdk-entry-dts" node --import tsx scripts/write-plugin-sdk-entry-dts.ts
 if [ -f "scripts/copy-plugin-sdk-root-alias.mjs" ]; then
   log_step "build: copy-plugin-sdk-root-alias" node scripts/copy-plugin-sdk-root-alias.mjs
