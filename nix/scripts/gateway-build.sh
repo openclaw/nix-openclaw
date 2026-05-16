@@ -97,7 +97,7 @@ ensure_root_package_link() {
     return 0
   fi
 
-  pkg_dir="$(find node_modules/.pnpm -path "*/node_modules/$pkg" -type d | head -n 1)"
+  pkg_dir="$(find node_modules/.pnpm -path "*/node_modules/$pkg" -print | head -n 1)"
   if [ -z "$pkg_dir" ]; then
     return 0
   fi
