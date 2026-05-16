@@ -118,6 +118,7 @@ let
         "";
     PROMOTE_PNPM_INTEGRITY_SH = "${../scripts/promote-pnpm-integrity.sh}";
     REMOVE_PACKAGE_MANAGER_FIELD_SH = "${../scripts/remove-package-manager-field.sh}";
+    PNPM_EXEC_SHIM = "${../scripts/pnpm-exec-shim/pnpm.cjs}";
     STDENV_SETUP = "${stdenv}/setup";
   }
   // lib.optionalAttrs (fsSafeSource != null) {

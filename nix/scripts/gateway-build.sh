@@ -142,7 +142,11 @@ case "$tsdown_node_options" in
   *) tsdown_node_options="${tsdown_node_options:+$tsdown_node_options }--max-old-space-size=${OPENCLAW_NIX_TSDOWN_MAX_OLD_SPACE_MB:-8192}" ;;
 esac
 if [ -f "scripts/tsdown-build.mjs" ]; then
-  log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" node scripts/tsdown-build.mjs
+  log_step "build: tsdown" env \
+    NODE_OPTIONS="$tsdown_node_options" \
+    OPENCLAW_REAL_PNPM="$(command -v pnpm)" \
+    npm_execpath="$PNPM_EXEC_SHIM" \
+    node scripts/tsdown-build.mjs
 else
   log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" pnpm exec tsdown
 fi
