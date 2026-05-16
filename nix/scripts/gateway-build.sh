@@ -89,6 +89,41 @@ if [ -n "${OPENCLAW_FS_SAFE_SOURCE:-}" ] && [ ! -d "node_modules/@openclaw/fs-sa
 fi
 
 # Ensure rolldown is found from workspace bins in offline/sandbox builds.
+ensure_root_package_link() {
+  pkg="$1"
+  root_path="node_modules/$pkg"
+
+  if [ -e "$root_path" ]; then
+    return 0
+  fi
+
+  pkg_dir="$(find node_modules/.pnpm -path "*/node_modules/$pkg" -type d | head -n 1)"
+  if [ -z "$pkg_dir" ]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$root_path")"
+  ln -s "$pkg_dir" "$root_path"
+}
+
+ensure_root_bin_link() {
+  bin_name="$1"
+  target_rel="$2"
+  bin_path="node_modules/.bin/$bin_name"
+
+  mkdir -p "$(dirname "$bin_path")"
+  rm -f "$bin_path"
+  ln -s "$target_rel" "$bin_path"
+}
+
+ensure_root_package_link "tsdown"
+ensure_root_package_link "tsx"
+ensure_root_bin_link "tsdown" "../tsdown/dist/run.mjs"
+ensure_root_bin_link "tsx" "../tsx/dist/cli.mjs"
+
+if [ -d "node_modules/.bin" ]; then
+  export PATH="$PWD/node_modules/.bin:$PATH"
+fi
 if [ -d "node_modules/.pnpm/node_modules/.bin" ]; then
   export PATH="$PWD/node_modules/.pnpm/node_modules/.bin:$PATH"
 fi
