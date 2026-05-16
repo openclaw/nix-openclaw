@@ -27,10 +27,6 @@ if ! "$qmd_bin" --version >/dev/null; then
   exit 1
 fi
 
-if ! grep -q "${QMD_PACKAGE}/bin" "$openclaw_bin"; then
-  echo "openclaw wrapper does not include qmd on the internal runtime PATH" >&2
-  exit 1
-fi
 if ! grep -q "OPENCLAW_PINNED_WRITE_PYTHON" "$openclaw_bin"; then
   echo "openclaw wrapper does not pin a Nix Python for safe writes" >&2
   exit 1
@@ -60,6 +56,7 @@ env \
   OPENCLAW_STATE_DIR="$tmp_dir/state" \
   OPENCLAW_LOG_DIR="$tmp_dir/logs" \
   OPENCLAW_NIX_MODE=1 \
+  PATH="${QMD_PACKAGE}/bin:$PATH" \
   NO_COLOR=1 \
   "$openclaw_bin" config validate --json >/dev/null
 
@@ -73,6 +70,7 @@ backend="$(
     OPENCLAW_STATE_DIR="$tmp_dir/state" \
     OPENCLAW_LOG_DIR="$tmp_dir/logs" \
     OPENCLAW_NIX_MODE=1 \
+    PATH="${QMD_PACKAGE}/bin:$PATH" \
     NO_COLOR=1 \
     "$openclaw_bin" config get memory.backend --json
 )"

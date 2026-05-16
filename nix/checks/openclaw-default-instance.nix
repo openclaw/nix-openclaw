@@ -133,6 +133,20 @@ let
     in
     if matching != [ ] then "ok" else throw "${name}: expected assertion containing `${needle}`.";
 
+  qmdPath =
+    if pkgs.openclawPackages ? qmd then
+      builtins.unsafeDiscardStringContext "${pkgs.openclawPackages.qmd}/bin"
+    else
+      null;
+  packageHasQmd =
+    pkg:
+    let
+      pathText = builtins.unsafeDiscardStringContext (
+        (pkg.OPENCLAW_TOOLS_PATH or "") + ":" + (pkg.OPENCLAW_QMD_PATH or "")
+      );
+    in
+    qmdPath != null && lib.hasInfix qmdPath pathText;
+
   defaultEval = moduleEval { };
   defaultConfig = builtins.fromJSON defaultEval.config.home.file.".openclaw/openclaw.json".text;
   hasLinuxUnit = builtins.hasAttr "openclaw-gateway" defaultEval.config.systemd.user.services;
@@ -144,6 +158,8 @@ let
       throw "Default OpenClaw instance missing launchd.label."
     else if (((defaultConfig.gateway or { }).mode or null) != "local") then
       throw "Default OpenClaw instance missing gateway.mode."
+    else if lib.any packageHasQmd defaultEval.config.home.packages then
+      throw "Default OpenClaw instance unexpectedly includes QMD on its runtime PATH."
     else
       "ok"
   );
@@ -223,6 +239,16 @@ let
       "ok"
     else
       throw "qmd.prewarmModels did not wire QMD model-cache prewarm activation."
+  );
+
+  qmdMemoryEval = moduleEval {
+    config.memory.backend = "qmd";
+  };
+  qmdMemoryCheck = builtins.deepSeq (requireNoAssertionFailures "memory.backend qmd" qmdMemoryEval) (
+    if lib.any packageHasQmd qmdMemoryEval.config.home.packages then
+      "ok"
+    else
+      throw "memory.backend = qmd did not add QMD to the internal OpenClaw runtime."
   );
 
   runtimeProfileEval = moduleEval {
@@ -357,6 +383,7 @@ let
     userPluginSkillCollisionCheck
     secretProviderCheck
     qmdPrewarmCheck
+    qmdMemoryCheck
     runtimeProfileCheck
     openclawPluginCheck
     openclawPluginOverrideCheck

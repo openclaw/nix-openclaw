@@ -174,8 +174,10 @@ let
             pluginsForInstance = plugins.resolvedPluginsByInstance.${instName} or [ ];
             pluginLines =
               if pluginsForInstance == [ ] then [ "- (none)" ] else map renderPlugin pluginsForInstance;
+            instanceConfig = lib.recursiveUpdate (cfg.config or { }) (inst.config or { });
+            qmdEnabled = (((instanceConfig.memory or { }).backend or null) == "qmd");
             runtimePackages = lib.unique (
-              (lib.optional (openclawLib.qmdPackage != null) openclawLib.qmdPackage)
+              (lib.optional (qmdEnabled && openclawLib.qmdPackage != null) openclawLib.qmdPackage)
               ++ (cfg.runtimePackages or [ ])
               ++ (inst.runtimePackages or [ ])
             );

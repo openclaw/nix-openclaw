@@ -60,7 +60,7 @@ Source: https://github.com/orgs/openclaw/people
 - No inline scripts or inline file contents in Nix code. Use repo scripts and explicit file paths.
 - The gateway package must include Control UI assets.
 - User-facing docs should lead with one package: `openclaw`. Treat `openclaw-gateway` and `openclaw-app` as component outputs for modules, checks, and debugging.
-- QMD is the Nix-supported batteries-included local memory backend. Keep `qmd` internal to the `openclaw` wrapper PATH; users opt in with upstream config.
+- QMD is the Nix-supported local memory backend. Keep `qmd` internal to the OpenClaw runtime PATH, and pull it into the closure only when users opt in with upstream config.
 
 ## Safety
 

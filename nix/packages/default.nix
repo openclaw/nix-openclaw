@@ -28,7 +28,6 @@ let
     openclaw-gateway = openclawGateway;
     openclaw-app = openclawApp;
     extendedTools = toolSets.tools;
-    inherit qmdPackage;
     version = sourceInfo.releaseVersion or null;
   };
 in

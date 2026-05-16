@@ -32,7 +32,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - The gateway package must include Control UI assets.
 - No inline scripts or inline file contents in Nix code. Use repo scripts and explicit file paths.
 - Keep runtime tools internal to the `openclaw` wrapper unless they are intentionally part of the public package surface.
-- QMD is the Nix-supported batteries-included local memory backend. Keep `qmd` internal to the `openclaw` wrapper PATH; users opt in with upstream config.
+- QMD is the Nix-supported local memory backend. Keep `qmd` internal to the OpenClaw runtime PATH, and pull it into the closure only when users opt in with upstream config.
 - ACPX is the first bundled OpenClaw plugin proof. It is consumed from OpenClaw's built `dist-runtime/extensions/acpx` tree, not installed or repaired by npm at runtime.
 - Keep files under 400 lines unless a maintainer explicitly accepts the larger file.
 

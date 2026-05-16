@@ -723,7 +723,7 @@ home-manager switch --rollback  # revert
 
 ### Local memory
 
-`openclaw` includes QMD internally as the supported local memory backend. It is not enabled automatically. Linux uses upstream `tobi/qmd`; Darwin uses the repaired `nix-openclaw-tools` package until upstream QMD is fixed there.
+QMD is the supported local memory backend when OpenClaw config opts into it. The default `openclaw` package does not build or install QMD unless `memory.backend = "qmd"` is set. Linux uses upstream `tobi/qmd`; Darwin uses the repaired `nix-openclaw-tools` package until upstream QMD is fixed there.
 
 Opt in through normal OpenClaw config:
 
@@ -733,7 +733,7 @@ programs.openclaw.config = {
 };
 ```
 
-QMD stays inside the `openclaw` wrapper PATH, so users do not need to install a separate `qmd` command. The builtin `memorySearch.provider = "local"` path is an escape hatch for people who want to manage `node-llama-cpp` themselves; it is not the primary Nix-supported path.
+When enabled through the nix-openclaw modules, QMD stays inside the OpenClaw runtime PATH, so users do not need to install a separate `qmd` command. The builtin `memorySearch.provider = "local"` path is an escape hatch for people who want to manage `node-llama-cpp` themselves; it is not the primary Nix-supported path.
 
 Plugin CLIs are also kept on the OpenClaw runtime PATH by default, not on the user's login shell PATH. Set `programs.openclaw.exposePluginPackages = true` only when you explicitly want plugin CLIs in `home.packages`.
 
@@ -768,7 +768,7 @@ The default `openclaw` package uses these tools internally and does not expose t
 
 **Core**: nodejs, pnpm, git, curl, jq, python3, ffmpeg, sox, ripgrep
 
-**Local memory**: QMD (`memory.backend = "qmd"` opt-in)
+**Local memory**: QMD, pulled in only when `memory.backend = "qmd"` is set
 
 **Default first-party tools** come from `nix-openclaw-tools`: gogcli (`gog`), goplaces, summarize, camsnap, sonoscli.
 

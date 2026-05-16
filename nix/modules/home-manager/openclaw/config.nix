@@ -101,7 +101,7 @@ let
       pluginPackages = plugins.pluginPackagesFor name;
       runtimePackages = lib.unique (
         openclawLib.toolSets.tools
-        ++ (lib.optional (qmdPackage != null) qmdPackage)
+        ++ (lib.optional (qmdEnabled && qmdPackage != null) qmdPackage)
         ++ pluginPackages
         ++ cfg.runtimePackages
         ++ inst.runtimePackages
@@ -149,6 +149,23 @@ let
           }
         else
           mergedConfig0;
+      qmdEnabled = (((mergedConfig.memory or { }).backend or null) == "qmd");
+      gatewayRuntimePackage =
+        if qmdEnabled && qmdPackage != null then
+          let
+            qmdPath = lib.makeBinPath [ qmdPackage ];
+          in
+          pkgs.stdenvNoCC.mkDerivation {
+            name = "${lib.getName gatewayPackage}-qmd";
+            dontUnpack = true;
+            nativeBuildInputs = [ pkgs.makeWrapper ];
+            OPENCLAW_GATEWAY_PACKAGE = "${gatewayPackage}";
+            OPENCLAW_GATEWAY_BIN = "${gatewayPackage}/bin/openclaw";
+            OPENCLAW_QMD_PATH = qmdPath;
+            installPhase = "${../../../scripts/openclaw-qmd-wrapper-install.sh}";
+          }
+        else
+          gatewayPackage;
       configJson = builtins.toJSON mergedConfig;
       configFile = pkgs.writeText "openclaw-${name}.json" configJson;
       agentIds =
@@ -192,7 +209,7 @@ let
           ) runtimeEnvAll
         )}
 
-        exec "${gatewayPackage}/bin/openclaw" "$@"
+        exec "${gatewayRuntimePackage}/bin/openclaw" "$@"
       '';
       appDefaults = lib.optionalAttrs (pkgs.stdenv.hostPlatform.isDarwin && inst.appDefaults.enable) {
         attachExistingOnly = inst.appDefaults.attachExistingOnly;
@@ -213,7 +230,7 @@ let
             };
           };
 
-      package = gatewayPackage;
+      package = gatewayRuntimePackage;
     in
     {
       homeFile = {
@@ -286,6 +303,7 @@ let
       appDefaults = appDefaults;
       appInstall = appInstall;
       package = package;
+      qmdEnabled = qmdEnabled;
       launchdLabel =
         if pkgs.stdenv.hostPlatform.isDarwin && inst.launchd.enable then inst.launchd.label else null;
     };
@@ -312,6 +330,7 @@ let
 
   appDefaults = lib.foldl' (acc: item: lib.recursiveUpdate acc item.appDefaults) { } instanceConfigs;
   appDefaultsEnabled = lib.filterAttrs (_: inst: inst.appDefaults.enable) enabledInstances;
+  qmdEnabledInstances = lib.filter (item: item.qmdEnabled) instanceConfigs;
 
 in
 {
@@ -320,6 +339,10 @@ in
       {
         assertion = lib.length (lib.attrNames appDefaultsEnabled) <= 1;
         message = "Only one OpenClaw instance may enable appDefaults.";
+      }
+      {
+        assertion = qmdEnabledInstances == [ ] || qmdPackage != null;
+        message = "OpenClaw config memory.backend = \"qmd\" requires a qmd package in openclawPackages.";
       }
     ]
     ++ files.documentsAssertions
