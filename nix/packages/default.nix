@@ -22,7 +22,6 @@ let
   openclawGateway = pkgs.callPackage ./openclaw-gateway.nix {
     inherit sourceInfo;
     inherit pnpm_11;
-    pnpmDepsHash = sourceInfo.pnpmDepsHash or null;
   };
   openclawApp = if isDarwin then pkgs.callPackage ./openclaw-app.nix { } else null;
   openclawBundle = pkgs.callPackage ./openclaw-batteries.nix {

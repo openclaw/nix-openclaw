@@ -24,7 +24,6 @@
 {
   pname,
   sourceInfo,
-  pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
   pnpmDepsPname ? "openclaw-gateway",
   gatewaySrc ? null,
   src ? null,
@@ -32,11 +31,15 @@
   extraNativeBuildInputs ? [ ],
   extraBuildInputs ? [ ],
   extraEnv ? { },
+  pnpmDepsHash ? (
+    sourceInfo.pnpmDepsHashBySystem.${stdenv.hostPlatform.system} or (sourceInfo.pnpmDepsHash or null)
+  ),
 }:
 
 let
   sourceFetch = lib.removeAttrs sourceInfo [
     "pnpmDepsHash"
+    "pnpmDepsHashBySystem"
     "pnpmMajor"
     "releaseTag"
     "releaseVersion"
