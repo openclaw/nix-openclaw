@@ -141,15 +141,16 @@ case "$tsdown_node_options" in
   *--max-old-space-size*) ;;
   *) tsdown_node_options="${tsdown_node_options:+$tsdown_node_options }--max-old-space-size=${OPENCLAW_NIX_TSDOWN_MAX_OLD_SPACE_MB:-8192}" ;;
 esac
-if [ -f "scripts/tsdown-build.mjs" ]; then
-  log_step "build: tsdown" env \
-    NODE_OPTIONS="$tsdown_node_options" \
-    OPENCLAW_REAL_PNPM="$(command -v pnpm)" \
-    npm_execpath="$PNPM_EXEC_SHIM" \
-    node scripts/tsdown-build.mjs
-else
-  log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" pnpm exec tsdown
+
+tsdown_cli="node_modules/tsdown/dist/run.mjs"
+if [ ! -f "$tsdown_cli" ]; then
+  tsdown_cli="$(find node_modules -path '*/tsdown/dist/run.mjs' -type f | head -n 1)"
 fi
+if [ -z "${tsdown_cli:-}" ] || [ ! -f "$tsdown_cli" ]; then
+  echo "tsdown CLI not found under ./node_modules" >&2
+  exit 1
+fi
+log_step "build: tsdown" env NODE_OPTIONS="$tsdown_node_options" node "$tsdown_cli" --config-loader unrun --logLevel warn
 log_step "build: runtime-postbuild" node scripts/runtime-postbuild.mjs
 if [ -f "scripts/stage-bundled-plugin-runtime.mjs" ]; then
   log_step "build: stage bundled plugin runtime" node scripts/stage-bundled-plugin-runtime.mjs
