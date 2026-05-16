@@ -159,7 +159,9 @@ log_step "build: runtime-postbuild" node scripts/runtime-postbuild.mjs
 if [ -f "scripts/stage-bundled-plugin-runtime.mjs" ]; then
   log_step "build: stage bundled plugin runtime" node scripts/stage-bundled-plugin-runtime.mjs
 fi
-log_step "build: plugin-sdk dts" pnpm build:plugin-sdk:dts
+ensure_root_package_link "@typescript/native-preview"
+ensure_root_bin_link "tsgo" "../@typescript/native-preview/bin/tsgo.js"
+log_step "build: plugin-sdk dts" node scripts/run-tsgo.mjs -p tsconfig.plugin-sdk.dts.json --declaration true
 log_step "build: write-plugin-sdk-entry-dts" node --import tsx scripts/write-plugin-sdk-entry-dts.ts
 if [ -f "scripts/copy-plugin-sdk-root-alias.mjs" ]; then
   log_step "build: copy-plugin-sdk-root-alias" node scripts/copy-plugin-sdk-root-alias.mjs
