@@ -88,7 +88,13 @@ fi
 
 log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"
 
-log_step "node $tsdown_cli" node "$tsdown_cli" --config-loader unrun --logLevel warn
+tsdown_node_options="${NODE_OPTIONS:-}"
+case "$tsdown_node_options" in
+  *--max-old-space-size*) ;;
+  *) tsdown_node_options="${tsdown_node_options:+$tsdown_node_options }--max-old-space-size=${OPENCLAW_NIX_TSDOWN_MAX_OLD_SPACE_MB:-8192}" ;;
+esac
+
+log_step "node $tsdown_cli" env NODE_OPTIONS="$tsdown_node_options" node "$tsdown_cli" --config-loader unrun --logLevel warn
 log_step "node scripts/build-stamp.mjs" node scripts/build-stamp.mjs
 log_step "node $tsc_cli" node "$tsc_cli" -p tsconfig.plugin-sdk.dts.json
 log_step "node --import tsx scripts/write-plugin-sdk-entry-dts.ts" node --import tsx scripts/write-plugin-sdk-entry-dts.ts
