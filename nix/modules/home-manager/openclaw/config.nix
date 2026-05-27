@@ -78,6 +78,18 @@ let
     else
       value;
 
+  execSecretFlowDocsUrl = "https://github.com/openclaw/nix-openclaw#secrets-and-openclaw-exec-secretrefs";
+
+  containsExecSecretFlow =
+    value:
+    if builtins.isAttrs value then
+      ((value.source or null) == "exec" && ((value ? command) || ((value ? provider) && (value ? id))))
+      || lib.any containsExecSecretFlow (builtins.attrValues value)
+    else if builtins.isList value then
+      lib.any containsExecSecretFlow value
+    else
+      false;
+
   baseConfig = {
     gateway = {
       mode = "local";
@@ -149,6 +161,8 @@ let
           }
         else
           mergedConfig0;
+      hasExecSecretFlow = containsExecSecretFlow mergedConfig;
+      execSecretFlowWarning = "programs.openclaw.instances.${name}.config uses OpenClaw exec secrets. nix-openclaw passes this through, but does not support or verify runtime command-based secret resolution. Prefer host-managed secrets with env/file SecretRefs: ${execSecretFlowDocsUrl}";
       qmdEnabled = (((mergedConfig.memory or { }).backend or null) == "qmd");
       gatewayRuntimePackage =
         if qmdEnabled && qmdPackage != null then
@@ -166,7 +180,11 @@ let
           }
         else
           gatewayPackage;
-      configJson = builtins.toJSON mergedConfig;
+      configJson =
+        if hasExecSecretFlow then
+          lib.warn execSecretFlowWarning (builtins.toJSON mergedConfig)
+        else
+          builtins.toJSON mergedConfig;
       configFile = pkgs.writeText "openclaw-${name}.json" configJson;
       agentIds =
         let

@@ -498,6 +498,64 @@ Deliverables: flake output, env overrides, AGENTS.md, skill update.
 
 That's it. Everything else has sensible defaults.
 
+### Secrets And OpenClaw Exec SecretRefs
+
+nix-openclaw is part of the OpenClaw org and renders upstream OpenClaw config, including OpenClaw SecretRefs. The supported nix-openclaw secret path is still Nix-shaped: materialize secrets outside the Nix store, then pass them to OpenClaw as env/file-backed runtime config.
+
+Good:
+
+```nix
+programs.openclaw.environment.GROQ_API_KEY =
+  config.age.secrets.openclaw-groq-api-key.path;
+
+programs.openclaw.config.models.providers.groq.apiKey = {
+  source = "env";
+  provider = "default";
+  id = "GROQ_API_KEY";
+};
+```
+
+Same shape with sops-nix:
+
+```nix
+programs.openclaw.environment.GROQ_API_KEY =
+  config.sops.secrets.openclaw-groq-api-key.path;
+```
+
+You can do this, but you should not:
+
+```nix
+programs.openclaw.config.secrets.providers.aws = {
+  source = "exec";
+  command = "/run/current-system/sw/bin/aws";
+  args = [ "secretsmanager" "get-secret-value" "--secret-id" "openclaw/groq-api-key" ];
+};
+
+programs.openclaw.config.models.providers.groq.apiKey = {
+  source = "exec";
+  provider = "aws";
+  id = "value";
+};
+```
+
+nix-openclaw will render this because upstream OpenClaw supports it. That is pass-through compatibility, not support, and nix-openclaw emits a Nix warning when it sees this shape. Exec SecretRefs move secret retrieval into OpenClaw runtime config, where Nix cannot evaluate it, build-check it, order it, permission it, reproduce it, or verify IAM/session/network/output failure modes. It also makes the OpenClaw process responsible for secret fetching instead of the host service layer that normally owns startup ordering, identity, logs, retries, and file permissions.
+
+Better for AWS Secrets Manager, 1Password, Vault, etc.: have the host fetch the secret into a runtime-only file, then wire OpenClaw to that file/env value.
+
+```nix
+# Your systemd/launchd/host config writes this before OpenClaw starts.
+programs.openclaw.environment.GROQ_API_KEY =
+  "/run/openclaw-secrets/groq-api-key";
+
+programs.openclaw.config.models.providers.groq.apiKey = {
+  source = "env";
+  provider = "default";
+  id = "GROQ_API_KEY";
+};
+```
+
+That keeps nix-openclaw responsible for stable config and service wiring, keeps secrets out of the Nix store, and leaves dynamic secret-manager integration to the host layer that owns credentials and runtime side effects.
+
 ### Minimal config (single instance)
 
 The simplest setup:

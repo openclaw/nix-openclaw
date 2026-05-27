@@ -227,6 +227,87 @@ let
           throw "secrets.providers file variant missing from generated config."
       );
 
+  secretRefPassthroughEval = moduleEval {
+    config = {
+      secrets.providers = {
+        aws_test = {
+          source = "exec";
+          command = "/usr/bin/aws";
+          args = [
+            "secretsmanager"
+            "get-secret-value"
+            "--secret-id"
+            "openclaw/groq"
+          ];
+          jsonOnly = false;
+        };
+        filemain = {
+          source = "file";
+          path = "/run/agenix/openclaw-secrets.json";
+          mode = "json";
+        };
+      };
+
+      models.providers = {
+        groq = {
+          baseUrl = "https://api.groq.com/openai/v1";
+          api = "openai-completions";
+          apiKey = {
+            source = "exec";
+            provider = "aws_test";
+            id = "value";
+          };
+          models = [
+            {
+              id = "llama-3.3-70b-versatile";
+              name = "Llama 3.3 70B";
+            }
+          ];
+        };
+        filebacked = {
+          baseUrl = "https://example.invalid/v1";
+          api = "openai-completions";
+          apiKey = {
+            source = "file";
+            provider = "filemain";
+            id = "/providers/filebacked/apiKey";
+          };
+          models = [
+            {
+              id = "test-model";
+              name = "Test model";
+            }
+          ];
+        };
+      };
+    };
+  };
+  secretRefPassthroughConfig =
+    builtins.fromJSON
+      secretRefPassthroughEval.config.home.file.".openclaw/openclaw.json".text;
+  secretRefGroqApiKey =
+    ((secretRefPassthroughConfig.models or { }).providers or { }).groq.apiKey or { };
+  secretRefFileApiKey =
+    ((secretRefPassthroughConfig.models or { }).providers or { }).filebacked.apiKey or { };
+  secretRefPassthroughCheck =
+    builtins.deepSeq (requireNoAssertionFailures "SecretRef passthrough" secretRefPassthroughEval)
+      (
+        if secretRefGroqApiKey.source != "exec" then
+          throw "models.providers.groq.apiKey exec SecretRef was not rendered unchanged."
+        else if secretRefGroqApiKey.provider != "aws_test" then
+          throw "models.providers.groq.apiKey exec SecretRef provider was not rendered unchanged."
+        else if secretRefGroqApiKey.id != "value" then
+          throw "models.providers.groq.apiKey exec SecretRef id was not rendered unchanged."
+        else if secretRefFileApiKey.source != "file" then
+          throw "models.providers.filebacked.apiKey file SecretRef was not rendered unchanged."
+        else if secretRefFileApiKey.provider != "filemain" then
+          throw "models.providers.filebacked.apiKey file SecretRef provider was not rendered unchanged."
+        else if secretRefFileApiKey.id != "/providers/filebacked/apiKey" then
+          throw "models.providers.filebacked.apiKey file SecretRef id was not rendered unchanged."
+        else
+          "ok"
+      );
+
   qmdPrewarmEval = moduleEval {
     qmd.prewarmModels.enable = true;
   };
@@ -382,6 +463,7 @@ let
     duplicateSkillCheck
     userPluginSkillCollisionCheck
     secretProviderCheck
+    secretRefPassthroughCheck
     qmdPrewarmCheck
     qmdMemoryCheck
     runtimeProfileCheck

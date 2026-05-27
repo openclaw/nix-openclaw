@@ -139,6 +139,14 @@ const typeForSchema = (schemaObj: JsonSchema, indent: string, pathSegments: stri
   return typeExpr;
 };
 
+const oneOfTypeForSchemas = (entries: JsonSchema[], indent: string, pathSegments: string[]): string => {
+  const parts = Array.from(
+    new Set(entries.map((entry) => typeForSchema(entry, indent, pathSegments)))
+  );
+  if (parts.length === 1) return parts[0];
+  return `t.oneOf [ ${parts.map((part) => `(${part})`).join(" ")} ]`;
+};
+
 const baseTypeForSchema = (schemaObj: JsonSchema, indent: string, pathSegments: string[]): string => {
   const schema = deref(schemaObj, new Set());
   if (schema.const !== undefined) {
@@ -153,16 +161,14 @@ const baseTypeForSchema = (schemaObj: JsonSchema, indent: string, pathSegments: 
     const entries = schema.anyOf as JsonSchema[];
     const objectUnion = objectUnionTypeForSchemas(entries, indent);
     if (objectUnion) return objectUnion;
-    const parts = entries.map((entry) => `(${typeForSchema(entry, indent, pathSegments)})`).join(" ");
-    return `t.oneOf [ ${parts} ]`;
+    return oneOfTypeForSchemas(entries, indent, pathSegments);
   }
 
   if (schema.oneOf && Array.isArray(schema.oneOf) && schema.oneOf.length > 0) {
     const entries = schema.oneOf as JsonSchema[];
     const objectUnion = objectUnionTypeForSchemas(entries, indent);
     if (objectUnion) return objectUnion;
-    const parts = entries.map((entry) => `(${typeForSchema(entry, indent, pathSegments)})`).join(" ");
-    return `t.oneOf [ ${parts} ]`;
+    return oneOfTypeForSchemas(entries, indent, pathSegments);
   }
 
   if (schema.allOf && Array.isArray(schema.allOf) && schema.allOf.length > 0) {
@@ -171,10 +177,11 @@ const baseTypeForSchema = (schemaObj: JsonSchema, indent: string, pathSegments: 
 
   const schemaType = schema.type;
   if (Array.isArray(schemaType) && schemaType.length > 0) {
-    const parts = schemaType
-      .map((entry) => `(${typeForSchema({ type: entry }, indent, pathSegments)})`)
-      .join(" ");
-    return `t.oneOf [ ${parts} ]`;
+    return oneOfTypeForSchemas(
+      schemaType.map((entry) => ({ type: entry })),
+      indent,
+      pathSegments
+    );
   }
 
   switch (schemaType) {
@@ -221,10 +228,6 @@ const objectUnionTypeForSchemas = (entries: JsonSchema[], indent: string): strin
 
   const uniqueSourceValues = Array.from(new Set(sourceValues as string[]));
   if (uniqueSourceValues.length !== sourceValues.length) return null;
-  const keySets = propsByVariant.map((props) =>
-    Object.keys(props as Record<string, JsonSchema>).sort().join("\n")
-  );
-  if (new Set(keySets).size === 1) return null;
 
   const merged: Record<string, JsonSchema[]> = {};
   for (const props of propsByVariant as Record<string, JsonSchema>[]) {
