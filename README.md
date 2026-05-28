@@ -1,3 +1,5 @@
+![nix-openclaw banner](docs/assets/readme-banner.jpg)
+
 # nix-openclaw
 
 > Declarative OpenClaw. Bulletproof by default.
