@@ -7,6 +7,13 @@ const { DatabaseSync } = require("node:sqlite");
 
 const fixedCheckedAt = Buffer.alloc(8);
 fixedCheckedAt.writeDoubleBE(4102444800000, 0); // 2100-01-01T00:00:00Z
+const fixedCheckedAtMillis = 4102444800000n; // 2100-01-01T00:00:00Z
+const minTimestampMillis = 946684800000n; // 2000-01-01T00:00:00Z
+const maxTimestampMillis = 4102444800000n;
+
+function normalizeTimestampMillis(value) {
+  return value > minTimestampMillis && value < maxTimestampMillis;
+}
 
 function need(buffer, offset, bytes) {
   if (offset + bytes > buffer.length) {
@@ -109,8 +116,16 @@ function normalizeMsgpackFloats(buffer) {
         need(out, offset, 4);
         return offset + 4;
       case 0xcf:
+        need(out, offset, 8);
+        if (normalizeTimestampMillis(out.readBigUInt64BE(offset))) {
+          out.writeBigUInt64BE(fixedCheckedAtMillis, offset);
+        }
+        return offset + 8;
       case 0xd3:
         need(out, offset, 8);
+        if (normalizeTimestampMillis(out.readBigInt64BE(offset))) {
+          out.writeBigInt64BE(fixedCheckedAtMillis, offset);
+        }
         return offset + 8;
       case 0xd4:
         need(out, offset, 2);
