@@ -512,6 +512,16 @@ let
   runtimePluginLoadPaths = ((runtimePluginConfig.plugins or { }).load or { }).paths or [ ];
   runtimePluginEntry = ((runtimePluginConfig.plugins or { }).entries or { }).slack or { };
   runtimePluginAllow = ((runtimePluginConfig.plugins or { }).allow or [ ]);
+  runtimePluginLaunchdEnv =
+    if pkgs.stdenv.hostPlatform.isDarwin then
+      runtimePluginEval.config.launchd.agents."com.steipete.openclaw.gateway".config.EnvironmentVariables
+    else
+      { };
+  runtimePluginSystemdEnv =
+    if pkgs.stdenv.hostPlatform.isLinux then
+      runtimePluginEval.config.systemd.user.services.openclaw-gateway.Service.Environment
+    else
+      [ ];
   runtimePluginCheck =
     builtins.deepSeq (requireNoAssertionFailures "runtimePlugins" runtimePluginEval)
       (
@@ -526,6 +536,18 @@ let
           ]
         then
           throw "runtimePlugins did not merge Slack into an existing plugins.allow list."
+        else if ((runtimePluginConfig.plugins or { }) ? installs) then
+          throw "runtimePlugins wrote plugins.installs into generated config."
+        else if
+          pkgs.stdenv.hostPlatform.isDarwin
+          && ((runtimePluginLaunchdEnv.OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY or null) != "1")
+        then
+          throw "runtimePlugins did not disable persisted plugin registry reads for launchd."
+        else if
+          pkgs.stdenv.hostPlatform.isLinux
+          && !(lib.elem "OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=1" runtimePluginSystemdEnv)
+        then
+          throw "runtimePlugins did not disable persisted plugin registry reads for systemd."
         else
           "ok"
       );
@@ -598,6 +620,18 @@ let
       "runtimePlugins cannot be mixed with raw programs.openclaw.config.plugins.load.paths"
       runtimePluginRawLoadPathEval;
 
+  runtimePluginInstallRecordEval = moduleEval {
+    runtimePlugins = [ "slack" ];
+    config.plugins.installs.slack = {
+      source = "npm";
+      spec = "@openclaw/slack";
+      installPath = "/tmp/mutable-openclaw-slack";
+    };
+  };
+  runtimePluginInstallRecordCheck =
+    requireEvalFailure "runtimePlugins install records are schema-rejected"
+      runtimePluginInstallRecordEval.config.assertions;
+
   runtimePluginDisabledEval = moduleEval {
     runtimePlugins = [ "slack" ];
     config.plugins.entries.slack.enabled = false;
@@ -649,6 +683,7 @@ let
     runtimePluginDuplicateCheck
     runtimePluginUnsupportedCheck
     runtimePluginRawLoadPathCheck
+    runtimePluginInstallRecordCheck
     runtimePluginDisabledCheck
     runtimePluginDeniedCheck
     npmRuntimePluginCheck

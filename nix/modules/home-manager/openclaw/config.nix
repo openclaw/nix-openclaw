@@ -154,6 +154,7 @@ let
         denyList = existingDenyList;
         nixOpenClawPluginIds = map (p: p.id) (plugins.openclawPluginsFor name);
       };
+      disablePersistedPluginRegistry = runtimePluginConfig.loadPaths != [ ];
       generatedPluginConfig = lib.recursiveUpdate (lib.optionalAttrs
         (runtimePluginConfig.loadPaths != [ ] || openclawPluginLoadPaths != [ ])
         {
@@ -319,6 +320,9 @@ let
               OPENCLAW_STATE_DIR = inst.stateDir;
               OPENCLAW_IMAGE_BACKEND = "sips";
               OPENCLAW_NIX_MODE = "1";
+            }
+            // lib.optionalAttrs disablePersistedPluginRegistry {
+              OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY = "1";
             };
           };
         };
@@ -339,7 +343,8 @@ let
               "OPENCLAW_CONFIG_PATH=${inst.configPath}"
               "OPENCLAW_STATE_DIR=${inst.stateDir}"
               "OPENCLAW_NIX_MODE=1"
-            ];
+            ]
+            ++ lib.optional disablePersistedPluginRegistry "OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=1";
             StandardOutput = "append:${inst.logPath}";
             StandardError = "append:${inst.logPath}";
           };
