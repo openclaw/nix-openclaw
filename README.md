@@ -793,6 +793,10 @@ OpenClaw version through Nix:
 nix run github:openclaw/nix-openclaw/v2026.5.28#openclaw
 ```
 
+Each generated GitHub Release links back to the matching upstream OpenClaw
+release so users can click through from the Nix package state to the source
+release notes and artifacts.
+
 Mirrored tags are only created when the source pin and macOS app pin both match
 the same upstream stable OpenClaw version and repository `CI` is green on Linux
 and macOS for that exact commit. If a source release is packageable but the

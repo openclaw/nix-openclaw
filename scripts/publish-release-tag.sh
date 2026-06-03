@@ -70,9 +70,12 @@ write_release_notes() {
   local source_rev="$4"
   local head_sha="$5"
   local ci_run_url="$6"
+  local upstream_release_url="https://github.com/openclaw/openclaw/releases/tag/${tag}"
 
   {
     printf 'nix-openclaw package state for OpenClaw `%s`.\n' "$tag"
+    printf '\n'
+    printf 'Upstream OpenClaw release: %s\n' "$upstream_release_url"
     printf '\n'
     printf 'Install with Nix:\n'
     printf '\n'
@@ -81,8 +84,8 @@ write_release_notes() {
     printf '```\n'
     printf '\n'
     printf '%s\n' 'Pins:'
-    printf '%s\n' "- OpenClaw source: \`$tag\` (\`$source_rev\`)"
-    printf '%s\n' "- macOS app artifact: \`OpenClaw-${source_version}.zip\`"
+    printf '%s\n' "- OpenClaw source: [\`$tag\`]($upstream_release_url) (\`$source_rev\`)"
+    printf '%s\n' "- macOS app artifact: [\`OpenClaw-${source_version}.zip\`]($upstream_release_url)"
     printf '%s\n' "- nix-openclaw commit: \`$head_sha\`"
     if [[ -n "$ci_run_url" ]]; then
       printf '%s\n' "- CI proof: $ci_run_url"
@@ -94,24 +97,41 @@ write_release_notes() {
   } >"$notes_file"
 }
 
-create_github_release() {
+sync_github_release() {
   local tag="$1"
   local target_sha="$2"
   local source_version="$3"
   local source_rev="$4"
   local ci_run_url="$5"
   local notes_file
+  local current_body
+  local desired_body
 
   notes_file=$(mktemp)
   trap 'rm -f "$notes_file"' RETURN
   write_release_notes "$notes_file" "$tag" "$source_version" "$source_rev" "$target_sha" "$ci_run_url"
 
-  log "Creating GitHub Release $tag"
-  gh release create "$tag" \
-    --repo "$repo" \
-    --target "$target_sha" \
-    --title "nix-openclaw $tag" \
-    --notes-file "$notes_file"
+  if current_body=$(gh release view "$tag" --repo "$repo" --json body --jq .body 2>/dev/null); then
+    desired_body=$(<"$notes_file")
+    if [[ "$current_body" == "$desired_body" ]]; then
+      log "GitHub Release $tag already up to date"
+      return 0
+    fi
+
+    log "Updating GitHub Release $tag"
+    gh release edit "$tag" \
+      --repo "$repo" \
+      --target "$target_sha" \
+      --title "nix-openclaw $tag" \
+      --notes-file "$notes_file"
+  else
+    log "Creating GitHub Release $tag"
+    gh release create "$tag" \
+      --repo "$repo" \
+      --target "$target_sha" \
+      --title "nix-openclaw $tag" \
+      --notes-file "$notes_file"
+  fi
 }
 
 require_cmds awk git
@@ -204,25 +224,13 @@ if git show-ref --verify --quiet "refs/tags/${tag}"; then
   tag_sha=$(git rev-parse "refs/tags/${tag}^{commit}")
   if [[ "$tag_sha" != "$head_sha" ]]; then
     log "Tag $tag already exists at $tag_sha; not moving it to $head_sha"
-    if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
-      summary "### Mirrored release tag already exists
-
-- Tag: \`$tag\`
-- Existing target: \`$tag_sha\`
-- Current main: \`$head_sha\`
-- Release: already exists
-- Action: no retag; automation treats public tags as immutable
-"
-      exit 0
-    fi
-
-    create_github_release "$tag" "$tag_sha" "$source_version" "$source_rev" ""
+    sync_github_release "$tag" "$tag_sha" "$source_version" "$source_rev" ""
     summary "### Mirrored release tag already exists
 
 - Tag: \`$tag\`
 - Existing target: \`$tag_sha\`
 - Current main: \`$head_sha\`
-- Release: created for existing tag target
+- Release: synced for existing tag target
 - Action: no retag; automation treats public tags as immutable
 "
     exit 0
@@ -230,22 +238,13 @@ if git show-ref --verify --quiet "refs/tags/${tag}"; then
   log "Tag $tag already exists at current main"
 else
   log "Creating annotated tag $tag at $head_sha"
-  git tag -a "$tag" -m "nix-openclaw $tag"
+  git tag -a "$tag" \
+    -m "nix-openclaw $tag" \
+    -m "Upstream OpenClaw release: https://github.com/openclaw/openclaw/releases/tag/${tag}"
   git push origin "refs/tags/${tag}"
 fi
 
-if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
-  log "GitHub Release $tag already exists"
-  summary "### Mirrored release tag already published
-
-- Tag: \`$tag\`
-- Target: \`$head_sha\`
-- Release: already exists
-"
-  exit 0
-fi
-
-create_github_release "$tag" "$head_sha" "$source_version" "$source_rev" "${CI_RUN_URL:-}"
+sync_github_release "$tag" "$head_sha" "$source_version" "$source_rev" "${CI_RUN_URL:-}"
 
 summary "### Mirrored release tag published
 
@@ -253,4 +252,5 @@ summary "### Mirrored release tag published
 - Target: \`$head_sha\`
 - OpenClaw source: \`$tag\` (\`$source_rev\`)
 - macOS app artifact: \`OpenClaw-${source_version}.zip\`
+- Release: synced
 "

@@ -47,8 +47,13 @@ can still be reported as upstream release-contract lag, but it is not a tagged
 user-facing release.
 
 Automation may create missing mirrored tags and lightweight GitHub Releases after
-green `CI` on `main`. Automation must not move an existing public tag. If a tag
-is wrong, a maintainer decides whether it is still safe to delete/retag
-immediately or whether to publish a corrective follow-up tag instead. If an
-upstream asset disappears or a hash invalidates after a tag is published, repair
-the package state first; do not move the public tag automatically.
+green `CI` on `main`. Generated release notes must link to the matching upstream
+OpenClaw release so users can click through from the Nix package state to the
+source release. New annotated tags should include the same upstream release URL
+in the tag message.
+
+Automation must not move an existing public tag. If a tag is wrong, a maintainer
+decides whether it is still safe to delete/retag immediately or whether to
+publish a corrective follow-up tag instead. If an upstream asset disappears or a
+hash invalidates after a tag is published, repair the package state first; do
+not move the public tag automatically.
