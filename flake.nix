@@ -103,18 +103,13 @@
 
         checks =
           let
-            baseChecks = {
+            stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
               bin-surface = pkgs.callPackage ./nix/checks/openclaw-bin-surface.nix {
                 openclawPackage = packageSetStable.openclaw;
               };
               package-contents = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
-              };
-              package-contents-dogfood = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
-                openclawGateway = packageSetDogfood.openclaw-gateway;
-                requireAgentWorkspaceTemplates = false;
-                requireNixStorePluginOwnership = false;
               };
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
               runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
@@ -131,30 +126,25 @@
                 openclawPackage = packageSetStable.openclaw;
                 inherit qmdPackage;
               };
-            }
-            // (
-              if pkgs.stdenv.hostPlatform.isLinux then
-                let
-                  sourceChecks = pkgs.callPackage ./nix/checks/openclaw-source-checks.nix {
-                    sourceInfo = sourceInfoStable;
-                    openclawGateway = packageSetStable.openclaw-gateway;
-                  };
-                in
-                {
-                  config-options = sourceChecks;
-                  source-checks = sourceChecks;
-                  hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
-                    inherit pkgs home-manager;
-                  };
-                }
-              else
-                { }
-            );
+            };
+            dogfoodChecks = {
+              package-contents-dogfood = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
+                openclawGateway = packageSetDogfood.openclaw-gateway;
+                requireAgentWorkspaceTemplates = false;
+              };
+            };
+            linuxOnlyChecks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+              hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
+                inherit pkgs home-manager;
+              };
+            };
           in
-          baseChecks
+          stableChecks
+          // dogfoodChecks
+          // linuxOnlyChecks
           // {
-            # CI aggregator: build the expensive gateway once, then run all checks in the
-            # same build machine/store to avoid cache-miss races between parallel jobs.
+            # CI aggregator: build the default npm gateway once, then run the
+            # Nix-owned package/runtime checks in one machine/store.
             ci = pkgs.symlinkJoin {
               name = "nix-openclaw-ci";
               paths = [
@@ -162,7 +152,8 @@
                 packageSetStable.openclaw-gateway
               ]
               ++ (builtins.attrValues packageSetStable.openclawRuntimePlugins)
-              ++ (builtins.attrValues baseChecks);
+              ++ (builtins.attrValues stableChecks)
+              ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux (builtins.attrValues linuxOnlyChecks);
             };
           };
 

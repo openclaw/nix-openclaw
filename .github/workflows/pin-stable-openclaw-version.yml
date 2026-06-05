@@ -94,15 +94,12 @@ jobs:
         if: steps.materialize.outcome == 'success'
         run: |
           set -euo pipefail
+          pin_files=()
+          while IFS= read -r file; do
+            pin_files+=("$file")
+          done < <(scripts/update-pins.sh files)
           digest="$(
-            git diff --binary -- \
-              nix/sources/openclaw-source.nix \
-              nix/packages/openclaw-app.nix \
-              nix/generated/openclaw-config-options.nix \
-              nix/npm/openclaw/package.json \
-              nix/npm/openclaw/package-lock.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
+            git diff --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -119,12 +116,6 @@ jobs:
         if: steps.materialize.outcome == 'success' && steps.owners.outcome == 'success'
         continue-on-error: true
         run: timeout --foreground 50m nix build .#checks.x86_64-linux.ci --accept-flake-config
-
-      - name: Dump failing source check log
-        if: steps.ci.outcome == 'failure'
-        run: |
-          drv="$(nix eval --raw .#checks.x86_64-linux.source-checks.drvPath --accept-flake-config)"
-          nix log "$drv" | tail -n 400 || true
 
       - name: Record validation result
         id: validation
@@ -179,15 +170,12 @@ jobs:
         if: steps.materialize.outcome == 'success'
         run: |
           set -euo pipefail
+          pin_files=()
+          while IFS= read -r file; do
+            pin_files+=("$file")
+          done < <(scripts/update-pins.sh files)
           digest="$(
-            git diff --binary -- \
-              nix/sources/openclaw-source.nix \
-              nix/packages/openclaw-app.nix \
-              nix/generated/openclaw-config-options.nix \
-              nix/npm/openclaw/package.json \
-              nix/npm/openclaw/package-lock.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
+            git diff --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -200,7 +188,6 @@ jobs:
         timeout-minutes: 25
         run: |
           nix build --accept-flake-config .#openclaw-gateway
-          nix build --accept-flake-config .#openclaw-gateway-dogfood
           nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
 
       - name: Run HM activation
@@ -283,27 +270,18 @@ jobs:
             "${{ needs.select.outputs.app_tag }}" \
             "${{ needs.select.outputs.app_url }}"
 
-          if git diff --quiet -- \
-            nix/sources/openclaw-source.nix \
-            nix/packages/openclaw-app.nix \
-            nix/generated/openclaw-config-options.nix \
-            nix/npm/openclaw/package.json \
-            nix/npm/openclaw/package-lock.json \
-            nix/npm/openclaw-runtime-plugins/acpx/package.json \
-            nix/npm/openclaw-runtime-plugins/acpx/package-lock.json; then
+          pin_files=()
+          while IFS= read -r file; do
+            pin_files+=("$file")
+          done < <(scripts/update-pins.sh files)
+
+          if git diff --quiet -- "${pin_files[@]}"; then
             echo "No pin changes detected."
             exit 0
           fi
 
           promote_digest="$(
-            git diff --binary -- \
-              nix/sources/openclaw-source.nix \
-              nix/packages/openclaw-app.nix \
-              nix/generated/openclaw-config-options.nix \
-              nix/npm/openclaw/package.json \
-              nix/npm/openclaw/package-lock.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package.json \
-              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
+            git diff --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -314,14 +292,7 @@ jobs:
             exit 1
           fi
 
-          git add \
-            nix/sources/openclaw-source.nix \
-            nix/packages/openclaw-app.nix \
-            nix/generated/openclaw-config-options.nix \
-            nix/npm/openclaw/package.json \
-            nix/npm/openclaw/package-lock.json \
-            nix/npm/openclaw-runtime-plugins/acpx/package.json \
-            nix/npm/openclaw-runtime-plugins/acpx/package-lock.json
+          git add "${pin_files[@]}"
 
           git commit -F - <<EOF
           🤖 codex: mirror OpenClaw stable source ${{ needs.select.outputs.source_tag }}
@@ -332,12 +303,11 @@ jobs:
           - keep the macOS app pin on the newest public app artifact
 
           Why:
-          - keep source-built OpenClaw current without blocking on public macOS app asset lag
+          - keep the npm-shrinkwrapped OpenClaw gateway current without blocking on public macOS app asset lag
 
           Tests:
           - nix build .#checks.x86_64-linux.ci --accept-flake-config
           - nix build --accept-flake-config .#openclaw-gateway
-          - nix build --accept-flake-config .#openclaw-gateway-dogfood
           - nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
           - scripts/hm-activation-macos.sh
           EOF

@@ -1,15 +1,12 @@
 builds:
-  exclude:
-    # GitHub Actions builds the full Linux CI aggregate. Garnix evaluates each
-    # requested derivation under a memory-limited dry-run, and the aggregate can
-    # exceed that evaluator cap before any build starts. Build the Linux package
-    # and check outputs individually here so Garnix still populates the cache.
-    - "checks.x86_64-linux.ci"
   include:
-    # CI aggregators prove package contracts.
+    # CI aggregators prove package contracts. GitHub Actions owns the Linux
+    # aggregate; Garnix keeps Linux cache targets explicit instead of expanding
+    # every generated runtime plugin package.
     - "checks.aarch64-darwin.ci"
-    - "checks.x86_64-linux.*"
     # User-facing/component packages must also be top-level Garnix artifacts,
     # otherwise downstream machines can see green CI but miss the binary cache.
-    - "packages.aarch64-darwin.*"
-    - "packages.x86_64-linux.*"
+    - "packages.aarch64-darwin.openclaw"
+    - "packages.aarch64-darwin.openclaw-gateway"
+    - "packages.x86_64-linux.openclaw"
+    - "packages.x86_64-linux.openclaw-gateway"

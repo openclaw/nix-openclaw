@@ -37,12 +37,6 @@ jobs:
       - name: Run Linux CI aggregator
         run: timeout --foreground 50m nix build .#checks.x86_64-linux.ci --accept-flake-config
 
-      - name: Dump failing source check log
-        if: failure()
-        run: |
-          drv="$(nix eval --raw .#checks.x86_64-linux.source-checks.drvPath --accept-flake-config)"
-          nix log "$drv" | tail -n 400 || true
-
   macos:
     if: >-
       ${{
@@ -63,7 +57,6 @@ jobs:
         timeout-minutes: 25
         run: |
           nix build --accept-flake-config .#openclaw-gateway
-          nix build --accept-flake-config .#openclaw-gateway-dogfood
           nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
 
       - name: Run HM activation
