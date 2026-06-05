@@ -99,6 +99,10 @@ jobs:
               nix/sources/openclaw-source.nix \
               nix/packages/openclaw-app.nix \
               nix/generated/openclaw-config-options.nix \
+              nix/npm/openclaw/package.json \
+              nix/npm/openclaw/package-lock.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -180,6 +184,10 @@ jobs:
               nix/sources/openclaw-source.nix \
               nix/packages/openclaw-app.nix \
               nix/generated/openclaw-config-options.nix \
+              nix/npm/openclaw/package.json \
+              nix/npm/openclaw/package-lock.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -278,7 +286,11 @@ jobs:
           if git diff --quiet -- \
             nix/sources/openclaw-source.nix \
             nix/packages/openclaw-app.nix \
-            nix/generated/openclaw-config-options.nix; then
+            nix/generated/openclaw-config-options.nix \
+            nix/npm/openclaw/package.json \
+            nix/npm/openclaw/package-lock.json \
+            nix/npm/openclaw-runtime-plugins/acpx/package.json \
+            nix/npm/openclaw-runtime-plugins/acpx/package-lock.json; then
             echo "No pin changes detected."
             exit 0
           fi
@@ -288,6 +300,10 @@ jobs:
               nix/sources/openclaw-source.nix \
               nix/packages/openclaw-app.nix \
               nix/generated/openclaw-config-options.nix \
+              nix/npm/openclaw/package.json \
+              nix/npm/openclaw/package-lock.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package.json \
+              nix/npm/openclaw-runtime-plugins/acpx/package-lock.json \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -301,7 +317,11 @@ jobs:
           git add \
             nix/sources/openclaw-source.nix \
             nix/packages/openclaw-app.nix \
-            nix/generated/openclaw-config-options.nix
+            nix/generated/openclaw-config-options.nix \
+            nix/npm/openclaw/package.json \
+            nix/npm/openclaw/package-lock.json \
+            nix/npm/openclaw-runtime-plugins/acpx/package.json \
+            nix/npm/openclaw-runtime-plugins/acpx/package-lock.json
 
           git commit -F - <<EOF
           🤖 codex: mirror OpenClaw stable source ${{ needs.select.outputs.source_tag }}

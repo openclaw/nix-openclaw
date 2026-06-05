@@ -423,12 +423,20 @@ apply_release() {
   cp "$source_file" "$backup_dir/source.nix"
   cp "$app_file" "$backup_dir/app.nix"
   cp "$config_options_file" "$backup_dir/config-options.nix"
+  cp "$gateway_npm_wrapper_dir/package.json" "$backup_dir/gateway-package.json"
+  cp "$gateway_npm_wrapper_dir/package-lock.json" "$backup_dir/gateway-package-lock.json"
+  cp "$acpx_npm_wrapper_dir/package.json" "$backup_dir/acpx-package.json"
+  cp "$acpx_npm_wrapper_dir/package-lock.json" "$backup_dir/acpx-package-lock.json"
 
   cleanup_apply() {
     if [[ "$success" -ne 1 ]]; then
       cp "$backup_dir/source.nix" "$source_file"
       cp "$backup_dir/app.nix" "$app_file"
       cp "$backup_dir/config-options.nix" "$config_options_file"
+      cp "$backup_dir/gateway-package.json" "$gateway_npm_wrapper_dir/package.json"
+      cp "$backup_dir/gateway-package-lock.json" "$gateway_npm_wrapper_dir/package-lock.json"
+      cp "$backup_dir/acpx-package.json" "$acpx_npm_wrapper_dir/package.json"
+      cp "$backup_dir/acpx-package-lock.json" "$acpx_npm_wrapper_dir/package-lock.json"
     fi
     rm -rf "$backup_dir"
   }
