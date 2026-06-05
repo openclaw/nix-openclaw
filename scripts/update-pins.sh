@@ -10,6 +10,9 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source_file="$repo_root/nix/sources/openclaw-source.nix"
 app_file="$repo_root/nix/packages/openclaw-app.nix"
 config_options_file="$repo_root/nix/generated/openclaw-config-options.nix"
+gateway_npm_wrapper_dir="$repo_root/nix/npm/openclaw"
+acpx_npm_wrapper_dir="$repo_root/nix/npm/openclaw-runtime-plugins/acpx"
+npm_fake_hash="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 log() {
   printf '>> %s\n' "$*" >&2
@@ -43,6 +46,79 @@ set_pnpm_deps_hash() {
   local hash="$1"
 
   perl -0pi -e "s|pnpmDepsHash = \"[^\"]*\";|pnpmDepsHash = \"${hash}\";|" "$source_file"
+}
+
+set_gateway_npm_deps_hash() {
+  local hash="$1"
+
+  if grep -q 'gatewayNpmDepsHash = ' "$source_file"; then
+    perl -0pi -e "s|gatewayNpmDepsHash = \"[^\"]*\";|gatewayNpmDepsHash = \"${hash}\";|" "$source_file"
+  else
+    perl -0pi -e "s|pnpmDepsHash = \"([^\"]*)\";|pnpmDepsHash = \"\$1\";\n  gatewayNpmDepsHash = \"${hash}\";|" "$source_file"
+  fi
+}
+
+set_acpx_npm_deps_hash() {
+  local hash="$1"
+
+  if grep -q 'acpxNpmDepsHash = ' "$source_file"; then
+    perl -0pi -e "s|acpxNpmDepsHash = \"[^\"]*\";|acpxNpmDepsHash = \"${hash}\";|" "$source_file"
+  else
+    perl -0pi -e "s|gatewayNpmDepsHash = \"([^\"]*)\";|gatewayNpmDepsHash = \"\$1\";\n  acpxNpmDepsHash = \"${hash}\";|" "$source_file"
+  fi
+}
+
+update_wrapper_package_version() {
+  local package_json="$1"
+  local package_name="$2"
+  local version="$3"
+  local tmp_json
+  tmp_json=$(mktemp)
+
+  jq --arg package_name "$package_name" --arg version "$version" \
+    '.dependencies[$package_name] = $version' \
+    "$package_json" >"$tmp_json"
+  mv "$tmp_json" "$package_json"
+}
+
+refresh_npm_wrapper_locks() {
+  local source_version="$1"
+
+  update_wrapper_package_version "$gateway_npm_wrapper_dir/package.json" "openclaw" "$source_version"
+  update_wrapper_package_version "$acpx_npm_wrapper_dir/package.json" "@openclaw/acpx" "$source_version"
+
+  rm -rf "$gateway_npm_wrapper_dir/node_modules" "$acpx_npm_wrapper_dir/node_modules"
+  nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
+    nixpkgs#nodejs_22 -c \
+    bash -euo pipefail -c "cd '$gateway_npm_wrapper_dir' && npm install --package-lock-only --ignore-scripts --omit=dev --legacy-peer-deps"
+  nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
+    nixpkgs#nodejs_22 -c \
+    bash -euo pipefail -c "cd '$acpx_npm_wrapper_dir' && npm install --package-lock-only --ignore-scripts --omit=dev --legacy-peer-deps"
+}
+
+refresh_npm_hash() {
+  local attr="$1"
+  local setter="$2"
+  local label="$3"
+  local build_log npm_hash
+
+  build_log=$(mktemp)
+  if ! nix --extra-experimental-features "nix-command flakes" build ".#${attr}" --accept-flake-config >"$build_log" 2>&1; then
+    npm_hash=$(grep -Eo 'got: *sha256-[A-Za-z0-9+/=]+' "$build_log" | head -n 1 | sed 's/.*got: *//' || true)
+    if [[ -z "$npm_hash" ]]; then
+      tail -n 200 "$build_log" >&2 || true
+      rm -f "$build_log"
+      return 1
+    fi
+    log "${label} npmDepsHash mismatch detected: $npm_hash"
+    "$setter" "$npm_hash"
+    nix --extra-experimental-features "nix-command flakes" build ".#${attr}" --accept-flake-config >"$build_log" 2>&1 || {
+      tail -n 200 "$build_log" >&2 || true
+      rm -f "$build_log"
+      return 1
+    }
+  fi
+  rm -f "$build_log"
 }
 
 resolve_release_tag_sha() {
@@ -111,9 +187,12 @@ unpacked_zip_hash() {
 }
 
 refresh_pnpm_hash() {
-  local build_log pnpm_hash
+  local build_log pnpm_hash current_system source_checks_attr
+  current_system=$(nix --extra-experimental-features "nix-command flakes" eval --raw --impure --expr 'builtins.currentSystem')
+  source_checks_attr=".#checks.${current_system}.source-checks"
+
   build_log=$(mktemp)
-  if ! nix --extra-experimental-features "nix-command flakes" build .#openclaw-gateway --accept-flake-config >"$build_log" 2>&1; then
+  if ! nix --extra-experimental-features "nix-command flakes" build "$source_checks_attr" --accept-flake-config >"$build_log" 2>&1; then
     pnpm_hash=$(grep -Eo 'got: *sha256-[A-Za-z0-9+/=]+' "$build_log" | head -n 1 | sed 's/.*got: *//' || true)
     if [[ -z "$pnpm_hash" ]]; then
       tail -n 200 "$build_log" >&2 || true
@@ -122,7 +201,7 @@ refresh_pnpm_hash() {
     fi
     log "pnpmDepsHash mismatch detected: $pnpm_hash"
     set_pnpm_deps_hash "$pnpm_hash"
-    nix --extra-experimental-features "nix-command flakes" build .#openclaw-gateway --accept-flake-config >"$build_log" 2>&1 || {
+    nix --extra-experimental-features "nix-command flakes" build "$source_checks_attr" --accept-flake-config >"$build_log" 2>&1 || {
       tail -n 200 "$build_log" >&2 || true
       rm -f "$build_log"
       return 1
@@ -366,6 +445,8 @@ apply_release() {
   set_source_skip_plugin_auto_enable_nix_mode_patch "$apply_skip_plugin_auto_enable_patch"
   perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${source_hash}\";|" "$source_file"
   set_pnpm_deps_hash ""
+  set_gateway_npm_deps_hash "$npm_fake_hash"
+  set_acpx_npm_deps_hash "$npm_fake_hash"
 
   if [[ -n "${app_version:-}" ]]; then
     perl -0pi -e "s|version = \"[^\"]+\";|version = \"${app_version}\";|" "$app_file"
@@ -373,6 +454,9 @@ apply_release() {
     perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${app_hash}\";|" "$app_file"
   fi
 
+  refresh_npm_wrapper_locks "$source_version"
+  refresh_npm_hash "openclaw-bundled-acpx" set_acpx_npm_deps_hash "ACPX"
+  refresh_npm_hash "openclaw-gateway" set_gateway_npm_deps_hash "OpenClaw gateway"
   refresh_pnpm_hash
   regenerate_config_options "$selected_sha" "$source_store_path" "$selected_pnpm_major"
 

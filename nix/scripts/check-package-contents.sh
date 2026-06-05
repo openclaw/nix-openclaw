@@ -36,8 +36,10 @@ if [ "${OPENCLAW_REQUIRE_AGENT_WORKSPACE_TEMPLATES:-1}" = "1" ]; then
   require_path "${root}/src/agents/templates/HEARTBEAT.md"
 fi
 require_path "${root}/skills"
-require_path "${root}/node_modules/hasown"
-require_path "${root}/node_modules/combined-stream"
+if find "${root}/node_modules" -path "*/form-data/package.json" -type f -print | grep -q .; then
+  require_path "${root}/node_modules/hasown"
+  require_path "${root}/node_modules/combined-stream"
+fi
 
 public_surface_loader="$(
   find "${root}/dist" -name "*.js" -type f -exec grep -sl "function loadBundledPluginPublicArtifactModuleSync" {} + | head -1
@@ -50,6 +52,25 @@ if grep -q "rejectHardlinks: true" "$public_surface_loader"; then
   echo "Bundled plugin public surface loader still rejects hardlinked package files" >&2
   exit 1
 fi
+
+if [ "${OPENCLAW_REQUIRE_NIX_STORE_PLUGIN_OWNERSHIP:-1}" = "1" ]; then
+  discovery="$(
+    find "${root}/dist" -maxdepth 1 -name 'discovery-*.js' -type f -exec grep -sl "function shouldRejectHardlinkedPluginFiles" {} + | head -1
+  )"
+  if [ -z "$discovery" ]; then
+    echo "Missing bundled plugin discovery policy chunk" >&2
+    exit 1
+  fi
+  if ! grep -q "function isTrustedNixStorePluginRoot" "$discovery"; then
+    echo "Bundled plugin discovery does not trust Nix store plugin roots in Nix mode" >&2
+    exit 1
+  fi
+  if ! grep -q "!isTrustedNixStorePluginRoot(params) && typeof stat.uid" "$discovery"; then
+    echo "Bundled plugin discovery still rejects Nix store plugin root ownership" >&2
+    exit 1
+  fi
+fi
+
 export PUBLIC_SURFACE_LOADER="$public_surface_loader"
 node --input-type=module <<'NODE'
 import { pathToFileURL } from "node:url";

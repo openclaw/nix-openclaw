@@ -4,6 +4,7 @@
   nodejs_22,
   openclawGateway,
   requireAgentWorkspaceTemplates ? true,
+  requireNixStorePluginOwnership ? true,
 }:
 
 stdenv.mkDerivation {
@@ -19,6 +20,9 @@ stdenv.mkDerivation {
   }
   // lib.optionalAttrs (!requireAgentWorkspaceTemplates) {
     OPENCLAW_REQUIRE_AGENT_WORKSPACE_TEMPLATES = "0";
+  }
+  // lib.optionalAttrs (!requireNixStorePluginOwnership) {
+    OPENCLAW_REQUIRE_NIX_STORE_PLUGIN_OWNERSHIP = "0";
   };
 
   doCheck = true;

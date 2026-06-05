@@ -114,6 +114,7 @@
               package-contents-dogfood = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetDogfood.openclaw-gateway;
                 requireAgentWorkspaceTemplates = false;
+                requireNixStorePluginOwnership = false;
               };
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
               runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
