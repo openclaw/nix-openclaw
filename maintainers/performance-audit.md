@@ -27,6 +27,7 @@ plugin PR.
 | `pr100-npm-default-2026-06-05` | `561aa2809a9c` | `aaadab2da7c2d` | switch default gateway from source/pnpm to npm shrinkwrap | major closure/output/file reduction |
 | `pr100-on99-acpx-convergence-2026-06-05` | `8c2595e682d1` | `f785b9d3b6fa` | stack on PR #99 and reuse generated ACPX lock | fewer knobs/files, faster pin apply, slightly smaller closure |
 | `pr100-on99-ci-apply-split-2026-06-05` | `ba3b6e65b07d` | `e93b21ed88e0` | split default CI/apply proof from exhaustive plugin catalog packaging | default CI schedules far less work while retaining explicit catalog proof |
+| `pr100-remote-ci-cache-2026-06-06` | `51aff7a59ba20` | `9d0ae60e8cbc` | measure real GitHub Actions/Garnix behavior and stop duplicate PR branch CI | one PR-branch workflow per SHA, cache behavior characterized |
 
 ## Runs
 
@@ -228,6 +229,62 @@ Proof for measured commit:
   - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.aarch64-darwin.ci"` (`1.80s` cached)
   - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.x86_64-linux.ci"` (`1.96s` cached)
   - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.aarch64-darwin.runtime-plugin-packages"` (`1.50s` cached)
+
+### `pr100-remote-ci-cache-2026-06-06`
+
+- PR: `#100`, stacked on PR `#99`
+  (`a528abcacd3903ac6898db02a757f9f7331122cf`).
+- Measured code commit: `9d0ae60e8cbc077d1969b0a4ca48863ec46a05b4`
+- Base commit: `51aff7a59ba205bccdd77fd4f9e80fdbe3680d79`
+- Purpose:
+  - measure real remote CI/cache behavior for PR #100 instead of relying on
+    local timings;
+  - remove duplicate `push` plus `pull_request` GitHub Actions runs for PR
+    branch pushes;
+  - identify which work remains uncached by Garnix.
+- Rejected interpretation:
+  - The workflow change does not prove an individual derivation got faster. It
+    removes duplicated remote workload for PR branches. Per-job speedups below
+    are also affected by Garnix/cache warmth and must not be counted as pure
+    code-speed gains.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| GitHub Actions CI events per PR branch SHA | run list for `51aff7a59`: `27045221578` push plus `27045223506` pull request | 2 | run list for `9d0ae60e`: `27045444112` pull request only | 1 | 50.0% fewer | `gh run list --repo openclaw/nix-openclaw --branch codex/npm-shrinkwrap-default --workflow CI --limit 8 --json databaseId,event,headSha,status,conclusion,createdAt,updatedAt,url` |
+| GitHub Actions jobs per PR branch SHA | same two baseline runs | 4 | measured run `27045444112` | 2 | 50.0% fewer | `gh run view <run> --json jobs` |
+| Observed Actions job-seconds per PR branch update | baseline push plus PR job durations: `167+232+166+231` | 796s | measured PR-only job durations: `132+193` | 325s | 59.2% fewer | `gh run view <run> --json jobs --jq '.jobs[] | {name,startedAt,completedAt}'` |
+| Remote CI wall time to completed PR run | PR run `27045223506` | 234s | PR run `27045444112` | 197s | 15.8% faster, cache-influenced | `gh run view <run> --json createdAt,updatedAt` |
+| Linux GitHub job duration | PR run `27045223506` | 166s | PR run `27045444112` | 132s | 20.5% faster, cache-influenced | `gh run view <run> --json jobs` |
+| macOS GitHub job duration | PR run `27045223506` | 231s | PR run `27045444112` | 193s | 16.5% faster, cache-influenced | `gh run view <run> --json jobs` |
+| Built derivation log lines in PR run | parsed log for `27045223506` | 131 | parsed log for `27045444112` | 91 | 30.5% fewer | `gh run view <run> --log | rg '^building ' | wc -l` |
+| Unique built derivations in PR run | parsed log for `27045223506` | 76 | parsed log for `27045444112` | 58 | 23.7% fewer | `gh run view <run> --log | rg '^building ' | sort -u | wc -l` |
+| macOS Darwin aggregate built derivation lines | `27045223506` step log | 37 | `27045444112` step log | 0 | fully substituted in measured run | parsed from `gh run view <run> --log` by step |
+| macOS HM activation built derivation lines | `27045223506` step log | 59 | `27045444112` step log | 59 | unchanged | parsed from `gh run view <run> --log` by step |
+| Garnix selected PR checks | PR #100 checks at `9d0ae60e` | n/a | Garnix status rows | 6 targets, all pass in 4s-14s plus overall 26s | recorded | `gh pr checks 100 --repo openclaw/nix-openclaw --watch=false` |
+
+Remote cache analysis:
+
+- `27045444112` copied `1,162` unique store paths: `60` from
+  `cache.garnix.io`, `1,031` from `cache.nixos.org`, and `71` from
+  `install.determinate.systems`.
+- The Darwin `ci` aggregate was substituted completely in the measured run.
+- Linux still built `openclaw-runtime-plugin-locks`,
+  `openclaw-package-contents`, selected package/check derivations, and the
+  Linux Home Manager/VM activation proof.
+- macOS `scripts/hm-activation-macos.sh` remains outside the flake check graph,
+  so Garnix cannot prebuild the activation package or its local activation
+  derivations as currently wired.
+
+Proof for measured commit:
+
+- `ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml"); puts "yaml ok"'`
+- `gh run list --repo openclaw/nix-openclaw --branch codex/npm-shrinkwrap-default --workflow CI --limit 8 --json databaseId,event,headSha,status,conclusion,createdAt,updatedAt,url`
+- `gh pr checks 100 --repo openclaw/nix-openclaw --watch=false`
+- `gh pr view 100 --repo openclaw/nix-openclaw --json headRefName,headRefOid,baseRefName,baseRefOid,mergeStateStatus,isDraft,url`
+- Latest measured PR-only run: `27045444112`, success,
+  `2026-06-05T23:28:03Z` to `2026-06-05T23:31:20Z`.
+- PR status at measured commit: `CLEAN`; all GitHub Actions, Garnix, Socket,
+  and flake-evaluation checks passed.
 
 ## Add A Run
 
