@@ -94,6 +94,29 @@ function sameArray(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function lockSourceIsValid(lock) {
+  if (lock.selectedSource === "npm") {
+    return typeof lock.tarballUrl === "string" && lock.tarballUrl.startsWith("https://registry.npmjs.org/");
+  }
+  if (lock.selectedSource === "clawhub") {
+    const validClawHubUrl =
+      typeof lock.tarballUrl === "string"
+      && (
+        lock.tarballUrl.startsWith("https://clawhub.ai/api/npm/")
+        || lock.tarballUrl.startsWith("https://clawhub.ai/api/v1/packages/")
+      );
+    return (
+      validClawHubUrl
+      && lock.clawhubArtifactKind === "npm-pack"
+      && typeof lock.clawhubArtifactSha256 === "string"
+      && lock.clawhubArtifactSha256.length > 0
+      && lock.clawhubPackageName === lock.packageName
+      && lock.clawhubVersion === lock.version
+    );
+  }
+  return false;
+}
+
 const report = readJson(path.join(generatedDir, "report.json"));
 const sourceInfo = readNixStringFields(sourceInfoPath);
 const locks = readJson(locksJsonPath);
@@ -121,11 +144,14 @@ for (const row of supported) {
   const lock = locks[row.id];
   assert(row.status === "supported", `supported row ${row.id} has wrong status`);
   assert(row.source === "official", `supported row ${row.id} is not from the official catalog source`);
-  assert(row.selectedSource === "npm", `supported row ${row.id} is not npm-backed`);
+  assert(row.selectedSource === "npm" || row.selectedSource === "clawhub", `supported row ${row.id} has invalid source`);
   assert(row.packageName, `supported row ${row.id} has no packageName`);
   assert(row.packageName.startsWith("@openclaw/"), `supported row ${row.id} is not an @openclaw/* package`);
   assert(row.version === report.openclawVersion, `supported row ${row.id} is not pinned to OpenClaw version`);
-  assert(row.dependencyMode === "none" || row.dependencyMode === "bundled", `supported row ${row.id} has invalid dependencyMode`);
+  assert(
+    row.dependencyMode === "none" || row.dependencyMode === "bundled" || row.dependencyMode === "shrinkwrap",
+    `supported row ${row.id} has invalid dependencyMode`,
+  );
   assert(!/[~^*]|latest/.test(row.version), `supported row ${row.id} has a floating version`);
   assert(defaultNix.includes(`${row.id} = import ./`), `default.nix does not import ${row.id}`);
   assert(lock, `missing imported lock for ${row.id}`);
@@ -148,9 +174,15 @@ for (const row of supported) {
   }
   assert(!("v1aClass" in lock), `lock ${row.id} still contains obsolete v1aClass`);
   assert(lock.manifestId === row.id, `lock ${row.id} manifestId does not match id`);
-  assert(typeof lock.tarballUrl === "string" && lock.tarballUrl.startsWith("https://registry.npmjs.org/"), `lock ${row.id} has invalid tarballUrl`);
-  assert(/^sha512-/.test(lock.npmIntegrity), `lock ${row.id} has missing npm SRI integrity`);
+  assert(lockSourceIsValid(lock), `lock ${row.id} has invalid source metadata`);
+  assert(!lock.npmIntegrity || /^(sha512|sha384|sha256)-/.test(lock.npmIntegrity), `lock ${row.id} has invalid npm SRI integrity`);
   assert(/^sha256-/.test(lock.nixHash), `lock ${row.id} has missing Nix hash`);
+  if (lock.dependencyMode === "shrinkwrap") {
+    assert(/^sha256-/.test(lock.npmDepsHash), `lock ${row.id} has missing npmDepsHash`);
+    assert((lock.bundledPackageRoots ?? []).length === 0, `lock ${row.id} shrinkwrap mode should not list bundled roots`);
+  } else {
+    assert(!lock.npmDepsHash, `lock ${row.id} has unexpected npmDepsHash`);
+  }
   assert(!lock.minHostVersion || satisfiesVersionRange(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
   assert(satisfiesVersionRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
   assert(satisfiesVersionRange(report.openclawVersion, lock.peerOpenClaw), `lock ${row.id} peerOpenClaw excludes OpenClaw ${report.openclawVersion}`);

@@ -10,6 +10,22 @@
   ],
   "supported": [
     {
+      "id": "acpx",
+      "status": "supported",
+      "label": "ACPX Runtime",
+      "kind": "plugin",
+      "source": "official",
+      "catalogFile": "official-external-plugin-catalog.json",
+      "catalogEntryName": "@openclaw/acpx",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/acpx",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
       "id": "amazon-bedrock",
       "status": "supported",
       "label": "Amazon Bedrock",
@@ -70,6 +86,38 @@
       "packageName": "@openclaw/brave-plugin",
       "version": "2026.6.1",
       "dependencyMode": "none",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
+      "id": "codex",
+      "status": "supported",
+      "label": "Codex",
+      "kind": "provider",
+      "source": "official",
+      "catalogFile": "official-external-provider-catalog.json",
+      "catalogEntryName": "@openclaw/codex",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/codex",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
+      "id": "copilot",
+      "status": "supported",
+      "label": "GitHub Copilot agent runtime",
+      "kind": "plugin",
+      "source": "official",
+      "catalogFile": "official-external-plugin-catalog.json",
+      "catalogEntryName": "@openclaw/copilot",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/copilot",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
       "openclawCompat": ">=2026.6.1",
       "peerOpenClaw": ">=2026.6.1"
     },
@@ -230,6 +278,22 @@
       "packageName": "@openclaw/lobster",
       "version": "2026.6.1",
       "dependencyMode": "bundled",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
+      "id": "memory-lancedb",
+      "status": "supported",
+      "label": "Memory LanceDB",
+      "kind": "plugin",
+      "source": "official",
+      "catalogFile": "official-external-plugin-catalog.json",
+      "catalogEntryName": "@openclaw/memory-lancedb",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/memory-lancedb",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
       "openclawCompat": ">=2026.6.1",
       "peerOpenClaw": ">=2026.6.1"
     },
@@ -456,8 +520,8 @@
       "clawhubSpec": "clawhub:@openclaw/matrix",
       "minHostVersion": ">=2026.4.10",
       "status": "skipped",
-      "reason": "clawhub-adapter-required",
-      "detail": "catalog-selected ClawHub artifacts are not implemented yet"
+      "reason": "shrinkwrap-materialization-failed",
+      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/file-type failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
     },
     {
       "id": "openclaw-plugin-yuanbao",
@@ -502,8 +566,8 @@
       "npmSpec": "@openclaw/tlon",
       "minHostVersion": ">=2026.4.10",
       "status": "skipped",
-      "reason": "dependency-materialization-required",
-      "detail": "package has runtime dependencies but no bundled node_modules"
+      "reason": "shrinkwrap-materialization-failed",
+      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/@aws-sdk%2fcore failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
     },
     {
       "id": "wecom-openclaw-plugin",
@@ -533,69 +597,8 @@
       "clawhubSpec": "clawhub:@openclaw/whatsapp",
       "minHostVersion": ">=2026.4.25",
       "status": "skipped",
-      "reason": "clawhub-adapter-required",
-      "detail": "catalog-selected ClawHub artifacts are not implemented yet"
-    },
-    {
-      "id": "acpx",
-      "label": "ACPX Runtime",
-      "kind": "plugin",
-      "source": "official",
-      "catalogFile": "official-external-plugin-catalog.json",
-      "catalogEntryName": "@openclaw/acpx",
-      "catalogDefaultChoice": "npm",
-      "selectedSource": "npm",
-      "npmSpec": "@openclaw/acpx",
-      "minHostVersion": ">=2026.4.25",
-      "status": "skipped",
-      "reason": "dependency-materialization-required",
-      "detail": "package has runtime dependencies but no bundled node_modules"
-    },
-    {
-      "id": "copilot",
-      "label": "GitHub Copilot agent runtime",
-      "kind": "plugin",
-      "source": "official",
-      "catalogFile": "official-external-plugin-catalog.json",
-      "catalogEntryName": "@openclaw/copilot",
-      "catalogDefaultChoice": "npm",
-      "selectedSource": "npm",
-      "npmSpec": "@openclaw/copilot",
-      "clawhubSpec": "clawhub:@openclaw/copilot",
-      "minHostVersion": ">=2026.5.28",
-      "status": "skipped",
-      "reason": "dependency-materialization-required",
-      "detail": "package has runtime dependencies but no bundled node_modules"
-    },
-    {
-      "id": "memory-lancedb",
-      "label": "Memory LanceDB",
-      "kind": "plugin",
-      "source": "official",
-      "catalogFile": "official-external-plugin-catalog.json",
-      "catalogEntryName": "@openclaw/memory-lancedb",
-      "catalogDefaultChoice": "npm",
-      "selectedSource": "npm",
-      "npmSpec": "@openclaw/memory-lancedb",
-      "minHostVersion": ">=2026.5.31",
-      "status": "skipped",
-      "reason": "dependency-materialization-required",
-      "detail": "package has runtime dependencies but no bundled node_modules"
-    },
-    {
-      "id": "codex",
-      "label": "Codex",
-      "kind": "provider",
-      "source": "official",
-      "catalogFile": "official-external-provider-catalog.json",
-      "catalogEntryName": "@openclaw/codex",
-      "catalogDefaultChoice": "npm",
-      "selectedSource": "npm",
-      "npmSpec": "@openclaw/codex",
-      "minHostVersion": ">=2026.5.1-beta.1",
-      "status": "skipped",
-      "reason": "dependency-materialization-required",
-      "detail": "package has runtime dependencies but no bundled node_modules"
+      "reason": "shrinkwrap-materialization-failed",
+      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/protobufjs failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
     },
     {
       "id": "pixverse",

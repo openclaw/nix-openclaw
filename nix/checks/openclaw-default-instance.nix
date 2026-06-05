@@ -569,7 +569,7 @@ let
       runtimePluginDuplicateEval;
 
   runtimePluginUnsupportedEval = moduleEval {
-    runtimePlugins = [ "codex" ];
+    runtimePlugins = [ "not-a-real-openclaw-plugin" ];
   };
   runtimePluginUnsupportedCheck =
     requireAssertionFailure "unsupported runtimePlugins"

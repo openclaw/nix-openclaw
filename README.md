@@ -89,7 +89,7 @@ This repo's plugin docs are about **nix-openclaw plugins**: Nix-managed tools an
 | You want | What it is | Status |
 |----------|------------|--------|
 | Supported OpenClaw catalog ids | OpenClaw runtime plugin | Supported with `runtimePlugins` |
-| Other OpenClaw catalog ids, such as WhatsApp, Matrix, Memory LanceDB, Codex, ACPX, Weixin, Yuanbao, WeCom | OpenClaw runtime plugin | Known to OpenClaw, not supported by this nix-openclaw build |
+| Other OpenClaw catalog ids, such as WhatsApp, Matrix, Tlon, Weixin, Yuanbao, WeCom | OpenClaw runtime plugin | Known to OpenClaw, not supported by this nix-openclaw build |
 | Install specs or source strings such as `npm:...`, `clawhub:...`, git, local paths, or marketplace entries | OpenClaw runtime plugin | Not accepted in `runtimePlugins` |
 | `discrawl`, `summarize`, `peekaboo`, other bundled tools | nix-openclaw plugin | Supported |
 | A pinned CLI repo with skills | custom nix-openclaw plugin | Supported, advanced |
@@ -120,7 +120,7 @@ Then rebuild your Nix/Home Manager config. Do not run `openclaw plugins install`
 
 `runtimePlugins` only selects and packages supported plugin ids. Runtime settings stay in `programs.openclaw.config`, using the upstream OpenClaw config shape for that plugin. Do not use `customPlugins.source = "npm:..."`; nix-openclaw rejects that path because it would reintroduce mutable package installation.
 
-Maintainers can inspect `nix/generated/openclaw-runtime-plugins/report.json` to see generated support status and skipped-catalog diagnostics.
+Maintainers can inspect `nix/generated/openclaw-runtime-plugins/report.json` to see generated support status and skipped-catalog diagnostics. Supported ids may come from dependency-free package roots, bundled package roots, or shrinkwrapped package roots; that distinction is maintainer packaging data, not user config.
 
 ---
 
