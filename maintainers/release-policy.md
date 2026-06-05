@@ -10,10 +10,13 @@
 
 ## Non-Negotiables
 
-- Do not hold back the source-built gateway because a newer source release lacks public macOS app assets.
+- Do not hold back the packaged gateway because a newer source release lacks public macOS app assets.
 - Do not treat source/app version mismatch as a failure.
 - Do not make upstream's full Vitest suite a promotion gate; upstream owns source test health.
-- Do verify the Nix-owned package contract: source build, generated config options, package contents, gateway smoke startup, module activation, and newest available public macOS app artifact.
+- Do verify the Nix-owned package contract: npm-shrinkwrapped gateway build,
+  generated config materialization during pin updates, package contents, gateway
+  smoke startup, module activation, and newest available public macOS app
+  artifact.
 - Do prefer the upstream `.zip` app artifact for `openclaw-app`, but verify the unpacked contents contain an `.app`.
 
 ## Freshness Check

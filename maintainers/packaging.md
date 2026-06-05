@@ -5,7 +5,9 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 ## Product Surface
 
 - The user-facing package is `openclaw`.
-- `openclaw-gateway` is the source-built runnable gateway for Linux and macOS.
+- `openclaw-gateway` is the runnable gateway for Linux and macOS. Stable pins
+  use upstream's npm package/shrinkwrap by default; source builds remain for
+  dogfood and explicit source overrides.
 - `openclaw-app` is the Darwin-only desktop app from upstream's public app artifact.
 - Component outputs exist for modules, checks, and debugging. They are not separate product tracks.
 - `openclaw-dogfood` and `openclaw-gateway-dogfood` are temporary maintainer
@@ -33,7 +35,8 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - No inline scripts or inline file contents in Nix code. Use repo scripts and explicit file paths.
 - Keep runtime tools internal to the `openclaw` wrapper unless they are intentionally part of the public package surface.
 - QMD is the Nix-supported local memory backend. Keep `qmd` internal to the OpenClaw runtime PATH, and pull it into the closure only when users opt in with upstream config.
-- ACPX is the first bundled OpenClaw plugin proof. It is consumed from OpenClaw's built `dist-runtime/extensions/acpx` tree, not installed or repaired by npm at runtime.
+- ACPX compatibility files are staged at build time from locked package inputs,
+  not installed or repaired by npm at runtime.
 - Keep files under 400 lines unless a maintainer explicitly accepts the larger file.
 
 ## Investigations
