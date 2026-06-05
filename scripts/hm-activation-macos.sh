@@ -27,9 +27,7 @@ export LOGNAME="$USER"
 
 cd "$test_dir"
 
-nix build --accept-flake-config --impure \
-  --override-input nix-openclaw "path:$repo_root" \
-  .#homeConfigurations.hm-test.activationPackage
+nix build --accept-flake-config "$repo_root#checks.aarch64-darwin.hm-activation-macos-package"
 
 ./result/activate
 

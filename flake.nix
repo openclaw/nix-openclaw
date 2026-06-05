@@ -144,11 +144,22 @@
                 inherit pkgs home-manager;
               };
             };
+            darwinOnlyChecks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+              hm-activation-macos-package =
+                (home-manager.lib.homeManagerConfiguration {
+                  inherit pkgs;
+                  modules = [
+                    self.homeManagerModules.openclaw
+                    ./nix/tests/hm-activation-macos/home.nix
+                  ];
+                }).activationPackage;
+            };
           in
           stableChecks
           // runtimePluginChecks
           // dogfoodChecks
           // linuxOnlyChecks
+          // darwinOnlyChecks
           // {
             # CI aggregator: prove the default package/config/apply path without
             # rebuilding every generated runtime plugin package on every push.
@@ -160,7 +171,8 @@
                 packageSetStable.openclaw
               ]
               ++ (builtins.attrValues stableChecks)
-              ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux (builtins.attrValues linuxOnlyChecks);
+              ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux (builtins.attrValues linuxOnlyChecks)
+              ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin (builtins.attrValues darwinOnlyChecks);
             };
           };
 
