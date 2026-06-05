@@ -19,7 +19,7 @@
   npmShasum = "a4d8d63d266546356e9e7fad7bbbb829f3ecc5c8";
   nixHash = "sha256-W/ZgtndJSPY01s7ovWqGUaN1BvxkXyy5tPsyzA1fh/c=";
   dependencyMode = "shrinkwrap";
-  npmDepsHash = "sha256-Sji+QuWjzZ1a+jSTh+DGsmjpW3QAI941FfGaRjiUuwc=";
+  npmDepsHash = "sha256-3I9qr1IXyPex1XyCyxLad4dS39QaEFLNMwmfFS+WDZ4=";
   manifestId = "memory-lancedb";
   openclawCompat = ">=2026.6.1";
   peerOpenClaw = ">=2026.6.1";

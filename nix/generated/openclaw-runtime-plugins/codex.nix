@@ -19,7 +19,7 @@
   npmShasum = "d4847350af8ffb0b34181fea32a3d8f3eeec45b2";
   nixHash = "sha256-VFBtNG0+M6Qc0GOsIvX/ELU5mYYUbe7WpFKH4pL0hyM=";
   dependencyMode = "shrinkwrap";
-  npmDepsHash = "sha256-i4HQrbOFcLntxDz93o3RS1x/mYcb6WZN4DSdxy8AOqM=";
+  npmDepsHash = "sha256-U5U7TLhcnJ/VZVcWspHVU/QIK2D9477pReEbthzScqE=";
   manifestId = "codex";
   openclawCompat = ">=2026.6.1";
   peerOpenClaw = ">=2026.6.1";

@@ -73,7 +73,7 @@ You talk to Telegram, your machine does things.
 
 Most people asking about plugins mean **OpenClaw plugins**: JavaScript runtime plugins loaded by the OpenClaw gateway. Channel plugins such as Slack, Discord, Weixin, or WhatsApp are OpenClaw plugins.
 
-nix-openclaw supports OpenClaw catalog runtime plugins declaratively with `programs.openclaw.runtimePlugins` when this build has a generated lock for the id.
+nix-openclaw supports OpenClaw catalog runtime plugins declaratively with `programs.openclaw.runtimePlugins` when the current catalog artifact can be packaged reproducibly. The upstream source form, such as npm or ClawHub, is maintainer packaging data. Users select the plugin id.
 
 ```nix
 programs.openclaw = {
@@ -88,8 +88,8 @@ This repo's plugin docs are about **nix-openclaw plugins**: Nix-managed tools an
 
 | You want | What it is | Status |
 |----------|------------|--------|
-| Supported OpenClaw catalog ids | OpenClaw runtime plugin | Supported with `runtimePlugins` |
-| Other OpenClaw catalog ids, such as WhatsApp, Matrix, Tlon, Weixin, Yuanbao, WeCom | OpenClaw runtime plugin | Known to OpenClaw, not supported by this nix-openclaw build |
+| Packageable OpenClaw catalog ids, for example Slack, Memory LanceDB, WhatsApp, Matrix, Tlon, Codex, or ACPX in the current generated lock | OpenClaw runtime plugin | Supported with `runtimePlugins` |
+| OpenClaw catalog ids whose current artifact fails reproducible packaging | OpenClaw runtime plugin | Not emitted in this generated lock; maintainers inspect the report and fix the packageability gap |
 | Install specs or source strings such as `npm:...`, `clawhub:...`, git, local paths, or marketplace entries | OpenClaw runtime plugin | Not accepted in `runtimePlugins` |
 | `discrawl`, `summarize`, `peekaboo`, other bundled tools | nix-openclaw plugin | Supported |
 | A pinned CLI repo with skills | custom nix-openclaw plugin | Supported, advanced |
@@ -122,6 +122,8 @@ Then rebuild your Nix/Home Manager config. Do not run `openclaw plugins install`
 
 Maintainers can inspect `nix/generated/openclaw-runtime-plugins/report.json` to see generated support status and skipped-catalog diagnostics. Supported ids may come from dependency-free package roots, bundled package roots, or shrinkwrapped package roots; that distinction is maintainer packaging data, not user config.
 
+The intended support contract for catalog runtime plugins is simple: if upstream points at a fixed artifact and nix-openclaw can prove the package root is reproducible, the id should be available through `runtimePlugins`. A package with runtime dependencies satisfies that rule when it either bundles those dependencies or ships a package-local `npm-shrinkwrap.json` that Nix can replay offline. If a shrinkwrapped catalog artifact is skipped, that is a materialization bug or packaging limitation to chase down, not a different user-facing plugin class.
+
 ### Regular OpenClaw installs vs nix-openclaw
 
 Regular OpenClaw installs plugins by running `openclaw plugins install ...`.
@@ -134,18 +136,19 @@ instead.
 | --- | --- | --- |
 | `openclaw plugins enable workboard` | Enable a plugin already bundled in the OpenClaw package. | Set upstream config directly, for example `programs.openclaw.config.plugins.entries.workboard.enabled = true;`. No `runtimePlugins` entry is needed for plugins already shipped inside the packaged gateway. |
 | `openclaw plugins install @openclaw/slack` | Install the official Slack catalog plugin. Upstream chooses the right bundled, npm, or catalog path for the current release. | Use `programs.openclaw.runtimePlugins = [ "slack" ];`, then put Slack runtime settings under `programs.openclaw.config.channels.slack`. |
-| `openclaw plugins install npm:@openclaw/memory-lancedb` | Install an OpenClaw-owned npm package whose runtime dependencies are resolved at install time. | Use `programs.openclaw.runtimePlugins = [ "memory-lancedb" ];` when the generated report lists it as supported. This build packages it from its shrinkwrap and generated `npmDepsHash`. |
-| `openclaw plugins install clawhub:@openclaw/whatsapp` | Resolve a ClawHub package to an artifact, verify ClawHub/npm metadata, then install it. | Not supported by this build yet. If a future generated report supports `whatsapp`, the Nix config will be `runtimePlugins = [ "whatsapp" ];`, not a `clawhub:` string. |
-| `openclaw plugins install npm:@scope/plugin@1.2.3` | Install an arbitrary npm runtime plugin into a mutable per-plugin npm project. | Not supported by the batteries-included Nix API yet. A future arbitrary-source API would need a locked source record with hashes; do not use `customPlugins` for this. |
-| `openclaw plugins install npm-pack:./plugin.tgz` | Install a local npm-pack tarball through npm install semantics. | Not a user-facing Nix API today. Maintainers can package catalog artifacts that resolve to npm-pack tarballs when the artifact hash and dependency graph are fixed. |
-| `openclaw plugins install git:github.com/owner/repo@ref` | Clone a repo and install the plugin root, recording the resolved commit. | Not supported as an OpenClaw runtime plugin source in nix-openclaw today. It needs a future locked source API or a maintainer package. |
+| `openclaw plugins install npm:@openclaw/memory-lancedb` | Install an npm package whose runtime dependencies are resolved at install time. | Use `programs.openclaw.runtimePlugins = [ "memory-lancedb" ];`. This build packages it from its shrinkwrap and generated `npmDepsHash`. |
+| `openclaw plugins install clawhub:@openclaw/whatsapp` | Resolve a ClawHub package to an npm-pack artifact, verify ClawHub/npm metadata, then install it. | Use `programs.openclaw.runtimePlugins = [ "whatsapp" ];`. The current generated lock also supports `matrix` through the same ClawHub npm-pack path. |
+| `openclaw plugins install npm:@scope/plugin@1.2.3` | Install an arbitrary npm runtime plugin into a mutable per-plugin npm project. | Not a `runtimePlugins` string. To make this declarative, nix-openclaw would need a locked source record with artifact URL/hash and dependency hash, then the same packageability checks used for catalog plugins. |
+| `openclaw plugins install npm-pack:./plugin.tgz` | Install a local npm-pack tarball through npm install semantics. | Not a plain local-path install during activation. Maintainers can package catalog or future locked-source artifacts that resolve to npm-pack tarballs when the artifact hash and dependency graph are fixed. |
+| `openclaw plugins install git:github.com/owner/repo@ref` | Clone a repo and install the plugin root, recording the resolved commit. | Not accepted as a raw source string. A declarative version would need a fixed revision, Nix source hash, and the same plugin-root validation before it can become a store path. |
 | `openclaw plugins install --link ./my-plugin` | Link a local development checkout and let OpenClaw load it. | Not part of the reproducible path. Advanced users can set raw `programs.openclaw.config.plugins.load.paths` only when they are not using `runtimePlugins`, and then they own the plugin root and dependencies themselves. |
-| `openclaw plugins install <plugin> --marketplace <source>` | Install a compatible bundle from a Claude marketplace source. | Not supported by `runtimePlugins`. nix-openclaw `customPlugins` is for Nix flake tool/skill bundles, not OpenClaw runtime plugin marketplace installs. |
+| `openclaw plugins install <plugin> --marketplace <source>` | Install a compatible bundle from a Claude marketplace source. | Not `runtimePlugins` unless it is first converted into a fixed, reproducible runtime plugin artifact. nix-openclaw `customPlugins` is for Nix flake tool/skill bundles, not OpenClaw runtime plugin marketplace installs. |
 
 The rule is deliberately simple: if nix-openclaw has a generated lock for the
 OpenClaw catalog id, use `runtimePlugins = [ "id" ];`. If it does not, the
 regular OpenClaw install command is not something Home Manager should emulate at
-activation time.
+activation time. The missing lock means the current artifact was not proven
+reproducible yet, not that users should learn a second Nix plugin API.
 
 ---
 

@@ -25,6 +25,51 @@ function isUnsupportedResolvedSource(resolved) {
   return /^(file:|workspace:|git\+|git:|ssh:|https:\/\/github\.com\/)/.test(resolved);
 }
 
+function dependencyPackagePath(parentPath, dependencyName) {
+  let current = parentPath;
+  while (true) {
+    const candidate = `${current ? `${current}/` : ""}node_modules/${dependencyName}`;
+    if (shrinkwrap.packages?.[candidate]) {
+      return candidate;
+    }
+    if (!current) {
+      return null;
+    }
+    const nestedIndex = current.lastIndexOf("/node_modules/");
+    if (nestedIndex !== -1) {
+      current = current.slice(0, nestedIndex);
+      continue;
+    }
+    if (current.startsWith("node_modules/")) {
+      current = "";
+      continue;
+    }
+    return null;
+  }
+}
+
+function normalizeLockedDependencySpecs() {
+  let changed = false;
+  for (const [packagePath, entry] of Object.entries(shrinkwrap.packages ?? {})) {
+    for (const field of ["dependencies", "optionalDependencies"]) {
+      const dependencies = entry[field];
+      if (!dependencies || typeof dependencies !== "object" || Array.isArray(dependencies)) {
+        continue;
+      }
+      for (const dependencyName of Object.keys(dependencies).sort()) {
+        const resolvedPath = dependencyPackagePath(packagePath, dependencyName);
+        const lockedVersion = resolvedPath ? shrinkwrap.packages?.[resolvedPath]?.version : null;
+        if (!lockedVersion || dependencies[dependencyName] === lockedVersion) {
+          continue;
+        }
+        dependencies[dependencyName] = lockedVersion;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
 const dependencyMode = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE");
 if (dependencyMode !== "shrinkwrap") {
   process.exit(0);
@@ -77,7 +122,12 @@ for (const [packagePath, entry] of Object.entries(shrinkwrap.packages ?? {})) {
   }
 }
 
+const shrinkwrapChanged = normalizeLockedDependencySpecs();
+
 if (packageJson.devDependencies) {
   delete packageJson.devDependencies;
   writeJson(packageJsonPath, packageJson);
+}
+if (shrinkwrapChanged) {
+  writeJson(shrinkwrapPath, shrinkwrap);
 }

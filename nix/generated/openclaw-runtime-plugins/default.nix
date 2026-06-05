@@ -17,6 +17,7 @@
   googlechat = import ./googlechat.nix;
   line = import ./line.nix;
   lobster = import ./lobster.nix;
+  matrix = import ./matrix.nix;
   memory-lancedb = import ./memoryLancedb.nix;
   msteams = import ./msteams.nix;
   nextcloud-talk = import ./nextcloudTalk.nix;
@@ -26,9 +27,11 @@
   qqbot = import ./qqbot.nix;
   slack = import ./slack.nix;
   synology-chat = import ./synologyChat.nix;
+  tlon = import ./tlon.nix;
   tokenjuice = import ./tokenjuice.nix;
   twitch = import ./twitch.nix;
   voice-call = import ./voiceCall.nix;
+  whatsapp = import ./whatsapp.nix;
   zalo = import ./zalo.nix;
   zalouser = import ./zalouser.nix;
 }

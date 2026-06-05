@@ -37,6 +37,27 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
+function sleepMs(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+function runWithRetries(command, args, options = {}) {
+  const attempts = options.attempts ?? 3;
+  const retryDelayMs = options.retryDelayMs ?? 1000;
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return run(command, args, options.runOptions ?? {});
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        sleepMs(retryDelayMs * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     const request = https
@@ -124,6 +145,8 @@ function toNix(value, indent = "") {
 function resolveOpenClawSourcePath() {
   const strippedAttrs = [
     "pnpmDepsHash",
+    "gatewayNpmDepsHash",
+    "acpxNpmDepsHash",
     "pnpmMajor",
     "releaseTag",
     "releaseVersion",
@@ -443,6 +466,120 @@ function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
   return roots;
 }
 
+function listManifestStringField(value, fieldName) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`package.json ${fieldName} must be an array`);
+  }
+  return value.map((entry, index) => {
+    const normalized = optionalString(entry);
+    if (!normalized) {
+      throw new Error(`package.json ${fieldName}[${index}] must be a non-empty string`);
+    }
+    return normalized;
+  });
+}
+
+function safePackageEntry(entry, label) {
+  const normalized = entry.replace(/\\/g, "/").replace(/^\.\//, "");
+  if (!normalized || path.isAbsolute(normalized) || normalized.split("/").includes("..")) {
+    throw new Error(`${label} must stay inside the package root: ${entry}`);
+  }
+  return normalized;
+}
+
+function isTypeScriptPackageEntry(entry) {
+  return [".ts", ".mts", ".cts"].includes(path.extname(entry).toLowerCase());
+}
+
+function listBuiltRuntimeEntryCandidates(entry) {
+  if (!isTypeScriptPackageEntry(entry)) {
+    return [];
+  }
+  const normalized = entry.replace(/\\/g, "/");
+  const withoutExtension = normalized.replace(/\.[^.]+$/u, "");
+  const normalizedRelative = normalized.replace(/^\.\//u, "");
+  const distWithoutExtension = normalizedRelative.startsWith("src/")
+    ? `./dist/${normalizedRelative.slice("src/".length).replace(/\.[^.]+$/u, "")}`
+    : `./dist/${withoutExtension.replace(/^\.\//u, "")}`;
+  const withJavaScriptExtensions = (basePath) => [
+    `${basePath}.js`,
+    `${basePath}.mjs`,
+    `${basePath}.cjs`,
+  ];
+  return [...new Set([
+    ...withJavaScriptExtensions(distWithoutExtension),
+    ...withJavaScriptExtensions(withoutExtension),
+  ])].filter((candidate) => candidate !== normalized);
+}
+
+function packageEntryExists(packageRoot, entry, label) {
+  const safeEntry = safePackageEntry(entry, label);
+  return fs.existsSync(path.join(packageRoot, safeEntry)) ? `./${safeEntry}` : null;
+}
+
+function resolveRuntimeEntry(packageRoot, sourceEntry, explicitRuntimeEntry, label) {
+  if (explicitRuntimeEntry) {
+    const existing = packageEntryExists(packageRoot, explicitRuntimeEntry, `${label} runtime entry`);
+    if (!existing) {
+      throw new Error(`${label} runtime entry not found: ${explicitRuntimeEntry}`);
+    }
+    return existing;
+  }
+
+  for (const candidate of listBuiltRuntimeEntryCandidates(sourceEntry)) {
+    const existing = packageEntryExists(packageRoot, candidate, `${label} inferred runtime entry`);
+    if (existing) {
+      return existing;
+    }
+  }
+
+  const source = packageEntryExists(packageRoot, sourceEntry, `${label} source entry`);
+  if (source && !isTypeScriptPackageEntry(sourceEntry)) {
+    return source;
+  }
+  if (source && isTypeScriptPackageEntry(sourceEntry)) {
+    throw new Error(`${label} requires compiled runtime output for TypeScript entry ${sourceEntry}`);
+  }
+  throw new Error(`${label} source entry not found: ${sourceEntry}`);
+}
+
+function resolveRuntimeEntries(packageRoot, packageJson) {
+  const openclaw = isRecord(packageJson.openclaw) ? packageJson.openclaw : {};
+  const extensions = listManifestStringField(openclaw.extensions, "openclaw.extensions");
+  if (extensions.length === 0) {
+    throw new Error("package has no package.json openclaw.extensions entries");
+  }
+  const explicitRuntimeExtensions = listManifestStringField(
+    openclaw.runtimeExtensions,
+    "openclaw.runtimeExtensions",
+  );
+  if (explicitRuntimeExtensions.length > 0 && explicitRuntimeExtensions.length !== extensions.length) {
+    throw new Error(
+      `package.json openclaw.runtimeExtensions length (${explicitRuntimeExtensions.length}) must match openclaw.extensions length (${extensions.length})`,
+    );
+  }
+
+  const runtimeExtensions = extensions.map((entry, index) =>
+    resolveRuntimeEntry(packageRoot, entry, explicitRuntimeExtensions[index], "extension"),
+  );
+
+  const setupEntry = optionalString(openclaw.setupEntry);
+  const explicitRuntimeSetupEntry = optionalString(openclaw.runtimeSetupEntry);
+  if (explicitRuntimeSetupEntry && !setupEntry) {
+    throw new Error("package.json openclaw.runtimeSetupEntry requires openclaw.setupEntry");
+  }
+
+  return {
+    runtimeExtensions,
+    runtimeSetupEntry: setupEntry
+      ? resolveRuntimeEntry(packageRoot, setupEntry, explicitRuntimeSetupEntry, "setup")
+      : null,
+  };
+}
+
 function validateTarMembers(tarball) {
   const memberList = run("tar", [
     "-tzf",
@@ -482,14 +619,28 @@ function resolvePrefetchNpmDepsBin() {
 }
 
 function computeNpmDepsHash(shrinkwrapPath) {
-  const output = run(resolvePrefetchNpmDepsBin(), [
-    shrinkwrapPath,
-  ]).trim();
+  const output = runWithRetries(
+    resolvePrefetchNpmDepsBin(),
+    [shrinkwrapPath],
+    { attempts: 3, retryDelayMs: 1000 },
+  ).trim();
   const hash = output.split(/\r?\n/).findLast((line) => line.startsWith("sha256-"));
   if (!hash) {
     throw new Error(`prefetch-npm-deps did not return an SRI hash for ${shrinkwrapPath}`);
   }
   return hash;
+}
+
+function prepareShrinkwrappedPackage(packageRoot, artifact) {
+  run(process.execPath, [prepareNpmScriptPath], {
+    cwd: packageRoot,
+    env: {
+      ...process.env,
+      OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE: "shrinkwrap",
+      OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME: artifact.packageName,
+      OPENCLAW_RUNTIME_PLUGIN_VERSION: artifact.version,
+    },
+  });
 }
 
 function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
@@ -522,6 +673,13 @@ function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
           src = pluginSrc;
           sourceRoot = "package";
           hash = ${nixString(npmDepsHash)};
+          nativeBuildInputs = [ pkgs.nodejs_22 ];
+          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+          OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = ${nixString(artifact.packageName)};
+          OPENCLAW_RUNTIME_PLUGIN_VERSION = ${nixString(artifact.version)};
+          postPatch = ''
+            ${"\${pkgs.nodejs_22}"}/bin/node ${"\${prepareNpmScript}"}
+          '';
         };
         npmInstallFlags = [
           "--omit=dev"
@@ -855,6 +1013,14 @@ function dependencyModeForArtifact(row, artifact, packageRoot, hasRuntimeDepende
   }
 
   const shrinkwrapPath = path.join(packageRoot, "npm-shrinkwrap.json");
+  try {
+    prepareShrinkwrappedPackage(packageRoot, artifact);
+  } catch (error) {
+    return {
+      skipped: skip(row, "shrinkwrap-prepare-failed", briefError(error)),
+    };
+  }
+
   let npmDepsHash;
   try {
     npmDepsHash = computeNpmDepsHash(shrinkwrapPath);
@@ -921,11 +1087,6 @@ async function buildArtifactLock(row, artifact) {
       ["openclaw.compat.pluginApi", openclawCompat],
       ["peerDependencies.openclaw", peerOpenClaw],
     ];
-    if (!openclawCompat || !peerOpenClaw) {
-      return {
-        skipped: skip(row, "missing-host-compatibility", "package must declare openclaw.compat.pluginApi and peerDependencies.openclaw"),
-      };
-    }
     for (const [name, range] of compatibilityRanges) {
       if (range && !satisfiesVersionRange(releaseVersion, range)) {
         return {
@@ -934,12 +1095,11 @@ async function buildArtifactLock(row, artifact) {
       }
     }
 
-    const runtimeEntries = [
-      ...(packageJson.openclaw?.runtimeExtensions ?? []),
-      ...(packageJson.openclaw?.runtimeSetupEntry ? [packageJson.openclaw.runtimeSetupEntry] : []),
-    ];
-    if (runtimeEntries.length === 0) {
-      return { skipped: skip(row, "missing-runtime-entry", "package has no OpenClaw runtime entry") };
+    let resolvedRuntimeEntries;
+    try {
+      resolvedRuntimeEntries = resolveRuntimeEntries(packageRoot, packageJson);
+    } catch (error) {
+      return { skipped: skip(row, "missing-runtime-entry", error.message) };
     }
 
     for (const bundledRoot of bundledPackageRoots) {
@@ -998,8 +1158,8 @@ async function buildArtifactLock(row, artifact) {
       manifestId: manifest.id,
       openclawCompat,
       peerOpenClaw,
-      runtimeExtensions: packageJson.openclaw?.runtimeExtensions ?? [],
-      runtimeSetupEntry: packageJson.openclaw?.runtimeSetupEntry ?? null,
+      runtimeExtensions: resolvedRuntimeEntries.runtimeExtensions,
+      runtimeSetupEntry: resolvedRuntimeEntries.runtimeSetupEntry,
       channels: manifest.channels ?? [],
       contracts: manifest.contracts ?? {},
       dependencies,
@@ -1025,15 +1185,6 @@ async function processRow(row, releaseVersion) {
   if (!row.install) {
     return { skipped: skip(row, "missing-install-metadata", "catalog row has no install metadata") };
   }
-  if (row.source !== "official") {
-    return {
-      skipped: skip(
-        row,
-        "external-catalog-source-unsupported",
-        "non-OpenClaw catalog packages need an explicit trust and dependency policy",
-      ),
-    };
-  }
   if (row.selectedSource === "local") {
     return { skipped: skip(row, "local-source-unsupported", "catalog-selected local paths are not reproducible Nix artifacts") };
   }
@@ -1041,15 +1192,6 @@ async function processRow(row, releaseVersion) {
     const clawhubPackage = parseClawHubSpec(row.install.clawhubSpec);
     if (!clawhubPackage) {
       return { skipped: skip(row, "invalid-clawhub-spec", row.install.clawhubSpec ?? "") };
-    }
-    if (!clawhubPackage.packageName.startsWith("@openclaw/")) {
-      return {
-        skipped: skip(
-          row,
-          "non-openclaw-package-unsupported",
-          "official catalog support is currently limited to OpenClaw-owned @openclaw/* packages",
-        ),
-      };
     }
     if (!clawhubPackage.version) {
       clawhubPackage.version = releaseVersion;
@@ -1069,15 +1211,6 @@ async function processRow(row, releaseVersion) {
   const npmPackage = parseNpmSpec(row.install.npmSpec);
   if (!npmPackage) {
     return { skipped: skip(row, "invalid-npm-spec", row.install.npmSpec ?? "") };
-  }
-  if (!npmPackage.packageName.startsWith("@openclaw/")) {
-    return {
-      skipped: skip(
-        row,
-        "non-openclaw-package-unsupported",
-        "official catalog support is currently limited to OpenClaw-owned @openclaw/* packages",
-      ),
-    };
   }
 
   if (!npmPackage.version) {

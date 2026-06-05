@@ -122,13 +122,16 @@ catalog id immutably. The reason belongs in the generated maintainer report, not
 in the user model.
 
 Example: `whatsapp` is not a "ClawHub plugin" in nix-openclaw docs. It is the
-OpenClaw catalog id `whatsapp`. Today the report says that id is skipped because
-nix-openclaw cannot yet materialize the catalog-selected ClawHub artifact. If
-that builder gap is fixed later, the user config is still:
+OpenClaw catalog id `whatsapp`. When the generator can materialize the
+catalog-selected ClawHub artifact, the user config is:
 
 ```nix
 programs.openclaw.runtimePlugins = [ "whatsapp" ];
 ```
+
+If a future catalog artifact cannot be materialized yet, the same rule applies:
+maintainers fix the generated lock path or upstream package artifact, and users
+do not switch to a source-specific Nix API.
 
 ## Admission Rule
 

@@ -50,16 +50,17 @@ already complete:
 - dependency-free package roots;
 - packages that publish bundled `node_modules`.
 
-That leaves important upstream plugin installs unsupported even when upstream
-appears to have enough package data to make the install deterministic:
+That leaves important upstream plugin installs absent from the generated lock
+even when upstream appears to have enough package data to make the install
+deterministic:
 
-- OpenClaw-owned npm packages such as `memory-lancedb`, `codex`, and `acpx`
-  publish `npm-shrinkwrap.json` but intentionally do not bundle every runtime
+- npm packages such as `memory-lancedb`, `codex`, and `acpx` publish
+  `npm-shrinkwrap.json` but intentionally do not bundle every runtime
   dependency.
-- Current ClawHub official packages such as WhatsApp and Matrix resolve to
-  npm-pack `.tgz` artifacts with SHA-256, npm integrity, and shrinkwrap, but
-  each artifact still has to pass the same offline materialization proof before
-  nix-openclaw can support it.
+- ClawHub packages such as WhatsApp and Matrix resolve to npm-pack `.tgz`
+  artifacts with SHA-256, npm integrity, and shrinkwrap, but each artifact
+  still has to pass the same offline materialization proof before nix-openclaw
+  can support it.
 
 The gap is not a new user-facing plugin type. It is a missing artifact
 materialization path for package roots that can be installed from shrinkwrap
@@ -68,9 +69,10 @@ instead of being pre-bundled.
 This RFC is about external catalog/package artifacts. Bundled OpenClaw runtime
 plugins that already ship inside the packaged gateway, including bundled Codex
 or ACPX entries when present in the pinned OpenClaw release, remain a separate
-upstream runtime source. A skipped generated row for `@openclaw/codex` or
-`@openclaw/acpx` means the external npm package root is not yet Nix-packaged;
-it does not mean the bundled gateway entry disappeared.
+upstream runtime source. In OpenClaw 2026.6.1 the external Codex and ACPX npm
+package roots are also Nix-packaged through the shrinkwrap materializer. If a
+future external package row is skipped, that does not imply that a separately
+bundled gateway entry disappeared.
 
 ## Upstream Contract
 
@@ -78,12 +80,12 @@ OpenClaw keeps dependency work at install/update time. Gateway startup and
 runtime plugin loading do not run package managers, repair dependencies, or
 mutate the OpenClaw package directory.
 
-OpenClaw-owned publishable npm plugin packages must ship
-`npm-shrinkwrap.json`. Upstream uses that shrinkwrap as the publishable
-dependency graph for users. Native-heavy OpenClaw packages can opt out of
-bundled runtime dependencies with `openclaw.release.bundleRuntimeDependencies =
-false`; those packages still ship shrinkwrap and let npm resolve dependencies
-at install time.
+Publishable npm plugin packages should ship `npm-shrinkwrap.json` when they
+expect npm to install runtime dependencies. Upstream uses that shrinkwrap as
+the publishable dependency graph for users. Native-heavy OpenClaw packages can
+opt out of bundled runtime dependencies with
+`openclaw.release.bundleRuntimeDependencies = false`; those packages still ship
+shrinkwrap and let npm resolve dependencies at install time.
 
 ClawHub is a resolver and distribution surface, not a separate dependency
 graph. Modern ClawHub plugin artifacts are npm-pack `.tgz` files. Once a
@@ -115,9 +117,9 @@ true:
    `node_modules/openclaw` peer to the packaged OpenClaw host.
 
 If an artifact declares runtime dependencies without bundled dependency roots,
-without shrinkwrap, or with shrinkwrap that still asks npm to resolve from a
-registry during the build, it is unsupported. That is a packaging failure, not a
-user-interface variant.
+without shrinkwrap, or with shrinkwrap that cannot be replayed offline by the
+selected Nix materializer, it is left out of the generated lock. That is a
+packageability failure, not a user-interface variant.
 
 ## Shrinkwrap Materialization
 
@@ -130,6 +132,10 @@ For shrinkwrapped artifacts, the builder should:
 4. normalize package metadata before dependency work:
    - remove dev-only package metadata, including workspace dev dependencies,
      from the build copy;
+   - when `npm-shrinkwrap.json` already selects an exact package version,
+     normalize dependency specs inside lock package entries to that selected
+     version so npm does not ask the registry to solve a range during offline
+     replay;
    - preserve runtime dependencies, optional dependencies, peer declarations,
      OpenClaw metadata, and published runtime files;
 5. validate `npm-shrinkwrap.json`:
@@ -155,6 +161,12 @@ Nix data. `importNpmLock` is rejected for this slice because it wants the lock
 JSON at Nix evaluation time; using it would require generated lockfile files or
 inline lock contents before it has shown enough benefit over `fetchNpmDeps`.
 
+The dependency-spec normalization is intentionally narrow. It does not resolve
+latest versions, choose alternate packages, or trust registry metadata outside
+the shrinkwrap. It only makes npm follow the package graph that the shrinkwrap
+already selected. If the lock lacks the selected package entry or lacks enough
+resolved/integrity data to prefetch it, the artifact still fails closed.
+
 The generator should compute `npmDepsHash` from the extracted artifact during
 lock updates. User builds consume that checked-in hash. They must fail closed
 when npm tries to read an uncached registry package during materialization.
@@ -175,10 +187,8 @@ catalog id
 Generated locks must record enough ClawHub metadata for drift detection and
 debugging, but Home Manager config must not render ClawHub install records or
 call ClawHub at activation/runtime. ClawHub npm-pack artifacts are supported
-only when the normal runtime plugin artifact builder can materialize them
-offline. A ClawHub package with shrinkwrap that still causes npm to resolve a
-registry package is skipped with a maintainer diagnostic until upstream fixes
-the package or nix-openclaw adopts a deliberate lock-rewrite policy.
+when the normal runtime plugin artifact builder can materialize them offline.
+For OpenClaw 2026.6.1 that includes WhatsApp and Matrix.
 
 Legacy ClawHub zip artifacts are only packageable when the extracted plugin root
 is dependency-free or already self-contained. A legacy zip with unmaterialized
@@ -242,7 +252,7 @@ Before shipping RFC 2:
 | Run `npm install` during Home Manager activation. | Reject. Activation becomes a mutable package-manager install. |
 | Write OpenClaw install records for Nix-managed plugins. | Reject. The declarative contract is immutable load paths plus enabled entries. |
 | Support unshrinkwrapped dependency packages by letting npm solve during build. | Reject. The output would depend on registry state outside checked-in lock data. |
-| Rewrite inconsistent shrinkwrap dependency ranges as part of RFC 2. | Reject for now. It may be useful later, but it is a separate policy decision because it changes the published npm lock before install. |
+| Resolve inconsistent shrinkwrap ranges from the registry. | Reject. RFC 2 may normalize lock edges to the exact versions already selected by shrinkwrap, but it must not solve ranges, choose different versions, or depend on registry state outside fixed-output fetches. |
 | Keep separate builders for npm, ClawHub npm-pack, and npm-pack archives after resolution. | Reject unless required by evidence. They all produce package roots and should share the same materialization boundary. |
 
 ## Evidence
@@ -250,9 +260,9 @@ Before shipping RFC 2:
 OpenClaw source evidence:
 
 - `docs/plugins/dependency-resolution.md`: dependency work belongs to
-  install/update, runtime loading never installs dependencies, OpenClaw-owned
-  publishable plugin packages must ship package-local shrinkwrap, and
-  native-heavy packages may opt out of bundled runtime dependencies.
+  install/update, runtime loading never installs dependencies, publishable npm
+  plugin packages can ship package-local shrinkwrap, and native-heavy packages
+  may opt out of bundled runtime dependencies.
 - `docs/gateway/security/shrinkwrap.md`: shrinkwrap is the published npm
   package dependency graph for users.
 - `docs/cli/plugins.md`: ClawHub installs can resolve to npm-pack artifacts and
@@ -260,21 +270,27 @@ OpenClaw source evidence:
 - `src/plugins/clawhub.ts`: ClawHub package install downloads npm-pack
   artifacts and verifies SHA-256 and npm integrity before using the normal
   archive install path.
-- Local RFC 2 prototype: `@openclaw/memory-lancedb@2026.6.1` produced a source
-  hash and `npmDepsHash`, then built an offline `node_modules` tree after
-  stripping dev-only workspace metadata from the build copy.
-- Local RFC 2 prototype: current ClawHub WhatsApp and Matrix npm-pack artifacts
-  expose tarball URL, SHA-256, npm integrity, and shrinkwrap, but their current
-  shrinkwraps caused npm to request uncached registry packages during offline
-  materialization. That is a generator/build diagnostic, not a user-facing
-  plugin taxonomy.
+- Local RFC 2 implementation: OpenClaw 2026.6.1 generated 34 supported catalog
+  rows. Seven are shrinkwrapped roots: `acpx`, `codex`, `copilot`, `matrix`,
+  `memory-lancedb`, `tlon`, and `whatsapp`.
+- Local RFC 2 implementation: ClawHub WhatsApp and Matrix resolve to npm-pack
+  artifacts with tarball URL, SHA-256, npm integrity, shrinkwrap, and generated
+  `npmDepsHash`; both are emitted as supported runtime plugin locks.
+- Local RFC 2 implementation: the current skipped diagnostics are
+  unshrinkwrapped runtime dependencies in Weixin, Yuanbao, and WeCom, plus a
+  duplicate PixVerse catalog row.
+- Local artifact check: the Weixin, Yuanbao, and WeCom npm tarballs declare
+  runtime dependencies but contain no `npm-shrinkwrap.json`, package lock, or
+  bundled `node_modules`. Supporting them under this RFC requires upstream to
+  publish a shrinkwrap or bundled runtime dependencies.
 
 nix-openclaw source evidence:
 
 - `nix/generated/openclaw-runtime-plugins/`: generated locks already support
   no-dep and bundled-node_modules package roots.
-- `nix/scripts/update-openclaw-runtime-plugin-locks.mjs`: generator currently
-  skips dependency-materialized and ClawHub-selected rows.
+- `nix/scripts/update-openclaw-runtime-plugin-locks.mjs`: generator owns
+  source resolution, fixed artifact validation, dependency-mode classification,
+  and skipped-row diagnostics.
 - `nix/lib/openclaw-runtime-plugin.nix`: runtime plugin builder currently
   fetches one package tarball and validates already-present dependency roots.
 - `nix/scripts/openclaw-runtime-plugin-install.mjs`: output validator already

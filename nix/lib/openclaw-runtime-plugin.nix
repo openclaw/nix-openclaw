@@ -69,12 +69,16 @@ let
       OPENCLAW_RUNTIME_PLUGIN_ID = lock.id;
       OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName;
       OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version;
-      OPENCLAW_RUNTIME_PLUGIN_COMPAT = lock.openclawCompat;
-      OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW = lock.peerOpenClaw;
       OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_FILE = runtimeEntriesFile;
       OPENCLAW_RUNTIME_PLUGIN_SHRINKWRAP_PATHS_FILE = shrinkwrapPathsFile;
       OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES = if hasRuntimeDependencies then "1" else "0";
       OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
+    }
+    // lib.optionalAttrs ((lock.openclawCompat or null) != null) {
+      OPENCLAW_RUNTIME_PLUGIN_COMPAT = lock.openclawCompat;
+    }
+    // lib.optionalAttrs ((lock.peerOpenClaw or null) != null) {
+      OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW = lock.peerOpenClaw;
     };
 
     installPhase = "${nodejs_22}/bin/node ${../scripts/openclaw-runtime-plugin-install.mjs}";
@@ -102,6 +106,13 @@ let
       src = pluginSrc;
       sourceRoot = "package";
       hash = lock.npmDepsHash;
+      nativeBuildInputs = [ nodejs_22 ];
+      OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+      OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName;
+      OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version;
+      postPatch = ''
+        ${nodejs_22}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
+      '';
     };
   });
 in

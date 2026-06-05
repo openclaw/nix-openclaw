@@ -9,6 +9,10 @@ function requiredEnv(name) {
   return value;
 }
 
+function optionalEnv(name) {
+  return process.env[name] ?? "";
+}
+
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
@@ -139,8 +143,8 @@ const out = requiredEnv("out");
 const expectedId = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_ID");
 const expectedPackageName = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME");
 const expectedVersion = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_VERSION");
-const expectedCompat = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_COMPAT");
-const expectedPeer = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW");
+const expectedCompat = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_COMPAT");
+const expectedPeer = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW");
 const runtimeEntriesFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_FILE");
 const shrinkwrapPathsFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_SHRINKWRAP_PATHS_FILE");
 const hasRuntimeDependencies = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES") === "1";

@@ -282,6 +282,22 @@
       "peerOpenClaw": ">=2026.6.1"
     },
     {
+      "id": "matrix",
+      "status": "supported",
+      "label": "Matrix",
+      "kind": "channel",
+      "source": "official",
+      "catalogFile": "official-external-channel-catalog.json",
+      "catalogEntryName": "@openclaw/matrix",
+      "catalogDefaultChoice": "clawhub",
+      "selectedSource": "clawhub",
+      "packageName": "@openclaw/matrix",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
       "id": "memory-lancedb",
       "status": "supported",
       "label": "Memory LanceDB",
@@ -426,6 +442,22 @@
       "peerOpenClaw": ">=2026.6.1"
     },
     {
+      "id": "tlon",
+      "status": "supported",
+      "label": "Tlon",
+      "kind": "channel",
+      "source": "official",
+      "catalogFile": "official-external-channel-catalog.json",
+      "catalogEntryName": "@openclaw/tlon",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/tlon",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
       "id": "tokenjuice",
       "status": "supported",
       "label": "Tokenjuice",
@@ -474,6 +506,22 @@
       "peerOpenClaw": ">=2026.6.1"
     },
     {
+      "id": "whatsapp",
+      "status": "supported",
+      "label": "WhatsApp",
+      "kind": "channel",
+      "source": "official",
+      "catalogFile": "official-external-channel-catalog.json",
+      "catalogEntryName": "@openclaw/whatsapp",
+      "catalogDefaultChoice": "clawhub",
+      "selectedSource": "clawhub",
+      "packageName": "@openclaw/whatsapp",
+      "version": "2026.6.1",
+      "dependencyMode": "shrinkwrap",
+      "openclawCompat": ">=2026.6.1",
+      "peerOpenClaw": ">=2026.6.1"
+    },
+    {
       "id": "zalo",
       "status": "supported",
       "label": "Zalo",
@@ -508,22 +556,6 @@
   ],
   "skipped": [
     {
-      "id": "matrix",
-      "label": "Matrix",
-      "kind": "channel",
-      "source": "official",
-      "catalogFile": "official-external-channel-catalog.json",
-      "catalogEntryName": "@openclaw/matrix",
-      "catalogDefaultChoice": "clawhub",
-      "selectedSource": "clawhub",
-      "npmSpec": "@openclaw/matrix",
-      "clawhubSpec": "clawhub:@openclaw/matrix",
-      "minHostVersion": ">=2026.4.10",
-      "status": "skipped",
-      "reason": "shrinkwrap-materialization-failed",
-      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/file-type failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
-    },
-    {
       "id": "openclaw-plugin-yuanbao",
       "label": "Yuanbao",
       "kind": "channel",
@@ -535,8 +567,8 @@
       "npmSpec": "openclaw-plugin-yuanbao@2.13.1",
       "expectedIntegrity": "sha512-lH2I9/nsmrg7l0YJJSQhOSpWMEFBAa6FwKbZcRLDFHDT2+mOZkHa44XE+8KYN4VmorlUdAxHzpZQmVr7C98IuA==",
       "status": "skipped",
-      "reason": "external-catalog-source-unsupported",
-      "detail": "non-OpenClaw catalog packages need an explicit trust and dependency policy"
+      "reason": "runtime-dependencies-without-shrinkwrap",
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
     },
     {
       "id": "openclaw-weixin",
@@ -551,23 +583,8 @@
       "minHostVersion": ">=2026.3.22",
       "expectedIntegrity": "sha512-dPQbidUNWigC6V10vGW4i+GLH09x+6zUhafZRjuxkJ9GDu8o62WBsnUTojp4KqUH756hz+t2v9khiCRSi0dBDw==",
       "status": "skipped",
-      "reason": "external-catalog-source-unsupported",
-      "detail": "non-OpenClaw catalog packages need an explicit trust and dependency policy"
-    },
-    {
-      "id": "tlon",
-      "label": "Tlon",
-      "kind": "channel",
-      "source": "official",
-      "catalogFile": "official-external-channel-catalog.json",
-      "catalogEntryName": "@openclaw/tlon",
-      "catalogDefaultChoice": "npm",
-      "selectedSource": "npm",
-      "npmSpec": "@openclaw/tlon",
-      "minHostVersion": ">=2026.4.10",
-      "status": "skipped",
-      "reason": "shrinkwrap-materialization-failed",
-      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/@aws-sdk%2fcore failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
+      "reason": "runtime-dependencies-without-shrinkwrap",
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
     },
     {
       "id": "wecom-openclaw-plugin",
@@ -581,24 +598,8 @@
       "npmSpec": "@wecom/wecom-openclaw-plugin@2026.5.7",
       "expectedIntegrity": "sha512-TCkP9as00WfEhgFWG8YL/rcmaWGIshAki2HQh83nTRccGfVBCoGjrEboTTqq3yDmK9koWTV11zi8u8A4dNtvug==",
       "status": "skipped",
-      "reason": "external-catalog-source-unsupported",
-      "detail": "non-OpenClaw catalog packages need an explicit trust and dependency policy"
-    },
-    {
-      "id": "whatsapp",
-      "label": "WhatsApp",
-      "kind": "channel",
-      "source": "official",
-      "catalogFile": "official-external-channel-catalog.json",
-      "catalogEntryName": "@openclaw/whatsapp",
-      "catalogDefaultChoice": "clawhub",
-      "selectedSource": "clawhub",
-      "npmSpec": "@openclaw/whatsapp",
-      "clawhubSpec": "clawhub:@openclaw/whatsapp",
-      "minHostVersion": ">=2026.4.25",
-      "status": "skipped",
-      "reason": "shrinkwrap-materialization-failed",
-      "detail": "> npm error code ENOTCACHED | > npm error request to https://registry.npmjs.org/protobufjs failed: cache mode is 'only-if-cached' but no cached response is available. | > ERROR: npm failed to install dependencies"
+      "reason": "runtime-dependencies-without-shrinkwrap",
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
     },
     {
       "id": "pixverse",

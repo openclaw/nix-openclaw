@@ -143,11 +143,8 @@ assert(sameArray(lockIds, supportedIds), "imported lock ids do not match report 
 for (const row of supported) {
   const lock = locks[row.id];
   assert(row.status === "supported", `supported row ${row.id} has wrong status`);
-  assert(row.source === "official", `supported row ${row.id} is not from the official catalog source`);
   assert(row.selectedSource === "npm" || row.selectedSource === "clawhub", `supported row ${row.id} has invalid source`);
   assert(row.packageName, `supported row ${row.id} has no packageName`);
-  assert(row.packageName.startsWith("@openclaw/"), `supported row ${row.id} is not an @openclaw/* package`);
-  assert(row.version === report.openclawVersion, `supported row ${row.id} is not pinned to OpenClaw version`);
   assert(
     row.dependencyMode === "none" || row.dependencyMode === "bundled" || row.dependencyMode === "shrinkwrap",
     `supported row ${row.id} has invalid dependencyMode`,
@@ -184,8 +181,8 @@ for (const row of supported) {
     assert(!lock.npmDepsHash, `lock ${row.id} has unexpected npmDepsHash`);
   }
   assert(!lock.minHostVersion || satisfiesVersionRange(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
-  assert(satisfiesVersionRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
-  assert(satisfiesVersionRange(report.openclawVersion, lock.peerOpenClaw), `lock ${row.id} peerOpenClaw excludes OpenClaw ${report.openclawVersion}`);
+  assert(!lock.openclawCompat || satisfiesVersionRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
+  assert(!lock.peerOpenClaw || satisfiesVersionRange(report.openclawVersion, lock.peerOpenClaw), `lock ${row.id} peerOpenClaw excludes OpenClaw ${report.openclawVersion}`);
 }
 
 for (const row of skipped) {

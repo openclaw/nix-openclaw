@@ -19,7 +19,7 @@
   npmShasum = "eb1e08c1986776a3e4125092e9fd33ab830e3590";
   nixHash = "sha256-NIQPronHxwlwUQeM3GpFUutT8cCmE9/PoFbiidiFjB8=";
   dependencyMode = "shrinkwrap";
-  npmDepsHash = "sha256-C463dJTINr81ramdtQfkH4BV19C3XGv0m17ryLhYAOY=";
+  npmDepsHash = "sha256-gkIigjipo2Acn0Vv5/ACGkDtqNrtRMCUKO/MoX/nRpU=";
   manifestId = "copilot";
   openclawCompat = ">=2026.6.1";
   peerOpenClaw = ">=2026.6.1";
