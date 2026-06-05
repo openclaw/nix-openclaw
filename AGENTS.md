@@ -44,6 +44,10 @@ Source: https://github.com/orgs/openclaw/people
 - `README.md` is the source of truth for product direction and user-facing behavior.
 - Keep documentation surface area small. Update `README.md` first, then adjust references.
 - Keep committed guidance about public `nix-openclaw` behavior, public upstream OpenClaw releases, public artifacts, and public CI.
+- Update `CHANGELOG.md` for significant user-facing changes, primarily breaking
+  changes and required migrations. Include the date, before/after config when
+  useful, and the packaged upstream OpenClaw release or commit when that context
+  affects the change.
 - Keep consumer setup docs in `README.md`, templates, and module docs.
 - Keep maintainer runbooks in `maintainers/`.
 - Never add internal ExecPlans or agent scratch history to this repo. `.agent/` is ignored for this reason.

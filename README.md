@@ -534,10 +534,11 @@ Deliverables: flake output, env overrides, AGENTS.md, skill update.
 
 > **Note:** You probably don't need to write this yourself. Your AI agent handles this when you use the [Quick Start](#quick-start) copypasta. These examples are here for reference.
 >
-> **Breaking change:** Nix now only emits config from `programs.openclaw.config` / `instances.<name>.config` (schema-typed). Legacy provider/routing/agent options are removed.
+> **Breaking change:** nix-openclaw no longer exposes provider/routing/agent shortcut options. Put OpenClaw runtime config under `programs.openclaw.config` / `instances.<name>.config`, using the upstream OpenClaw config shape.
 >
 > **Breaking change:** `programs.openclaw.documents` is removed. Use `programs.openclaw.workspace.bootstrapFiles` with explicit file paths for `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md`; use `programs.openclaw.workspace.files` for extra managed workspace files.
 > When migrating from `documents`, re-declare every old extra file you still want Nix-managed, e.g. `LORE.md`, `PROMPTING-EXAMPLES.md`, or private companion docs. Files not declared under `workspace.bootstrapFiles` or `workspace.files` intentionally stop being managed by nix-openclaw.
+> See [CHANGELOG.md](CHANGELOG.md) for all current breaking changes, before/after config, and file mapping.
 > When bootstrap files are configured, nix-openclaw forces `agents.defaults.skipBootstrap = true` so OpenClaw never seeds workspace bootstrap files from bundled templates.
 > `BOOTSTRAP.md` and `MEMORY.md` are runtime-owned, not managed by `workspace.files`.
 
