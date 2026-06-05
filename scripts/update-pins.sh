@@ -11,7 +11,6 @@ source_file="$repo_root/nix/sources/openclaw-source.nix"
 app_file="$repo_root/nix/packages/openclaw-app.nix"
 config_options_file="$repo_root/nix/generated/openclaw-config-options.nix"
 gateway_npm_wrapper_dir="$repo_root/nix/npm/openclaw"
-acpx_npm_wrapper_dir="$repo_root/nix/npm/openclaw-runtime-plugins/acpx"
 npm_fake_hash="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 log() {
@@ -49,8 +48,6 @@ pin_files=(
   "$config_options_file"
   "$gateway_npm_wrapper_dir/package.json"
   "$gateway_npm_wrapper_dir/package-lock.json"
-  "$acpx_npm_wrapper_dir/package.json"
-  "$acpx_npm_wrapper_dir/package-lock.json"
 )
 
 pin_file_paths() {
@@ -65,16 +62,6 @@ set_gateway_npm_deps_hash() {
 
   if grep -q 'gatewayNpmDepsHash = ' "$source_file"; then
     perl -0pi -e "s|gatewayNpmDepsHash = \"[^\"]*\";|gatewayNpmDepsHash = \"${hash}\";|" "$source_file"
-  fi
-}
-
-set_acpx_npm_deps_hash() {
-  local hash="$1"
-
-  if grep -q 'acpxNpmDepsHash = ' "$source_file"; then
-    perl -0pi -e "s|acpxNpmDepsHash = \"[^\"]*\";|acpxNpmDepsHash = \"${hash}\";|" "$source_file"
-  else
-    perl -0pi -e "s|gatewayNpmDepsHash = \"([^\"]*)\";|gatewayNpmDepsHash = \"\$1\";\n  acpxNpmDepsHash = \"${hash}\";|" "$source_file"
   fi
 }
 
@@ -95,15 +82,11 @@ refresh_npm_wrapper_locks() {
   local source_version="$1"
 
   update_wrapper_package_version "$gateway_npm_wrapper_dir/package.json" "openclaw" "$source_version"
-  update_wrapper_package_version "$acpx_npm_wrapper_dir/package.json" "@openclaw/acpx" "$source_version"
 
-  rm -rf "$gateway_npm_wrapper_dir/node_modules" "$acpx_npm_wrapper_dir/node_modules"
+  rm -rf "$gateway_npm_wrapper_dir/node_modules"
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
     nixpkgs#nodejs_22 -c \
     bash -euo pipefail -c "cd '$gateway_npm_wrapper_dir' && npm install --package-lock-only --ignore-scripts --omit=dev --legacy-peer-deps"
-  nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_22 -c \
-    bash -euo pipefail -c "cd '$acpx_npm_wrapper_dir' && npm install --package-lock-only --ignore-scripts --omit=dev --legacy-peer-deps"
 }
 
 refresh_npm_hash() {
@@ -433,7 +416,6 @@ apply_release() {
   set_source_skip_plugin_auto_enable_nix_mode_patch "$apply_skip_plugin_auto_enable_patch"
   perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${source_hash}\";|" "$source_file"
   set_gateway_npm_deps_hash "$npm_fake_hash"
-  set_acpx_npm_deps_hash "$npm_fake_hash"
 
   if [[ -n "${app_version:-}" ]]; then
     perl -0pi -e "s|version = \"[^\"]+\";|version = \"${app_version}\";|" "$app_file"
@@ -442,7 +424,6 @@ apply_release() {
   fi
 
   refresh_npm_wrapper_locks "$source_version"
-  refresh_npm_hash "openclaw-gateway.bundledAcpx" set_acpx_npm_deps_hash "ACPX"
   refresh_npm_hash "openclaw-gateway" set_gateway_npm_deps_hash "OpenClaw gateway"
   regenerate_config_options "$selected_sha" "$source_store_path" "$selected_pnpm_major"
 

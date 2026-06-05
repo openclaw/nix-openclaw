@@ -6,7 +6,8 @@
   npmHooks,
   nodejs_22,
   cctools,
-  openclawPackage,
+  openclawPackage ? null,
+  linkOpenClawPeer ? openclawPackage != null,
 }:
 
 lock:
@@ -32,6 +33,8 @@ let
     (lock.dependencies or { }) != { } || (lock.optionalDependencies or { }) != { };
   safeName = lib.replaceStrings [ "@" "/" ":" ] [ "" "-" "-" ] lock.id;
   packageName = "openclaw-runtime-plugin-${safeName}";
+
+  peerLinkIsValid = !linkOpenClawPeer || openclawPackage != null;
 
   drv = stdenvNoCC.mkDerivation ({
     pname = packageName;
@@ -65,7 +68,6 @@ let
     '';
 
     env = {
-      OPENCLAW_GATEWAY_PACKAGE = "${openclawPackage}";
       OPENCLAW_RUNTIME_PLUGIN_ID = lock.id;
       OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName;
       OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version;
@@ -73,6 +75,10 @@ let
       OPENCLAW_RUNTIME_PLUGIN_BUNDLED_PACKAGE_ROOTS_FILE = bundledPackageRootsFile;
       OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES = if hasRuntimeDependencies then "1" else "0";
       OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
+      OPENCLAW_RUNTIME_PLUGIN_LINK_PEER_OPENCLAW = if linkOpenClawPeer then "1" else "0";
+    }
+    // lib.optionalAttrs linkOpenClawPeer {
+      OPENCLAW_GATEWAY_PACKAGE = "${openclawPackage}";
     }
     // lib.optionalAttrs ((lock.openclawCompat or null) != null) {
       OPENCLAW_RUNTIME_PLUGIN_COMPAT = lock.openclawCompat;
@@ -116,4 +122,6 @@ let
     };
   });
 in
+assert lib.assertMsg peerLinkIsValid
+  "openclaw-runtime-plugin ${lock.id} cannot link its OpenClaw peer without openclawPackage";
 drv
