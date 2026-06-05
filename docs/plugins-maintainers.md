@@ -19,6 +19,24 @@ PR #81 (`fix: copy plugin manifests into dist/extensions`) was related but not t
 
 Supported OpenClaw catalog runtime plugins are fetched as pinned Nix artifacts, validated as OpenClaw runtime plugin roots, and wired through OpenClaw's own `plugins.load.paths` and `plugins.entries` config. Runtime dependencies must be absent, bundled, or materialized from a generated `npmDepsHash` and package-local shrinkwrap during the Nix build. Do not route npm runtime plugins through `customPlugins`; that surface is for nix-openclaw plugin flakes.
 
+## OpenClaw Runtime Install Surfaces
+
+Regular OpenClaw has one mutable lifecycle command, `openclaw plugins install`, with several source forms. In Nix mode, OpenClaw disables plugin install, update, uninstall, enable, and disable mutators. nix-openclaw must therefore package the supported cases ahead of time and render immutable load paths; it must not run the upstream installer during activation.
+
+| Regular OpenClaw command | Upstream behavior | nix-openclaw behavior |
+| --- | --- | --- |
+| `openclaw plugins enable workboard` | Enables a plugin that already ships inside the OpenClaw package. | Set the upstream config entry directly, for example `programs.openclaw.config.plugins.entries.workboard.enabled = true;`. |
+| `openclaw plugins install @openclaw/slack` | Installs an official catalog plugin. Upstream may use a bundled source, npm, or official catalog metadata. | If generated support exists, users write `programs.openclaw.runtimePlugins = [ "slack" ];`. |
+| `openclaw plugins install npm:@openclaw/memory-lancedb` | Installs an OpenClaw-owned npm package and resolves dependencies during install. | If its artifact has a materializer-valid shrinkwrap, the generator writes `dependencyMode = "shrinkwrap"` and `npmDepsHash`; users still write only `runtimePlugins = [ "memory-lancedb" ];`. |
+| `openclaw plugins install clawhub:@openclaw/whatsapp` | Resolves ClawHub metadata, verifies the artifact, then installs the package root. | The generator may resolve ClawHub at update time, but the row is supported only if the resolved artifact passes the same packageability rule. Current WhatsApp and Matrix remain skipped. |
+| `openclaw plugins install npm:@scope/plugin@1.2.3` | Installs an arbitrary npm package into a mutable per-plugin npm project. | Unsupported in the public API until there is a locked arbitrary-source design with artifact hash and dependency hash. |
+| `openclaw plugins install npm-pack:./plugin.tgz` | Installs a local npm-pack tarball through npm install semantics. | Supported only as maintainer machinery when a catalog or ClawHub resolver produces a fixed artifact. There is no user-facing local tarball runtime-plugin option. |
+| `openclaw plugins install git:github.com/owner/repo@ref` | Clones a repo, checks out the ref, installs the plugin root, and records source metadata. | Unsupported in nix-openclaw runtime plugins today. A future source API would need a fixed revision and Nix hash. |
+| `openclaw plugins install --link ./my-plugin` | Links a local development checkout into OpenClaw's plugin roots. | Not reproducible. A raw `programs.openclaw.config.plugins.load.paths` escape hatch is user-owned and cannot be mixed with `runtimePlugins`. |
+| `openclaw plugins install <plugin> --marketplace <source>` | Installs a compatible bundle from a Claude marketplace source. | Not `runtimePlugins`. `customPlugins` remains the Nix flake tool/skill bundle surface, not a marketplace installer. |
+
+The maintainer rule is: first resolve upstream source details into a package root with fixed identity, then decide whether that root is Nix-packageable. If it is packageable, expose only the catalog id. If it is not packageable, leave it unsupported and keep the diagnostic in `nix/generated/openclaw-runtime-plugins/report.json`.
+
 ## Interface Contract
 Every nix-openclaw plugin exposes the same fields through the `openclawPlugin` flake output:
 
