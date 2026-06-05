@@ -1,0 +1,8 @@
+{
+  "name": "nix-openclaw-acpx-wrapper",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@openclaw/acpx": "2026.6.1"
+  }
+}

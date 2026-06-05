@@ -1,0 +1,8 @@
+{
+  "name": "nix-openclaw-openclaw-wrapper",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "openclaw": "2026.6.1"
+  }
+}

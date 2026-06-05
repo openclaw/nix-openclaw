@@ -19,8 +19,14 @@ let
     openclawToolPkgs = toolPkgs;
     inherit toolNamesOverride excludeToolNames;
   };
+  openclawBundledAcpx =
+    if sourceInfo ? acpxNpmDepsHash then
+      pkgs.callPackage ./openclaw-bundled-acpx.nix { inherit sourceInfo; }
+    else
+      null;
   openclawGateway = pkgs.callPackage ./openclaw-gateway.nix {
     inherit sourceInfo;
+    inherit openclawBundledAcpx;
     inherit pnpm_11;
   };
   runtimePluginLocks = import ../generated/openclaw-runtime-plugins;
@@ -45,4 +51,5 @@ in
   openclaw = openclawBundle;
 }
 // (if qmdPackage != null then { qmd = qmdPackage; } else { })
+// (if sourceInfo ? acpxNpmDepsHash then { openclaw-bundled-acpx = openclawBundledAcpx; } else { })
 // (if isDarwin then { openclaw-app = openclawApp; } else { })
