@@ -49,7 +49,17 @@ pkgs.testers.nixosTest {
 
             programs.openclaw = {
               enable = true;
-              documents = ../tests/documents;
+              workspace = {
+                bootstrapFiles = {
+                  agents = ../tests/workspace/AGENTS.md;
+                  soul = ../tests/workspace/SOUL.md;
+                  tools = ../tests/workspace/TOOLS.md;
+                  identity = ../tests/workspace/IDENTITY.md;
+                  user = ../tests/workspace/USER.md;
+                  heartbeat = ../tests/workspace/HEARTBEAT.md;
+                };
+                files."LORE.md" = ../tests/workspace/LORE.md;
+              };
               customPlugins = [
                 { source = alphaPluginSource; }
               ];

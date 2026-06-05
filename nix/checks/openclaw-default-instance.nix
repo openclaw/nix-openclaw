@@ -278,6 +278,103 @@ let
       "ok"
   );
 
+  bootstrapFiles = {
+    agents = ../tests/workspace/AGENTS.md;
+    soul = ../tests/workspace/SOUL.md;
+    tools = ../tests/workspace/TOOLS.md;
+    identity = ../tests/workspace/IDENTITY.md;
+    user = ../tests/workspace/USER.md;
+    heartbeat = ../tests/workspace/HEARTBEAT.md;
+  };
+
+  workspaceBootstrapEval = moduleEval {
+    workspace = {
+      bootstrapFiles = bootstrapFiles;
+      files."LORE.md" = ../tests/workspace/LORE.md;
+    };
+  };
+  workspaceBootstrapConfig = builtins.fromJSON (
+    builtins.unsafeDiscardStringContext
+      workspaceBootstrapEval.config.home.file.".openclaw/openclaw.json".text
+  );
+  workspaceBootstrapCheck =
+    builtins.deepSeq (requireNoAssertionFailures "workspace bootstrap files" workspaceBootstrapEval)
+      (
+        if (((workspaceBootstrapConfig.agents or { }).defaults or { }).skipBootstrap or false) != true then
+          throw "workspace.bootstrapFiles did not force agents.defaults.skipBootstrap = true."
+        else
+          "ok"
+      );
+
+  documentsRemovedEval = moduleEval {
+    documents = ../tests/workspace;
+  };
+  documentsRemovedCheck = builtins.deepSeq [
+    (requireAssertionFailure "removed documents option" "programs.openclaw.documents was removed"
+      documentsRemovedEval
+    )
+    (requireAssertionFailure "removed documents option extras" "LORE.md" documentsRemovedEval)
+    (requireAssertionFailure "removed documents option prompting examples" "PROMPTING-EXAMPLES.md"
+      documentsRemovedEval
+    )
+    (requireAssertionFailure "removed documents option heartbeat"
+      "programs.openclaw.workspace.bootstrapFiles.heartbeat"
+      documentsRemovedEval
+    )
+  ] "ok";
+
+  bootstrapSeedConflictEval = moduleEval {
+    workspace.bootstrapFiles = bootstrapFiles;
+    config.agents.defaults.skipBootstrap = false;
+  };
+  bootstrapSeedConflictCheck =
+    requireAssertionFailure "bootstrap seed conflict" "OpenClaw must not seed bootstrap files"
+      bootstrapSeedConflictEval;
+
+  workspaceFileCollisionEval = moduleEval {
+    workspace = {
+      bootstrapFiles = bootstrapFiles;
+      files = {
+        "AGENTS.md" = ../tests/workspace/LORE.md;
+        "AGENTS.md/foo" = ../tests/workspace/LORE.md;
+        "BOOTSTRAP.md/foo" = ../tests/workspace/LORE.md;
+        "MEMORY.md/foo" = ../tests/workspace/LORE.md;
+      };
+    };
+  };
+  workspaceFileCollisionCheck =
+    requireAssertionFailure "workspace file reserved collision"
+      "workspace.files cannot manage reserved OpenClaw workspace paths"
+      workspaceFileCollisionEval;
+
+  workspaceRuntimeFileCollisionEval = moduleEval {
+    workspace.files = {
+      "memory" = ../tests/workspace/LORE.md;
+      "memory/foo" = ../tests/workspace/LORE.md;
+    };
+  };
+  workspaceRuntimeFileCollisionCheck =
+    requireAssertionFailure "workspace file runtime collision"
+      "workspace.files cannot manage reserved OpenClaw workspace paths"
+      workspaceRuntimeFileCollisionEval;
+
+  invalidWorkspaceFileEval = moduleEval {
+    workspace.files = {
+      "" = ../tests/workspace/LORE.md;
+      "." = ../tests/workspace/LORE.md;
+      "../outside.md" = ../tests/workspace/LORE.md;
+      "nested/." = ../tests/workspace/LORE.md;
+      "nested/./LORE.md" = ../tests/workspace/LORE.md;
+      "nested/.." = ../tests/workspace/LORE.md;
+      "nested//LORE.md" = ../tests/workspace/LORE.md;
+      "nested/" = ../tests/workspace/LORE.md;
+    };
+  };
+  invalidWorkspaceFileCheck =
+    requireAssertionFailure "invalid workspace file path"
+      "workspace.files keys must be relative paths below the workspace without empty, '.', or '..' path segments"
+      invalidWorkspaceFileEval;
+
   secretProviderEval = moduleEval {
     config.secrets.providers.test-file = {
       source = "file";
@@ -635,6 +732,12 @@ let
     duplicateSkillCheck
     userPluginSkillCollisionCheck
     userSkillCheck
+    workspaceBootstrapCheck
+    documentsRemovedCheck
+    bootstrapSeedConflictCheck
+    workspaceFileCollisionCheck
+    workspaceRuntimeFileCollisionCheck
+    invalidWorkspaceFileCheck
     secretProviderCheck
     secretRefPassthroughCheck
     qmdPrewarmCheck

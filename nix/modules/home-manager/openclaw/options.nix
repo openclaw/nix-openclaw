@@ -37,6 +37,35 @@ let
   };
   instanceModule = import ./options-instance.nix { inherit lib openclawLib pluginOptionType; };
   pluginCatalog = import ./plugin-catalog.nix;
+  bootstrapFilesOptionType = lib.types.submodule {
+    options = {
+      agents = lib.mkOption {
+        type = lib.types.path;
+        description = "Source file for the Nix-managed workspace AGENTS.md bootstrap file.";
+      };
+      soul = lib.mkOption {
+        type = lib.types.path;
+        description = "Source file for the Nix-managed workspace SOUL.md bootstrap file.";
+      };
+      tools = lib.mkOption {
+        type = lib.types.path;
+        description = "Source file for the authored TOOLS.md content. nix-openclaw appends the generated Nix tool inventory.";
+      };
+      identity = lib.mkOption {
+        type = lib.types.path;
+        description = "Source file for the Nix-managed workspace IDENTITY.md bootstrap file.";
+      };
+      user = lib.mkOption {
+        type = lib.types.path;
+        description = "Source file for the Nix-managed workspace USER.md bootstrap file.";
+      };
+      heartbeat = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = "Optional source file for a Nix-managed workspace HEARTBEAT.md bootstrap file.";
+      };
+    };
+  };
   mkSkillOption = lib.types.submodule {
     options = {
       name = lib.mkOption {
@@ -133,6 +162,18 @@ in
         default = true;
         description = "Pin agents.defaults.workspace to each instance workspaceDir when unset (prevents falling back to template ~/.openclaw/workspace).";
       };
+
+      bootstrapFiles = lib.mkOption {
+        type = lib.types.nullOr bootstrapFilesOptionType;
+        default = null;
+        description = "Explicit Nix-managed OpenClaw workspace bootstrap files. These files are materialized into each workspace as AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, and optional HEARTBEAT.md, and are replaced on activation.";
+      };
+
+      files = lib.mkOption {
+        type = lib.types.attrsOf lib.types.path;
+        default = { };
+        description = "Extra Nix-managed workspace files. These are copied into each workspace but are not OpenClaw bootstrap files and are not injected automatically by upstream OpenClaw.";
+      };
     };
 
     runtimePackages = lib.mkOption {
@@ -150,7 +191,7 @@ in
     documents = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Path to a documents directory containing AGENTS.md, SOUL.md, and TOOLS.md.";
+      description = "Removed. Use programs.openclaw.workspace.bootstrapFiles and programs.openclaw.workspace.files.";
     };
 
     skills = lib.mkOption {

@@ -10,7 +10,9 @@ let
   cfg = openclawLib.cfg;
   resolvePath = openclawLib.resolvePath;
   toolSets = openclawLib.toolSets;
-  documentsEnabled = cfg.documents != null;
+  bootstrapFiles = cfg.workspace.bootstrapFiles;
+  bootstrapFilesEnabled = bootstrapFiles != null;
+  extraWorkspaceFiles = cfg.workspace.files or { };
   instanceWorkspaceDirs = map (inst: resolvePath inst.workspaceDir) (lib.attrValues enabledInstances);
 
   renderSkill =
@@ -94,50 +96,140 @@ let
 
   skillLoadDirsForInstance = instName: skillLoadDirsByInstance.${instName} or [ ];
 
-  documentsRequiredFiles = [
-    "AGENTS.md"
-    "SOUL.md"
-    "TOOLS.md"
-  ];
-
-  documentsOptionalFiles = [
-    "IDENTITY.md"
-    "USER.md"
-    "LORE.md"
-    "HEARTBEAT.md"
-    "PROMPTING-EXAMPLES.md"
-  ];
-
-  documentsFileNames =
-    if documentsEnabled then
-      let
-        extra = lib.filter (file: builtins.pathExists (cfg.documents + "/${file}")) documentsOptionalFiles;
-      in
-      documentsRequiredFiles ++ extra
+  bootstrapFileEntries =
+    if bootstrapFilesEnabled then
+      [
+        {
+          optionName = "agents";
+          targetName = "AGENTS.md";
+          source = bootstrapFiles.agents;
+        }
+        {
+          optionName = "soul";
+          targetName = "SOUL.md";
+          source = bootstrapFiles.soul;
+        }
+        {
+          optionName = "tools";
+          targetName = "TOOLS.md";
+          source = bootstrapFiles.tools;
+        }
+        {
+          optionName = "identity";
+          targetName = "IDENTITY.md";
+          source = bootstrapFiles.identity;
+        }
+        {
+          optionName = "user";
+          targetName = "USER.md";
+          source = bootstrapFiles.user;
+        }
+      ]
+      ++ lib.optional (bootstrapFiles.heartbeat != null) {
+        optionName = "heartbeat";
+        targetName = "HEARTBEAT.md";
+        source = bootstrapFiles.heartbeat;
+      }
     else
       [ ];
 
-  documentsAssertions = lib.optionals documentsEnabled [
-    {
-      assertion = builtins.pathExists cfg.documents;
-      message = "programs.openclaw.documents must point to an existing directory.";
-    }
-    {
-      assertion = builtins.pathExists (cfg.documents + "/AGENTS.md");
-      message = "Missing AGENTS.md in programs.openclaw.documents.";
-    }
-    {
-      assertion = builtins.pathExists (cfg.documents + "/SOUL.md");
-      message = "Missing SOUL.md in programs.openclaw.documents.";
-    }
-    {
-      assertion = builtins.pathExists (cfg.documents + "/TOOLS.md");
-      message = "Missing TOOLS.md in programs.openclaw.documents.";
-    }
+  upstreamBootstrapTargetNames = [
+    "AGENTS.md"
+    "SOUL.md"
+    "TOOLS.md"
+    "IDENTITY.md"
+    "USER.md"
+    "HEARTBEAT.md"
+    "BOOTSTRAP.md"
+    "MEMORY.md"
   ];
 
+  reservedWorkspaceTargetNames = upstreamBootstrapTargetNames ++ [
+    "memory"
+  ];
+
+  oldDocumentDirectoryEntries =
+    if cfg.documents != null && builtins.pathExists cfg.documents then
+      builtins.readDir cfg.documents
+    else
+      { };
+
+  oldDocumentFileNames = lib.attrNames (
+    lib.filterAttrs (_: kind: kind == "regular" || kind == "symlink") oldDocumentDirectoryEntries
+  );
+
+  oldDocumentExtraFileNames = lib.filter (
+    name: !(lib.elem name upstreamBootstrapTargetNames)
+  ) oldDocumentFileNames;
+
+  oldDocumentExtrasHint =
+    if oldDocumentExtraFileNames == [ ] then
+      " If the old directory contained files such as LORE.md or PROMPTING-EXAMPLES.md, declare each one under programs.openclaw.workspace.files."
+    else
+      " Move old non-bootstrap files into programs.openclaw.workspace.files to keep them Nix-managed: ${lib.concatStringsSep ", " oldDocumentExtraFileNames}.";
+
+  oldDocumentHeartbeatHint =
+    if lib.elem "HEARTBEAT.md" oldDocumentFileNames then
+      " Set programs.openclaw.workspace.bootstrapFiles.heartbeat if HEARTBEAT.md should remain Nix-managed."
+    else
+      " HEARTBEAT.md is managed only if programs.openclaw.workspace.bootstrapFiles.heartbeat is set.";
+
+  validWorkspaceFileName =
+    name:
+    name != ""
+    && name != "."
+    && !(lib.hasPrefix "/" name)
+    && !(lib.hasPrefix "./" name)
+    && !(lib.hasPrefix "../" name)
+    && !(lib.hasInfix "/../" name)
+    && !(lib.hasSuffix "/" name)
+    && !(lib.hasSuffix "/.." name)
+    && !(lib.hasInfix "\t" name)
+    && !(lib.hasInfix "\n" name)
+    && name != ".."
+    && lib.all (segment: segment != "" && segment != "." && segment != "..") (
+      lib.splitString "/" name
+    );
+
+  invalidWorkspaceFileNames = lib.filter (name: !(validWorkspaceFileName name)) (
+    lib.attrNames extraWorkspaceFiles
+  );
+
+  reservedWorkspacePath =
+    name:
+    lib.any (target: name == target || lib.hasPrefix "${target}/" name) reservedWorkspaceTargetNames;
+
+  reservedWorkspacePathCollisions = lib.filter reservedWorkspacePath (
+    lib.attrNames extraWorkspaceFiles
+  );
+
+  workspaceAssertions = [
+    {
+      assertion = cfg.documents == null;
+      message =
+        "programs.openclaw.documents was removed. Use programs.openclaw.workspace.bootstrapFiles = { agents = ./AGENTS.md; soul = ./SOUL.md; tools = ./TOOLS.md; identity = ./IDENTITY.md; user = ./USER.md; }; and programs.openclaw.workspace.files for non-bootstrap workspace files."
+        + oldDocumentExtrasHint
+        + " "
+        + oldDocumentHeartbeatHint;
+    }
+    {
+      assertion = invalidWorkspaceFileNames == [ ];
+      message = "programs.openclaw.workspace.files keys must be relative paths below the workspace without empty, '.', or '..' path segments, tabs, newlines, or trailing slash: ${lib.concatStringsSep ", " invalidWorkspaceFileNames}";
+    }
+    {
+      assertion = reservedWorkspacePathCollisions == [ ];
+      message = "programs.openclaw.workspace.files cannot manage reserved OpenClaw workspace paths. Use programs.openclaw.workspace.bootstrapFiles for declarative bootstrap files, and leave BOOTSTRAP.md, MEMORY.md, and memory/ runtime-owned: ${lib.concatStringsSep ", " reservedWorkspacePathCollisions}";
+    }
+  ]
+  ++ lib.optionals bootstrapFilesEnabled (
+    map (entry: {
+      assertion = builtins.pathExists entry.source;
+      message = "programs.openclaw.workspace.bootstrapFiles.${entry.optionName} must point to an existing file.";
+    }) bootstrapFileEntries
+  );
+
   toolsReport =
-    if documentsEnabled then
+    if bootstrapFilesEnabled then
       let
         renderPkgName = pkg: if pkg ? pname then pkg.pname else lib.getName pkg;
         renderPkgCommand =
@@ -222,33 +314,41 @@ let
       null;
 
   toolsWithReport =
-    if documentsEnabled then
+    if bootstrapFilesEnabled then
       pkgs.runCommand "openclaw-tools-with-report.md" { } ''
-        cat ${cfg.documents + "/TOOLS.md"} > $out
+        cat ${bootstrapFiles.tools} > $out
         echo "" >> $out
         cat ${toolsReport} >> $out
       ''
     else
       null;
 
-  documentEntries =
-    if documentsEnabled then
+  bootstrapEntries =
+    if bootstrapFilesEnabled then
       let
-        mkDocFiles =
+        mkBootstrapFiles =
           dir:
-          let
-            mkDoc = name: {
-              source = if name == "TOOLS.md" then toolsWithReport else cfg.documents + "/${name}";
-              target = dir + "/${name}";
-            };
-          in
-          map mkDoc documentsFileNames;
+          map (entry: {
+            source = if entry.targetName == "TOOLS.md" then toolsWithReport else entry.source;
+            target = dir + "/${entry.targetName}";
+          }) bootstrapFileEntries;
       in
-      lib.flatten (map mkDocFiles instanceWorkspaceDirs)
+      lib.flatten (map mkBootstrapFiles instanceWorkspaceDirs)
     else
       [ ];
 
-  materializedEntries = documentEntries;
+  workspaceFileEntries =
+    let
+      entriesForDir =
+        dir:
+        lib.mapAttrsToList (name: source: {
+          inherit source;
+          target = dir + "/${name}";
+        }) extraWorkspaceFiles;
+    in
+    lib.flatten (map entriesForDir instanceWorkspaceDirs);
+
+  materializedEntries = bootstrapEntries ++ workspaceFileEntries;
   materializedManifest =
     let
       renderEntry = entry: "${entry.source}\t${entry.target}";
@@ -260,8 +360,8 @@ let
 in
 {
   inherit
-    documentsEnabled
-    documentsAssertions
+    bootstrapFilesEnabled
+    workspaceAssertions
     materializedManifest
     materializedEntries
     duplicateSkillAssertion

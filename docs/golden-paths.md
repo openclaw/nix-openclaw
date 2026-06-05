@@ -59,10 +59,13 @@ You can check required permissions in `openclaw nodes status/describe` and then 
 
 Pinned / Nix-managed:
 - `openclaw.json` (gateway config)
-- documents (`AGENTS.md`, `SOUL.md`, `TOOLS.md`, etc.)
+- workspace bootstrap files (`AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, optional `HEARTBEAT.md`)
+- extra workspace files explicitly declared with `programs.openclaw.workspace.files`
 - workspace path selection
 
 Runtime:
 - sessions, caches
 - pairing state (devices/nodes)
 - exec approvals
+- first-run bootstrap state (`BOOTSTRAP.md`)
+- long-term memory (`MEMORY.md` and `memory/`)

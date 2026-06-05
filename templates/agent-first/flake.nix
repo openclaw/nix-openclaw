@@ -37,8 +37,13 @@
             programs.home-manager.enable = true;
 
             programs.openclaw = {
-              # REPLACE: path to your managed documents directory
-              documents = ./documents;
+              workspace.bootstrapFiles = {
+                agents = ./workspace/AGENTS.md;
+                soul = ./workspace/SOUL.md;
+                tools = ./workspace/TOOLS.md;
+                identity = ./workspace/IDENTITY.md;
+                user = ./workspace/USER.md;
+              };
 
               # Schema-typed OpenClaw config (from upstream)
               config = {

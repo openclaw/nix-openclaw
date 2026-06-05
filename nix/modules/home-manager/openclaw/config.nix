@@ -165,15 +165,34 @@ let
           };
         }
       ) runtimePluginConfig.config;
-      generatedLoadConfig =
-        generatedPluginConfig
-        // lib.optionalAttrs (nixSkillLoadDirs != [ ]) {
-          skills = {
-            load = {
-              extraDirs = lib.unique (nixSkillLoadDirs ++ existingSkillLoadDirs);
-            };
+      generatedSkillLoadConfig = lib.optionalAttrs (nixSkillLoadDirs != [ ]) {
+        skills = {
+          load = {
+            extraDirs = lib.unique (nixSkillLoadDirs ++ existingSkillLoadDirs);
           };
         };
+      };
+      generatedBootstrapConfig = lib.optionalAttrs files.bootstrapFilesEnabled {
+        agents = {
+          defaults = {
+            skipBootstrap = true;
+          };
+        };
+      };
+      generatedLoadConfig = lib.foldl' lib.recursiveUpdate { } [
+        generatedPluginConfig
+        generatedSkillLoadConfig
+        generatedBootstrapConfig
+      ];
+      userSkipBootstrap = (
+        ((mergedConfigWithoutLoadPaths.agents or { }).defaults or { }).skipBootstrap or null
+      );
+      bootstrapAssertions = lib.optionals (files.bootstrapFilesEnabled && userSkipBootstrap == false) [
+        {
+          assertion = false;
+          message = "programs.openclaw.workspace.bootstrapFiles requires agents.defaults.skipBootstrap to stay true. Remove programs.openclaw.config.agents.defaults.skipBootstrap = false; OpenClaw must not seed bootstrap files in Nix-managed workspaces.";
+        }
+      ];
       mergedConfig0 = lib.recursiveUpdate mergedConfigWithoutLoadPaths generatedLoadConfig;
       existingWorkspace = (((mergedConfig0.agents or { }).defaults or { }).workspace or null);
       mergedConfig =
@@ -354,7 +373,7 @@ let
       package = package;
       qmdEnabled = qmdEnabled;
       runtimePluginPackages = runtimePluginConfig.packages;
-      assertions = runtimePluginConfig.assertions;
+      assertions = runtimePluginConfig.assertions ++ bootstrapAssertions;
       launchdLabel =
         if pkgs.stdenv.hostPlatform.isDarwin && inst.launchd.enable then inst.launchd.label else null;
     };
@@ -399,7 +418,7 @@ in
         message = "OpenClaw config memory.backend = \"qmd\" requires a qmd package in openclawPackages.";
       }
     ]
-    ++ files.documentsAssertions
+    ++ files.workspaceAssertions
     ++ files.duplicateSkillAssertion
     ++ plugins.pluginAssertions
     ++ lib.flatten (map (item: item.assertions) instanceConfigs)

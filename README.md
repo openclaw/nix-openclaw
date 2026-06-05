@@ -195,10 +195,12 @@ What nix-openclaw is:
 
 What I need you to do:
 1. Inspect my OS, CPU architecture, shell, Home Manager setup, and whether Nix with flakes is installed
-2. Ask me only for missing choices: channel, bot/account secrets, allowed users, provider keys, and documents/identity preferences
+2. Ask me only for missing choices: channel, bot/account secrets, allowed users, provider keys, and workspace identity preferences
 3. Create a local flake at ~/code/openclaw-local using templates/agent-first/flake.nix
-4. Create a docs dir next to the config (e.g., ~/code/openclaw-local/documents) with AGENTS.md, SOUL.md, TOOLS.md (optional: IDENTITY.md, USER.md, LORE.md, HEARTBEAT.md, PROMPTING-EXAMPLES.md)
-   - If ~/.openclaw/workspace already has these files, adopt them into the documents dir first (use copy/rsync that dereferences symlinks, e.g. `cp -L`)
+4. Create explicit workspace bootstrap files next to the config (e.g., ~/code/openclaw-local/workspace): AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md
+   - Optional Nix-managed workspace files can live next to them, e.g. LORE.md or PROMPTING-EXAMPLES.md
+   - HEARTBEAT.md is managed only if you explicitly set `workspace.bootstrapFiles.heartbeat`
+   - If ~/.openclaw/workspace already has files you want to keep, adopt them into the flake first (use copy/rsync that dereferences symlinks, e.g. `cp -L`)
 5. Help me create or connect the channel account I choose
 6. Set up secrets (bot token, provider key) - plain files at ~/.secrets/ are fine unless I already have a secret manager
 7. Ask whether I want local memory through QMD; if yes, set `memory.backend = "qmd"` in OpenClaw config
@@ -224,8 +226,8 @@ reason to diverge.
 **What happens next:**
 1. Your agent sets everything up and runs `home-manager switch`
 2. You message your Telegram bot for the first time
-3. OpenClaw runs its **bootstrap ritual** - it asks you playful questions: *"Who am I? What am I? Who are you?"* - to learn its identity and yours
-4. Once you've named it and introduced yourself, the bootstrap is done. You're up and running.
+3. OpenClaw starts with the workspace context declared in your flake
+4. To change identity or operating context later, edit the source files and run Home Manager again
 
 <details>
 <summary><strong>Option 2: Manual setup</strong></summary>
@@ -241,8 +243,10 @@ reason to diverge.
 3. Edit `flake.nix` placeholders:
    - `system` = `aarch64-darwin`
    - `home.username` and `home.homeDirectory`
-   - `programs.openclaw.documents` with `AGENTS.md`, `SOUL.md`, `TOOLS.md` (optional: `IDENTITY.md`, `USER.md`, `LORE.md`, `HEARTBEAT.md`, `PROMPTING-EXAMPLES.md`)
-     - Keep this directory inside the flake, or make sure the Nix daemon can read it and traverse every parent directory.
+   - `programs.openclaw.workspace.bootstrapFiles` with explicit paths for `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md`
+     - Set `heartbeat = ./workspace/HEARTBEAT.md` only if you want Nix to manage `HEARTBEAT.md`
+     - Put non-bootstrap workspace files in `programs.openclaw.workspace.files`, e.g. `files."LORE.md" = ./workspace/LORE.md`
+     - Keep these files inside the flake, or make sure the Nix daemon can read them and traverse every parent directory.
    - Provider secrets (Telegram/Discord tokens, Anthropic API key)
 4. Apply:
    ```bash
@@ -264,8 +268,10 @@ reason to diverge.
 3. Edit `flake.nix` placeholders:
    - `system` = `x86_64-linux`
    - `home.username` and `home.homeDirectory` (e.g., `/home/<user>`)
-   - `programs.openclaw.documents` with `AGENTS.md`, `SOUL.md`, `TOOLS.md` (optional: `IDENTITY.md`, `USER.md`, `LORE.md`, `HEARTBEAT.md`, `PROMPTING-EXAMPLES.md`)
-     - Keep this directory inside the flake, or make sure the Nix daemon can read it and traverse every parent directory.
+   - `programs.openclaw.workspace.bootstrapFiles` with explicit paths for `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md`
+     - Set `heartbeat = ./workspace/HEARTBEAT.md` only if you want Nix to manage `HEARTBEAT.md`
+     - Put non-bootstrap workspace files in `programs.openclaw.workspace.files`, e.g. `files."LORE.md" = ./workspace/LORE.md`
+     - Keep these files inside the flake, or make sure the Nix daemon can read them and traverse every parent directory.
    - Provider secrets (Telegram/Discord tokens, Anthropic API key)
 4. Apply:
    ```bash
@@ -528,7 +534,13 @@ Deliverables: flake output, env overrides, AGENTS.md, skill update.
 
 > **Note:** You probably don't need to write this yourself. Your AI agent handles this when you use the [Quick Start](#quick-start) copypasta. These examples are here for reference.
 >
-> **Breaking change:** Nix now only emits config from `programs.openclaw.config` / `instances.<name>.config` (schema-typed). Legacy provider/routing/agent options are removed.
+> **Breaking change:** nix-openclaw no longer exposes provider/routing/agent shortcut options. Put OpenClaw runtime config under `programs.openclaw.config` / `instances.<name>.config`, using the upstream OpenClaw config shape.
+>
+> **Breaking change:** `programs.openclaw.documents` is removed. Use `programs.openclaw.workspace.bootstrapFiles` with explicit file paths for `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md`; use `programs.openclaw.workspace.files` for extra managed workspace files.
+> When migrating from `documents`, re-declare every old extra file you still want Nix-managed, e.g. `LORE.md`, `PROMPTING-EXAMPLES.md`, or private companion docs. Files not declared under `workspace.bootstrapFiles` or `workspace.files` intentionally stop being managed by nix-openclaw.
+> See [CHANGELOG.md](CHANGELOG.md) for all current breaking changes, before/after config, and file mapping.
+> When bootstrap files are configured, nix-openclaw forces `agents.defaults.skipBootstrap = true` so OpenClaw never seeds workspace bootstrap files from bundled templates.
+> `BOOTSTRAP.md` and `MEMORY.md` are runtime-owned, not managed by `workspace.files`.
 
 ### What OpenClaw needs (minimum)
 
@@ -633,7 +645,14 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
 ```nix
 {
   programs.openclaw = {
-    documents = ./documents;
+    workspace.bootstrapFiles = {
+      agents = ./workspace/AGENTS.md;
+      soul = ./workspace/SOUL.md;
+      tools = ./workspace/TOOLS.md;
+      identity = ./workspace/IDENTITY.md;
+      user = ./workspace/USER.md;
+    };
+
     config = {
       gateway = {
         mode = "local";
@@ -703,7 +722,16 @@ Use named instances when you need two local gateways. Keep the default package u
 
 ```nix
 programs.openclaw = {
-  documents = ./documents;
+  workspace = {
+    bootstrapFiles = {
+      agents = ./workspace/AGENTS.md;
+      soul = ./workspace/SOUL.md;
+      tools = ./workspace/TOOLS.md;
+      identity = ./workspace/IDENTITY.md;
+      user = ./workspace/USER.md;
+    };
+    files."LORE.md" = ./workspace/LORE.md;
+  };
 
   instances = {
     prod = {
