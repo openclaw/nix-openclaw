@@ -71,84 +71,201 @@ You talk to Telegram, your machine does things.
 
 ## OpenClaw Plugins vs nix-openclaw Plugins
 
-Most people asking about plugins mean **OpenClaw plugins**: JavaScript runtime plugins loaded by the OpenClaw gateway. Channel plugins such as Slack, Discord, Weixin, or WhatsApp are OpenClaw plugins.
+Most people asking about plugins mean **OpenClaw runtime plugins**: JavaScript
+plugin roots loaded by the OpenClaw gateway. Slack, Discord, Matrix, WhatsApp,
+Weixin, Codex, ACPX, and Memory LanceDB are OpenClaw runtime plugins.
 
-nix-openclaw supports OpenClaw catalog runtime plugins declaratively with `programs.openclaw.runtimePlugins` when the current catalog artifact can be packaged reproducibly. The upstream source form, such as npm or ClawHub, is maintainer packaging data. Users select the plugin id.
+In regular OpenClaw you install those with commands such as
+`openclaw plugins install @openclaw/slack` or
+`openclaw plugins install clawhub:@openclaw/whatsapp`. In nix-openclaw, put the
+catalog plugin id in Nix instead. The id must be present in the generated lock
+for the OpenClaw release you are using:
 
 ```nix
 programs.openclaw = {
   runtimePlugins = [ "slack" ];
 
-  # Runtime plugin config stays in upstream OpenClaw config.
+  # Plugin settings keep the same shape as upstream OpenClaw config.
   config.channels.slack.enabled = true;
 };
 ```
 
-This repo's plugin docs are about **nix-openclaw plugins**: Nix-managed tools and skills exposed through the `openclawPlugin` flake output. They are useful for tools such as `discrawl`, `summarize`, and `peekaboo`; they are not a way to install OpenClaw runtime plugins.
+Then rebuild your Nix/Home Manager config. Do not run
+`openclaw plugins install`; nix-openclaw writes immutable plugin load paths into
+OpenClaw config.
 
-| You want | What it is | Status |
-|----------|------------|--------|
-| Packageable OpenClaw catalog ids, for example Slack, Memory LanceDB, WhatsApp, Matrix, Tlon, Codex, or ACPX in the current generated lock | OpenClaw runtime plugin | Supported with `runtimePlugins` |
-| OpenClaw catalog ids whose current artifact fails reproducible packaging | OpenClaw runtime plugin | Not emitted in this generated lock; maintainers inspect the report and fix the packageability gap |
-| Install specs or source strings such as `npm:...`, `clawhub:...`, git, local paths, or marketplace entries | OpenClaw runtime plugin | Not accepted in `runtimePlugins` |
-| `discrawl`, `summarize`, `peekaboo`, other bundled tools | nix-openclaw plugin | Supported |
-| A pinned CLI repo with skills | custom nix-openclaw plugin | Supported, advanced |
+**nix-openclaw plugins** are different. They are Nix flake bundles of CLI tools
+and skills, such as `discrawl`, `summarize`, and `peekaboo`. Use
+`bundledPlugins` or `customPlugins` for those. Do not use `customPlugins` to
+install OpenClaw runtime plugins from npm or ClawHub.
 
-### Installing OpenClaw runtime plugins
+### Runtime Plugin Examples
 
-Use `runtimePlugins` for supported OpenClaw runtime plugins:
+Use the upstream plugin id, not the npm or ClawHub source string.
+
+To inspect the generated ids in this repo:
+
+```bash
+jq -r '.supported[].id' nix/generated/openclaw-runtime-plugins/report.json
+```
+
+#### Bundled In The Gateway
+
+Some runtime plugins already ship inside the OpenClaw package.
+
+Regular OpenClaw:
+
+```bash
+openclaw plugins enable workboard
+```
+
+nix-openclaw:
+
+```nix
+programs.openclaw.config.plugins.entries.workboard.enabled = true;
+```
+
+No `runtimePlugins` entry is needed because there is no external plugin root to
+package.
+
+#### Official npm Catalog Plugin With Bundled Dependencies
+
+Regular OpenClaw:
+
+```bash
+openclaw plugins install @openclaw/slack
+openclaw channels add --channel slack
+```
+
+nix-openclaw:
 
 ```nix
 programs.openclaw = {
-  runtimePlugins = [
-    "slack"
-  ];
+  runtimePlugins = [ "slack" ];
 
   config.channels.slack = {
     enabled = true;
-    appToken.source = "env";
-    appToken.provider = "env";
-    appToken.id = "SLACK_APP_TOKEN";
-    botToken.source = "env";
-    botToken.provider = "env";
-    botToken.id = "SLACK_BOT_TOKEN";
+    # Add the normal upstream Slack channel settings here.
   };
 };
 ```
 
-Then rebuild your Nix/Home Manager config. Do not run `openclaw plugins install`; nix-openclaw renders the plugin load path into OpenClaw config.
+Slack and Discord are npm artifacts whose runtime dependencies are bundled in
+`node_modules`, so nix-openclaw packages them without an `npmDepsHash`. The
+current generated lock supports both.
 
-`runtimePlugins` only selects and packages supported plugin ids. Runtime settings stay in `programs.openclaw.config`, using the upstream OpenClaw config shape for that plugin. Do not use `customPlugins.source = "npm:..."`; nix-openclaw rejects that path because it would reintroduce mutable package installation.
+#### Catalog Plugin With No npm Dependencies
 
-Maintainers can inspect `nix/generated/openclaw-runtime-plugins/report.json` to see generated support status and skipped-catalog diagnostics. Supported ids may come from dependency-free package roots, bundled package roots, or shrinkwrapped package roots; that distinction is maintainer packaging data, not user config.
+Regular OpenClaw:
 
-The intended support contract for catalog runtime plugins is simple: if upstream points at a fixed artifact and nix-openclaw can prove the package root is reproducible, the id should be available through `runtimePlugins`. A package with runtime dependencies satisfies that rule when it either bundles those dependencies or ships a package-local `npm-shrinkwrap.json` that Nix can replay offline. If a shrinkwrapped catalog artifact is skipped, that is a materialization bug or packaging limitation to chase down, not a different user-facing plugin class.
+```bash
+openclaw plugins install @openclaw/brave-plugin
+```
 
-### Regular OpenClaw installs vs nix-openclaw
+nix-openclaw:
 
-Regular OpenClaw installs plugins by running `openclaw plugins install ...`.
-That command writes install records, may create a managed npm project, may call
-ClawHub or npm, and may restart the Gateway. nix-openclaw runs OpenClaw in Nix
-mode, where those lifecycle mutators are disabled. Put the desired state in Nix
-instead.
+```nix
+programs.openclaw.runtimePlugins = [ "brave" ];
+```
 
-| What you would do in regular OpenClaw | What that means upstream | What to do in nix-openclaw |
-| --- | --- | --- |
-| `openclaw plugins enable workboard` | Enable a plugin already bundled in the OpenClaw package. | Set upstream config directly, for example `programs.openclaw.config.plugins.entries.workboard.enabled = true;`. No `runtimePlugins` entry is needed for plugins already shipped inside the packaged gateway. |
-| `openclaw plugins install @openclaw/slack` | Install the official Slack catalog plugin. Upstream chooses the right bundled, npm, or catalog path for the current release. | Use `programs.openclaw.runtimePlugins = [ "slack" ];`, then put Slack runtime settings under `programs.openclaw.config.channels.slack`. |
-| `openclaw plugins install npm:@openclaw/memory-lancedb` | Install an npm package whose runtime dependencies are resolved at install time. | Use `programs.openclaw.runtimePlugins = [ "memory-lancedb" ];`. This build packages it from its shrinkwrap and generated `npmDepsHash`. |
-| `openclaw plugins install clawhub:@openclaw/whatsapp` | Resolve a ClawHub package to an npm-pack artifact, verify ClawHub/npm metadata, then install it. | Use `programs.openclaw.runtimePlugins = [ "whatsapp" ];`. The current generated lock also supports `matrix` through the same ClawHub npm-pack path. |
-| `openclaw plugins install npm:@scope/plugin@1.2.3` | Install an arbitrary npm runtime plugin into a mutable per-plugin npm project. | Not a `runtimePlugins` string. To make this declarative, nix-openclaw would need a locked source record with artifact URL/hash and dependency hash, then the same packageability checks used for catalog plugins. |
-| `openclaw plugins install npm-pack:./plugin.tgz` | Install a local npm-pack tarball through npm install semantics. | Not a plain local-path install during activation. Maintainers can package catalog or future locked-source artifacts that resolve to npm-pack tarballs when the artifact hash and dependency graph are fixed. |
-| `openclaw plugins install git:github.com/owner/repo@ref` | Clone a repo and install the plugin root, recording the resolved commit. | Not accepted as a raw source string. A declarative version would need a fixed revision, Nix source hash, and the same plugin-root validation before it can become a store path. |
-| `openclaw plugins install --link ./my-plugin` | Link a local development checkout and let OpenClaw load it. | Not part of the reproducible path. Advanced users can set raw `programs.openclaw.config.plugins.load.paths` only when they are not using `runtimePlugins`, and then they own the plugin root and dependencies themselves. |
-| `openclaw plugins install <plugin> --marketplace <source>` | Install a compatible bundle from a Claude marketplace source. | Not `runtimePlugins` unless it is first converted into a fixed, reproducible runtime plugin artifact. nix-openclaw `customPlugins` is for Nix flake tool/skill bundles, not OpenClaw runtime plugin marketplace installs. |
+Brave has no runtime npm dependency graph to materialize, so the Nix build only
+has to fetch and validate the fixed package root.
 
-The rule is deliberately simple: if nix-openclaw has a generated lock for the
-OpenClaw catalog id, use `runtimePlugins = [ "id" ];`. If it does not, the
-regular OpenClaw install command is not something Home Manager should emulate at
-activation time. The missing lock means the current artifact was not proven
-reproducible yet, not that users should learn a second Nix plugin API.
+#### Catalog Plugin With npm Dependencies
+
+Regular OpenClaw:
+
+```bash
+openclaw plugins install npm:@openclaw/memory-lancedb
+```
+
+nix-openclaw:
+
+```nix
+programs.openclaw.runtimePlugins = [ "memory-lancedb" ];
+```
+
+Memory LanceDB ships an `npm-shrinkwrap.json`, so nix-openclaw can prefetch and
+replay its dependency graph during the Nix build. Users still only select the
+plugin id.
+
+#### ClawHub Catalog Plugin
+
+Regular OpenClaw:
+
+```bash
+openclaw plugins install clawhub:@openclaw/whatsapp
+openclaw channels add --channel whatsapp
+```
+
+nix-openclaw:
+
+```nix
+programs.openclaw = {
+  runtimePlugins = [ "whatsapp" ];
+
+  config.channels.whatsapp = {
+    enabled = true;
+    # Add the normal upstream WhatsApp channel settings here.
+  };
+};
+```
+
+The current generated lock supports WhatsApp and Matrix through ClawHub. The
+lock generator resolves ClawHub to a fixed npm-pack tarball first, then builds
+that tarball like any other packageable runtime plugin root.
+
+#### Codex And ACPX
+
+Codex and ACPX can be confusing because OpenClaw releases may also contain
+bundled gateway-side support for them. nix-openclaw also packages the external
+catalog runtime plugin roots when they are present in the generated lock:
+
+```nix
+programs.openclaw.runtimePlugins = [
+  "codex"
+  "acpx"
+];
+```
+
+If a future OpenClaw release already includes the behavior you need inside the
+gateway, you may not need to select the external catalog roots. If you do select
+them, nix-openclaw treats them like the other generated runtime plugin ids.
+
+#### A Catalog Plugin That Does Not Package Yet
+
+Regular OpenClaw can install packages whose dependencies are resolved by npm at
+install time:
+
+```bash
+openclaw plugins install @tencent-weixin/openclaw-weixin
+```
+
+nix-openclaw cannot turn that mutable install into a reproducible build unless
+the published artifact contains everything needed to build offline. The current
+Weixin, Yuanbao, and WeCom catalog packages declare runtime dependencies but do
+not publish `npm-shrinkwrap.json` or bundled `node_modules`, so they need an
+upstream publish fix first.
+
+When upstream publishes one of those packages with shrinkwrap or bundled
+runtime dependencies, the user config should become the same simple shape:
+
+```nix
+programs.openclaw.runtimePlugins = [ "openclaw-weixin" ];
+```
+
+No new Nix user API should be needed.
+
+#### Arbitrary Third-Party Sources
+
+Regular OpenClaw also accepts arbitrary npm, git, local, archive, and
+marketplace install specs. nix-openclaw does not accept those raw strings in
+`runtimePlugins` because they would make Home Manager activation behave like a
+package-manager install.
+
+A future declarative source API would need fixed source hashes and dependency
+hashes, like other Nix package definitions. The current supported path is the
+generated OpenClaw catalog id list.
 
 ---
 

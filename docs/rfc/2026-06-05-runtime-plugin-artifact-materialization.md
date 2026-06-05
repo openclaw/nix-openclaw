@@ -31,6 +31,17 @@ programs.openclaw.runtimePlugins = [
 archive, or dependency-mode choices. Source-specific resolution is maintainer
 machinery behind generated locks.
 
+Concrete cases:
+
+| Regular OpenClaw command | nix-openclaw user config | Maintainer packaging path |
+| --- | --- | --- |
+| `openclaw plugins enable workboard` | `programs.openclaw.config.plugins.entries.workboard.enabled = true;` | Already inside the packaged gateway; no generated external root. |
+| `openclaw plugins install @openclaw/brave-plugin` | `programs.openclaw.runtimePlugins = [ "brave" ];` | Fixed npm package root with no runtime dependencies. |
+| `openclaw plugins install @openclaw/slack` | `programs.openclaw.runtimePlugins = [ "slack" ];` | Fixed npm package root with bundled `node_modules`. |
+| `openclaw plugins install npm:@openclaw/memory-lancedb` | `programs.openclaw.runtimePlugins = [ "memory-lancedb" ];` | Fixed npm package root with `npm-shrinkwrap.json` and generated `npmDepsHash`. |
+| `openclaw plugins install clawhub:@openclaw/whatsapp` | `programs.openclaw.runtimePlugins = [ "whatsapp" ];` | ClawHub resolves to a fixed npm-pack tarball, then uses the same shrinkwrap path. |
+| `openclaw plugins install @tencent-weixin/openclaw-weixin` | No `runtimePlugins` id in the current generated lock. | Upstream must publish shrinkwrap or bundled runtime dependencies before this contract can package it. |
+
 For a later arbitrary-source API, require locked source definitions rather than
 mutable install specs. A source spec such as `npm:@scope/plugin@1.2.3` or
 `clawhub:@openclaw/whatsapp@2026.6.1` must be resolved by a maintainer/user

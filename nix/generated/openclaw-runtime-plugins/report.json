@@ -568,7 +568,7 @@
       "expectedIntegrity": "sha512-lH2I9/nsmrg7l0YJJSQhOSpWMEFBAa6FwKbZcRLDFHDT2+mOZkHa44XE+8KYN4VmorlUdAxHzpZQmVr7C98IuA==",
       "status": "skipped",
       "reason": "runtime-dependencies-without-shrinkwrap",
-      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json or bundled node_modules"
     },
     {
       "id": "openclaw-weixin",
@@ -584,7 +584,7 @@
       "expectedIntegrity": "sha512-dPQbidUNWigC6V10vGW4i+GLH09x+6zUhafZRjuxkJ9GDu8o62WBsnUTojp4KqUH756hz+t2v9khiCRSi0dBDw==",
       "status": "skipped",
       "reason": "runtime-dependencies-without-shrinkwrap",
-      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json or bundled node_modules"
     },
     {
       "id": "wecom-openclaw-plugin",
@@ -599,7 +599,7 @@
       "expectedIntegrity": "sha512-TCkP9as00WfEhgFWG8YL/rcmaWGIshAki2HQh83nTRccGfVBCoGjrEboTTqq3yDmK9koWTV11zi8u8A4dNtvug==",
       "status": "skipped",
       "reason": "runtime-dependencies-without-shrinkwrap",
-      "detail": "package has runtime dependencies but no npm-shrinkwrap.json"
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json or bundled node_modules"
     },
     {
       "id": "pixverse",

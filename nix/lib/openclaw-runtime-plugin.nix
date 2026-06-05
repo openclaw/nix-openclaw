@@ -18,7 +18,7 @@ let
   runtimeEntriesFile = builtins.toFile "openclaw-runtime-plugin-${lock.id}-runtime-entries" (
     (lib.concatStringsSep "\n" runtimeEntries) + "\n"
   );
-  shrinkwrapPathsFile = builtins.toFile "openclaw-runtime-plugin-${lock.id}-shrinkwrap-paths" (
+  bundledPackageRootsFile = builtins.toFile "openclaw-runtime-plugin-${lock.id}-bundled-package-roots" (
     (lib.concatStringsSep "\n" (lock.bundledPackageRoots or [ ])) + "\n"
   );
   npmHooksForNode = npmHooks.override { nodejs = nodejs_22; };
@@ -70,7 +70,7 @@ let
       OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName;
       OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version;
       OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_FILE = runtimeEntriesFile;
-      OPENCLAW_RUNTIME_PLUGIN_SHRINKWRAP_PATHS_FILE = shrinkwrapPathsFile;
+      OPENCLAW_RUNTIME_PLUGIN_BUNDLED_PACKAGE_ROOTS_FILE = bundledPackageRootsFile;
       OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES = if hasRuntimeDependencies then "1" else "0";
       OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
     }

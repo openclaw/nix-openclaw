@@ -93,10 +93,11 @@ function removeNodeModulesBinDirs(nodeModulesDir) {
 
 function packageRootForName(packageName) {
   if (packageName.startsWith("@")) {
-    const [scope, name] = packageName.split("/");
-    if (!scope || !name) {
+    const parts = packageName.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
       fail(`invalid scoped package name ${packageName}`);
     }
+    const [scope, name] = parts;
     return `node_modules/${scope}/${name}`;
   }
   if (!packageName || packageName.includes("/")) {
@@ -146,7 +147,7 @@ const expectedVersion = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_VERSION");
 const expectedCompat = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_COMPAT");
 const expectedPeer = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW");
 const runtimeEntriesFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_FILE");
-const shrinkwrapPathsFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_SHRINKWRAP_PATHS_FILE");
+const bundledPackageRootsFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_BUNDLED_PACKAGE_ROOTS_FILE");
 const hasRuntimeDependencies = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES") === "1";
 const dependencyMode =
   process.env.OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE ?? (hasRuntimeDependencies ? "bundled" : "none");
@@ -205,7 +206,7 @@ for (const runtimeEntry of runtimeEntries) {
 
 const expectedPackageRoots = new Set(
   fs
-    .readFileSync(shrinkwrapPathsFile, "utf8")
+    .readFileSync(bundledPackageRootsFile, "utf8")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && line !== ""),
@@ -213,9 +214,6 @@ const expectedPackageRoots = new Set(
 const actualPackageRoots = new Set(collectPackageRoots(path.join(out, "node_modules")));
 
 if (hasRuntimeDependencies) {
-  if (!fs.existsSync(path.join(out, "npm-shrinkwrap.json"))) {
-    fail(`runtime plugin ${expectedId} has runtime dependencies but no npm-shrinkwrap.json`);
-  }
   if (dependencyMode === "bundled") {
     for (const expectedRoot of expectedPackageRoots) {
       if (!actualPackageRoots.has(expectedRoot)) {
@@ -228,12 +226,17 @@ if (hasRuntimeDependencies) {
       }
     }
   } else if (dependencyMode === "shrinkwrap") {
+    if (!fs.existsSync(path.join(out, "npm-shrinkwrap.json"))) {
+      fail(`runtime plugin ${expectedId} has runtime dependencies but no npm-shrinkwrap.json`);
+    }
     for (const dependencyName of Object.keys(packageJson.dependencies ?? {}).sort()) {
       const dependencyRoot = packageRootForName(dependencyName);
       if (!actualPackageRoots.has(dependencyRoot)) {
         fail(`runtime plugin ${expectedId} is missing materialized dependency root ${dependencyRoot}`);
       }
     }
+    // Optional dependencies may be omitted by npm for the current platform.
+    // The generator still requires shrinkwrap whenever optional deps exist.
   } else {
     fail(`runtime plugin ${expectedId} has invalid dependency mode ${dependencyMode}`);
   }

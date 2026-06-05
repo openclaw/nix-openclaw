@@ -26,18 +26,31 @@ Regular OpenClaw has one mutable lifecycle command, `openclaw plugins install`, 
 | Regular OpenClaw command | Upstream behavior | nix-openclaw behavior |
 | --- | --- | --- |
 | `openclaw plugins enable workboard` | Enables a plugin that already ships inside the OpenClaw package. | Set the upstream config entry directly, for example `programs.openclaw.config.plugins.entries.workboard.enabled = true;`. |
+| `openclaw plugins install @openclaw/brave-plugin` | Installs an official catalog plugin with no runtime npm dependencies. | If the generated lock contains `brave`, users write `programs.openclaw.runtimePlugins = [ "brave" ];`. |
 | `openclaw plugins install @openclaw/slack` | Installs an official catalog plugin. Upstream may use a bundled source, npm, or official catalog metadata. | If generated support exists, users write `programs.openclaw.runtimePlugins = [ "slack" ];`. |
 | `openclaw plugins install npm:@openclaw/memory-lancedb` | Installs an npm package and resolves dependencies during install. | The generator writes `dependencyMode = "shrinkwrap"` and `npmDepsHash`; users still write only `runtimePlugins = [ "memory-lancedb" ];`. |
 | `openclaw plugins install clawhub:@openclaw/whatsapp` | Resolves ClawHub metadata, verifies the artifact, then installs the package root. | The generator resolves ClawHub at update time and feeds the fixed artifact through the same packageability rule. The current OpenClaw 2026.6.1 lock supports WhatsApp and Matrix this way. |
+| `openclaw plugins install @tencent-weixin/openclaw-weixin` | Installs a package whose current artifact lets npm solve dependencies at install time. | No `runtimePlugins` id until upstream publishes `npm-shrinkwrap.json` or bundled `node_modules`, then maintainers regenerate the lock. |
 | `openclaw plugins install npm:@scope/plugin@1.2.3` | Installs an arbitrary npm package into a mutable per-plugin npm project. | Not a raw public API input. A declarative version needs a locked source record with artifact hash and dependency hash, then the same packageability checks. |
 | `openclaw plugins install npm-pack:./plugin.tgz` | Installs a local npm-pack tarball through npm install semantics. | Supported only as maintainer machinery when a catalog or ClawHub resolver produces a fixed artifact. There is no user-facing local tarball runtime-plugin option. |
 | `openclaw plugins install git:github.com/owner/repo@ref` | Clones a repo, checks out the ref, installs the plugin root, and records source metadata. | Not accepted as a raw source string. A declarative version needs a fixed revision, Nix source hash, and plugin-root validation. |
 | `openclaw plugins install --link ./my-plugin` | Links a local development checkout into OpenClaw's plugin roots. | Not reproducible. A raw `programs.openclaw.config.plugins.load.paths` escape hatch is user-owned and cannot be mixed with `runtimePlugins`. |
 | `openclaw plugins install <plugin> --marketplace <source>` | Installs a compatible bundle from a Claude marketplace source. | Not `runtimePlugins` unless it is first converted into a fixed runtime plugin artifact. `customPlugins` remains the Nix flake tool/skill bundle surface, not a marketplace installer. |
 
-The maintainer rule is: first resolve upstream source details into a package root with fixed identity, then decide whether that root is Nix-packageable. If it is packageable, expose only the catalog id. If it is not packageable, leave it out of the generated lock and keep the diagnostic in `nix/generated/openclaw-runtime-plugins/report.json`. Do not treat report skip reasons as user-facing product categories.
+The maintainer rule is: first resolve upstream source details into a package root with fixed identity, then decide whether that root is Nix-packageable. If it is packageable, expose only the catalog id. If it is not packageable, leave it out of the generated lock and keep the diagnostic in `nix/generated/openclaw-runtime-plugins/report.json`. Do not turn report skip reasons into user-facing product categories.
 
-For OpenClaw 2026.6.1 the generated lock supports 34 catalog rows: dependency-free roots, bundled `node_modules` roots, and seven shrinkwrapped roots (`acpx`, `codex`, `copilot`, `matrix`, `memory-lancedb`, `tlon`, `whatsapp`). No current OpenClaw-owned shrinkwrapped catalog artifact is left out of the lock. The remaining maintainer diagnostics are concrete packageability issues: Weixin, Yuanbao, and WeCom publish runtime dependencies without `npm-shrinkwrap.json` or bundled `node_modules`, so those packages need an upstream publish fix before they fit this contract; PixVerse has a duplicate catalog row after the first row is already emitted.
+For OpenClaw 2026.6.1 the generated lock supports 34 catalog rows:
+dependency-free roots, bundled `node_modules` roots, and seven shrinkwrapped
+roots (`acpx`, `codex`, `copilot`, `matrix`, `memory-lancedb`, `tlon`,
+`whatsapp`). No current shrinkwrapped catalog artifact is left out of the lock.
+
+The remaining real skipped rows are Weixin, Yuanbao, and WeCom. Their current
+published artifacts declare runtime dependencies but contain neither
+`npm-shrinkwrap.json` nor bundled `node_modules`. The user-facing consequence is
+simple: those ids are not available through `runtimePlugins` in this generated
+lock. The fix is upstream publishing shrinkwrap or bundled runtime dependencies,
+then regenerating nix-openclaw's lock. PixVerse is only a duplicate catalog row
+after the first row is already emitted.
 
 ## Interface Contract
 Every nix-openclaw plugin exposes the same fields through the `openclawPlugin` flake output:

@@ -96,6 +96,23 @@ function fetchJson(url) {
   });
 }
 
+async function fetchJsonWithRetries(url, options = {}) {
+  const attempts = options.attempts ?? 3;
+  const retryDelayMs = options.retryDelayMs ?? 1000;
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchJson(url);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        sleepMs(retryDelayMs * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 function readSourceField(field) {
   const sourceInfo = fs.readFileSync(sourceInfoPath, "utf8");
   const match = sourceInfo.match(new RegExp(`${field} = "([^"]+)";`));
@@ -408,29 +425,6 @@ function attrNameForId(id) {
   return attrName.replace(/^[0-9]/, "_$&");
 }
 
-function shrinkwrapSummary(shrinkwrap) {
-  const packages = shrinkwrap?.packages ?? {};
-  return Object.fromEntries(
-    Object.entries(packages)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([packagePath, entry]) => [
-        packagePath,
-        pickDefined({
-          name: entry.name,
-          version: entry.version,
-          resolved: entry.resolved,
-          integrity: entry.integrity,
-          optional: entry.optional === true ? true : undefined,
-          dev: entry.dev === true ? true : undefined,
-          hasInstallScript: entry.hasInstallScript === true ? true : undefined,
-          bin: entry.bin,
-          os: entry.os,
-          cpu: entry.cpu,
-        }),
-      ]),
-  );
-}
-
 function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
   if (!fs.existsSync(nodeModulesDir)) {
     return [];
@@ -444,7 +438,7 @@ function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
 
     const entryPath = path.join(nodeModulesDir, entry);
     const entryRel = `${baseRel}/${entry}`;
-    if (!fs.statSync(entryPath).isDirectory()) {
+    if (!fs.lstatSync(entryPath).isDirectory()) {
       continue;
     }
 
@@ -452,7 +446,7 @@ function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
       for (const scopedName of fs.readdirSync(entryPath).sort()) {
         const scopedPath = path.join(entryPath, scopedName);
         const scopedRel = `${entryRel}/${scopedName}`;
-        if (fs.statSync(scopedPath).isDirectory()) {
+        if (fs.lstatSync(scopedPath).isDirectory()) {
           roots.push(scopedRel);
           roots.push(...collectPackageRoots(path.join(scopedPath, "node_modules"), `${scopedRel}/node_modules`));
         }
@@ -464,6 +458,32 @@ function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
   }
 
   return roots;
+}
+
+function packageRootForName(packageName) {
+  if (packageName.startsWith("@")) {
+    const parts = packageName.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      throw new Error(`invalid scoped package name ${packageName}`);
+    }
+    const [scope, name] = parts;
+    return `node_modules/${scope}/${name}`;
+  }
+  if (!packageName || packageName.includes("/")) {
+    throw new Error(`invalid package name ${packageName}`);
+  }
+  return `node_modules/${packageName}`;
+}
+
+function declaredDependencyRoots(dependencies = {}, optionalDependencies = {}) {
+  return [
+    ...new Set(
+      [
+        ...Object.keys(dependencies),
+        ...Object.keys(optionalDependencies),
+      ].map((dependencyName) => packageRootForName(dependencyName)),
+    ),
+  ].sort();
 }
 
 function listManifestStringField(value, fieldName) {
@@ -848,7 +868,7 @@ function readCatalogRows(openclawSourcePath) {
 }
 
 async function resolveNpmArtifact(row, npmPackage) {
-  const packageMetadata = await fetchJson(npmRegistryUrl(npmPackage.packageName));
+  const packageMetadata = await fetchJsonWithRetries(npmRegistryUrl(npmPackage.packageName));
   const versionMetadata = packageMetadata.versions?.[npmPackage.version];
   if (!versionMetadata) {
     return {
@@ -903,7 +923,7 @@ async function resolveNpmArtifact(row, npmPackage) {
 }
 
 async function resolveClawHubArtifact(row, clawhubPackage) {
-  const payload = await fetchJson(clawHubArtifactUrl(clawhubPackage.packageName, clawhubPackage.version));
+  const payload = await fetchJsonWithRetries(clawHubArtifactUrl(clawhubPackage.packageName, clawhubPackage.version));
   const artifactMetadata = payload.artifact ?? payload.version?.artifact ?? payload.packageVersion?.artifact;
   if (!isRecord(artifactMetadata)) {
     return {
@@ -984,7 +1004,18 @@ async function resolveClawHubArtifact(row, clawhubPackage) {
   };
 }
 
-function dependencyModeForArtifact(row, artifact, packageRoot, hasRuntimeDependencies, bundledPackageRoots, shrinkwrap) {
+function dependencyModeForArtifact(
+  row,
+  artifact,
+  packageRoot,
+  dependencies,
+  optionalDependencies,
+  bundledPackageRoots,
+  shrinkwrap,
+) {
+  const hasRuntimeDependencies =
+    Object.keys(dependencies).length > 0 || Object.keys(optionalDependencies).length > 0;
+
   if (!hasRuntimeDependencies && bundledPackageRoots.length > 0) {
     return {
       skipped: skip(
@@ -998,18 +1029,30 @@ function dependencyModeForArtifact(row, artifact, packageRoot, hasRuntimeDepende
     return { dependencyMode: "none", npmDepsHash: undefined };
   }
 
+  if (bundledPackageRoots.length > 0) {
+    const bundledRootSet = new Set(bundledPackageRoots);
+    const missingBundledRoots = declaredDependencyRoots(dependencies, optionalDependencies)
+      .filter((dependencyRoot) => !bundledRootSet.has(dependencyRoot));
+    if (missingBundledRoots.length > 0) {
+      return {
+        skipped: skip(
+          row,
+          "partial-bundled-runtime-dependencies",
+          `declared dependency roots missing from bundled node_modules: ${missingBundledRoots.join(", ")}`,
+        ),
+      };
+    }
+    return { dependencyMode: "bundled", npmDepsHash: undefined };
+  }
+
   if (!shrinkwrap) {
     return {
       skipped: skip(
         row,
         "runtime-dependencies-without-shrinkwrap",
-        "package has runtime dependencies but no npm-shrinkwrap.json",
+        "package has runtime dependencies but no npm-shrinkwrap.json or bundled node_modules",
       ),
     };
-  }
-
-  if (bundledPackageRoots.length > 0) {
-    return { dependencyMode: "bundled", npmDepsHash: undefined };
   }
 
   const shrinkwrapPath = path.join(packageRoot, "npm-shrinkwrap.json");
@@ -1067,7 +1110,7 @@ async function buildArtifactLock(row, artifact) {
     const shrinkwrap = fs.existsSync(shrinkwrapPath)
       ? JSON.parse(fs.readFileSync(shrinkwrapPath, "utf8"))
       : null;
-    const shrinkwrapPackages = shrinkwrapSummary(shrinkwrap);
+    const shrinkwrapPackagePaths = new Set(Object.keys(shrinkwrap?.packages ?? {}));
     const bundledPackageRoots = collectPackageRoots(path.join(packageRoot, "node_modules"));
 
     if (packageJson.name !== artifact.packageName) {
@@ -1102,30 +1145,31 @@ async function buildArtifactLock(row, artifact) {
       return { skipped: skip(row, "missing-runtime-entry", error.message) };
     }
 
-    for (const bundledRoot of bundledPackageRoots) {
-      if (!shrinkwrapPackages[bundledRoot]) {
-        return {
-          skipped: skip(
-            row,
-            "bundled-dependency-missing-from-shrinkwrap",
-            `bundled dependency ${bundledRoot} is not in npm-shrinkwrap.json`,
-          ),
-        };
-      }
-    }
-
     const dependencies = sortedObject(packageJson.dependencies ?? artifact.versionMetadata?.dependencies ?? {});
     const optionalDependencies = sortedObject(
       packageJson.optionalDependencies ?? artifact.versionMetadata?.optionalDependencies ?? {},
     );
-    const hasRuntimeDependencies =
-      Object.keys(dependencies).length > 0 || Object.keys(optionalDependencies).length > 0;
+
+    if (shrinkwrap) {
+      for (const bundledRoot of bundledPackageRoots) {
+        if (!shrinkwrapPackagePaths.has(bundledRoot)) {
+          return {
+            skipped: skip(
+              row,
+              "bundled-dependency-missing-from-shrinkwrap",
+              `bundled dependency ${bundledRoot} is not in npm-shrinkwrap.json`,
+            ),
+          };
+        }
+      }
+    }
 
     const dependencyResult = dependencyModeForArtifact(
       row,
       artifact,
       packageRoot,
-      hasRuntimeDependencies,
+      dependencies,
+      optionalDependencies,
       bundledPackageRoots,
       shrinkwrap,
     );
