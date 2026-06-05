@@ -186,9 +186,7 @@ jobs:
         if: steps.materialize.outcome == 'success'
         continue-on-error: true
         timeout-minutes: 25
-        run: |
-          nix build --accept-flake-config .#openclaw-gateway
-          nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
+        run: nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
 
       - name: Run HM activation
         id: hm
@@ -307,7 +305,6 @@ jobs:
 
           Tests:
           - nix build .#checks.x86_64-linux.ci --accept-flake-config
-          - nix build --accept-flake-config .#openclaw-gateway
           - nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
           - scripts/hm-activation-macos.sh
           EOF

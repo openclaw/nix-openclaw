@@ -133,6 +133,12 @@
                 requireAgentWorkspaceTemplates = false;
               };
             };
+            runtimePluginChecks = {
+              runtime-plugin-packages = pkgs.symlinkJoin {
+                name = "openclaw-runtime-plugin-packages";
+                paths = builtins.attrValues packageSetStable.openclawRuntimePlugins;
+              };
+            };
             linuxOnlyChecks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
               hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
                 inherit pkgs home-manager;
@@ -140,18 +146,19 @@
             };
           in
           stableChecks
+          // runtimePluginChecks
           // dogfoodChecks
           // linuxOnlyChecks
           // {
-            # CI aggregator: build the default npm gateway once, then run the
-            # Nix-owned package/runtime checks in one machine/store.
+            # CI aggregator: prove the default package/config/apply path without
+            # rebuilding every generated runtime plugin package on every push.
+            # Exhaustive runtime plugin package builds remain available as the
+            # explicit runtime-plugin-packages check.
             ci = pkgs.symlinkJoin {
               name = "nix-openclaw-ci";
               paths = [
                 packageSetStable.openclaw
-                packageSetStable.openclaw-gateway
               ]
-              ++ (builtins.attrValues packageSetStable.openclawRuntimePlugins)
               ++ (builtins.attrValues stableChecks)
               ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux (builtins.attrValues linuxOnlyChecks);
             };

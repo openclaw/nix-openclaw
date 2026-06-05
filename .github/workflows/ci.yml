@@ -55,9 +55,7 @@ jobs:
 
       - name: Build Darwin CI aggregator
         timeout-minutes: 25
-        run: |
-          nix build --accept-flake-config .#openclaw-gateway
-          nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
+        run: nix build --accept-flake-config --option max-jobs 1 .#checks.aarch64-darwin.ci
 
       - name: Run HM activation
         timeout-minutes: 10
