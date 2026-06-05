@@ -26,6 +26,7 @@ plugin PR.
 | --- | --- | --- | --- | --- |
 | `pr100-npm-default-2026-06-05` | `561aa2809a9c` | `aaadab2da7c2d` | switch default gateway from source/pnpm to npm shrinkwrap | major closure/output/file reduction |
 | `pr100-on99-acpx-convergence-2026-06-05` | `8c2595e682d1` | `f785b9d3b6fa` | stack on PR #99 and reuse generated ACPX lock | fewer knobs/files, faster pin apply, slightly smaller closure |
+| `pr100-on99-ci-apply-split-2026-06-05` | `ba3b6e65b07d` | `e93b21ed88e0` | split default CI/apply proof from exhaustive plugin catalog packaging | default CI schedules far less work while retaining explicit catalog proof |
 
 ## Runs
 
@@ -108,6 +109,16 @@ Remote proof for measured commit:
   - Full runtime plugin lock update/check cost was measured at `114.86s` with
     `/usr/bin/time -p nix/scripts/update-openclaw-runtime-plugin-locks.mjs --check`.
     This run does not add that full catalog refresh to stable pin apply.
+- Rebase correction:
+  - After rebasing onto PR #99 head
+    `a528abcacd3903ac6898db02a757f9f7331122cf`, the equivalent package graph
+    commit is `557df7b4b41c820e09917d6d74862ebd3af528c5`, with audit follow-up
+    `ba3b6e65b07d6ff50119247db6588416e68bd6b5`.
+  - The remeasured package outputs are
+    `/nix/store/v3algdl8d8vh7nynmwa2j0xxzxs7wqbl-openclaw-gateway-2026.6.1`
+    and `/nix/store/z6945hw6msi58cyfh78pybinfzpn5i2m-openclaw-2026.6.1`.
+    Gateway closure remained `904,983,184` B and `openclaw` closure remained
+    `1,846,536,320` B.
 
 | Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
 | --- | --- | ---: | --- | ---: | ---: | --- |
@@ -145,6 +156,78 @@ Proof for measured commit:
 - `GITHUB_ACTIONS=true /usr/bin/time -p scripts/update-pins.sh apply v2026.6.1 2e08f0f4221f522b60423ed6ffd83427942b28de v2026.6.1 https://github.com/openclaw/openclaw/releases/download/v2026.6.1/OpenClaw-2026.6.1.zip`
 - `nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.ci` (`192.23s`)
 - `nix build --accept-flake-config --no-link --print-out-paths .#checks.x86_64-linux.ci` (`413.95s`)
+
+### `pr100-on99-ci-apply-split-2026-06-05`
+
+- PR: `#100`, stacked locally on PR `#99`
+  (`a528abcacd3903ac6898db02a757f9f7331122cf`).
+- Measured code commit: `e93b21ed88e0a1e6f58e6c9487a141e540f9a66c`
+- Base commit: `ba3b6e65b07d6ff50119247db6588416e68bd6b5`
+- Purpose:
+  - keep the default `ci` aggregate focused on the default package/config/apply
+    contract;
+  - move exhaustive runtime plugin catalog packaging into an explicit
+    `runtime-plugin-packages` check;
+  - remove duplicate macOS workflow builds of `.#openclaw-gateway`, since
+    `stableChecks.gateway` is already a direct `ci` input.
+- External rationale:
+  - Nix `flake check` builds derivations under the `checks` output:
+    https://nix.dev/manual/nix/2.18/command-ref/new-cli/nix3-flake-check
+  - Garnix selects named flake outputs through `garnix.yaml` include/exclude
+    matchers and builds each selected drv path:
+    https://garnix.io/docs/yaml_config/ and https://garnix.io/docs/steps/
+  - NixOS VM tests are the right expensive proof for apply confidence, because
+    they build and run a machine test in an isolated VM:
+    https://nixos.org/manual/nixos/stable/#sec-nixos-tests
+- Discrawl signals:
+  - `golden-path-deployments`, 2026-05-26, reported the old pnpm dependency
+    fetch path producing nondeterministic hashes, cross-platform optional
+    dependency fetches, and Garnix cache misses.
+  - `golden-path-deployments`, 2026-05-28, reported Garnix cache continuity as
+    a project risk, so CI should avoid unnecessary cache targets while keeping
+    the default install/apply contract explicit.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Darwin `ci` direct derivation inputs | `ba3b6e65` `ci` drv | 47 | `e93b21ed` `ci` drv | 13 | 72.3% fewer | `nix derivation show "$(nix eval --raw <ref>#checks.aarch64-darwin.ci.drvPath)" \| jq '.derivations[] \| .inputs.drvs \| keys \| length'` |
+| Linux `ci` direct derivation inputs | `ba3b6e65` `ci` drv | 48 | `e93b21ed` `ci` drv | 14 | 70.8% fewer | same command for `checks.x86_64-linux.ci` |
+| Direct runtime plugin package inputs in Darwin `ci` | `ba3b6e65` `ci` drv | 34 | `e93b21ed` `ci` drv | 0 | removed from default gate | `nix derivation show "$drv" \| jq -r '.derivations[] \| .inputs.drvs \| keys[]' \| rg -P 'openclaw-runtime-plugin-(?!locks)[a-z0-9-]+-[0-9].*\\.drv' \| wc -l` |
+| Direct runtime plugin package inputs in Linux `ci` | `ba3b6e65` `ci` drv | 34 | `e93b21ed` `ci` drv | 0 | removed from default gate | same command for `checks.x86_64-linux.ci` |
+| Runtime plugin lock check in `ci` | `ba3b6e65` `ci` drv | 1 | `e93b21ed` `ci` drv | 1 | retained | `nix derivation show "$drv" \| jq -r '.derivations[] \| .inputs.drvs \| keys[]' \| rg -c 'openclaw-runtime-plugin-locks'` |
+| Explicit exhaustive runtime plugin package check | `ba3b6e65` flake checks | 0 | `e93b21ed` flake checks | 1 | added | `nix eval .#checks.aarch64-darwin --apply 'attrs: builtins.attrNames attrs'` |
+| Hardcoded macOS gateway build command mentions | `ba3b6e65` workflows | 3 | `e93b21ed` workflows | 0 | removed | `rg -o 'nix build --accept-flake-config .#openclaw-gateway' .github/workflows \| wc -l` |
+| Linux default CI aggregate | `557df7b4` equivalent aggregate before split | 413.95s | `862a887c`/`e93b21ed` equivalent graph after split | 268.33s uncached local run; 1.96s exact-ref cached rerun | 35.2% faster on uncached local run | `/usr/bin/time -p nix build --accept-flake-config --no-link --print-out-paths .#checks.x86_64-linux.ci` |
+| Darwin exhaustive catalog proof | `e93b21ed` split checks, same local cache state | n/a | `ci` plus `runtime-plugin-packages` | 252.17s | recorded | `/usr/bin/time -p nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.ci .#checks.aarch64-darwin.runtime-plugin-packages` |
+| Darwin default CI aggregate warm rerun | `e93b21ed` after exhaustive proof | n/a | `ci` only | 0.87s dirty-tree, 36.94s contended clean rerun | recorded, cache-biased | `/usr/bin/time -p nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.ci` |
+
+Apply-confidence retained in `ci`:
+
+- `packageSetStable.openclaw`
+- `stableChecks.gateway` (`openclaw-gateway`)
+- `bin-surface`
+- `package-contents`
+- `default-instance`
+- `runtime-plugin-locks`
+- `workspace-materializer`
+- `config-validity`
+- `gateway-smoke`
+- `qmd-runtime` when available
+- Linux `hm-activation`; macOS workflows still run
+  `scripts/hm-activation-macos.sh`
+
+Proof for measured commit:
+
+- `git diff --check`
+- `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml .github/workflows/pin-stable-openclaw-version.yml garnix.yaml`
+- `nix eval --accept-flake-config --json .#checks.aarch64-darwin --apply 'attrs: builtins.attrNames attrs'`
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'attrs: builtins.attrNames attrs'`
+- `nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.runtime-plugin-packages` (`2.18s` warm rerun after the exhaustive proof)
+- `nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.ci`
+- `nix build --accept-flake-config --no-link --print-out-paths .#checks.x86_64-linux.ci`
+- Exact rebased-code ref reruns:
+  - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.aarch64-darwin.ci"` (`1.80s` cached)
+  - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.x86_64-linux.ci"` (`1.96s` cached)
+  - `nix build --accept-flake-config --no-link --print-out-paths "git+file://$PWD?rev=e93b21ed88e0a1e6f58e6c9487a141e540f9a66c#checks.aarch64-darwin.runtime-plugin-packages"` (`1.50s` cached)
 
 ## Add A Run
 
