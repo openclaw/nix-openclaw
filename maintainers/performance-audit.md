@@ -39,10 +39,10 @@ simplification pass.
   `42.56s` on Darwin and `43.58s` on Linux. Later reruns took `111.16s`
   on Darwin and `216.83s` on Linux because Nix auto-GC ran first; keep GC
   time separate.
-- Current PR diff shape versus `origin/main`: total `25 files,
-  5204 insertions, 632 deletions`; excluding npm lockfiles `23 files,
-  649 insertions, 632 deletions`; build/workflow/doc logic `12 files,
-  409 insertions, 365 deletions`.
+- Current PR diff shape versus `origin/main`: total `29 files,
+  5217 insertions, 639 deletions`; excluding npm lockfiles `27 files,
+  662 insertions, 639 deletions`; build/workflow/doc logic `16 files,
+  422 insertions, 372 deletions`.
 
 ## Update Rules
 
