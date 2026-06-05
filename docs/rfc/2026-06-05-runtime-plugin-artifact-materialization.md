@@ -5,7 +5,7 @@ written_by: ai
 # RFC 2: Runtime Plugin Artifact Materialization
 
 - Date: 2026-06-05
-- Status: Draft
+- Status: Implementing
 - Audience: OpenClaw and nix-openclaw maintainers
 
 ## Decision
