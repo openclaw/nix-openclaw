@@ -11,13 +11,13 @@ Purpose: define nix-openclaw plugins without confusing them with OpenClaw runtim
 
 nix-openclaw plugins are the tool/skill/env bundles described below. They do not use OpenClaw's JavaScript plugin loader. They are the right shape for CLIs such as `goplaces`, `gog`, `qmd`, `xuezh`, `camsnap`, and `summarize`.
 
-OpenClaw plugins are runtime plugin directories with `openclaw.plugin.json` plus built JavaScript loaded by the gateway. They include bundled upstream plugins, official external plugins from OpenClaw's catalog or ClawHub, third-party npm plugins, and channel plugins such as Slack, Discord, Weixin, or WhatsApp. nix-openclaw supports generated OpenClaw-owned catalog runtime plugin locks through `programs.openclaw.runtimePlugins`; arbitrary npm, ClawHub, git, local, marketplace, non-OpenClaw external catalog, and third-party OpenClaw runtime plugin sources are not supported yet.
+OpenClaw plugins are runtime plugin directories with `openclaw.plugin.json` plus built JavaScript loaded by the gateway. They include bundled upstream plugins, official external plugins from OpenClaw's catalog or ClawHub, third-party npm plugins, and channel plugins such as Slack, Discord, Weixin, or WhatsApp. nix-openclaw supports generated OpenClaw-owned catalog runtime plugin locks through `programs.openclaw.runtimePlugins` when the catalog artifact can be packaged reproducibly. Arbitrary npm, ClawHub, git, local, marketplace, non-OpenClaw external catalog, and third-party OpenClaw runtime plugin sources are not supported yet.
 
 Current nix-openclaw `customPlugins` supports nix-openclaw plugins: package binaries on the gateway PATH, add skills through OpenClaw skill load paths, create state dirs, validate env files, and render optional tool settings.
 
 PR #81 (`fix: copy plugin manifests into dist/extensions`) was related but not the missing external-plugin feature. It fixed bundled upstream plugin manifests missing from the packaged gateway `dist/extensions/*/openclaw.plugin.json` tree. Current packaging already copies those manifests and checks them in `openclaw-package-contents`.
 
-Supported OpenClaw catalog runtime plugins are fetched as pinned Nix artifacts, validated as OpenClaw runtime plugin roots, and wired through OpenClaw's own `plugins.load.paths` and `plugins.entries` config. Do not route npm runtime plugins through `customPlugins`; that surface is for nix-openclaw plugin flakes.
+Supported OpenClaw catalog runtime plugins are fetched as pinned Nix artifacts, validated as OpenClaw runtime plugin roots, and wired through OpenClaw's own `plugins.load.paths` and `plugins.entries` config. Runtime dependencies must be absent, bundled, or materialized from a generated `npmDepsHash` and package-local shrinkwrap during the Nix build. Do not route npm runtime plugins through `customPlugins`; that surface is for nix-openclaw plugin flakes.
 
 ## Interface Contract
 Every nix-openclaw plugin exposes the same fields through the `openclawPlugin` flake output:

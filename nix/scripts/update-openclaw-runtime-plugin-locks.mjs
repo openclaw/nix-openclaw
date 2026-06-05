@@ -13,7 +13,10 @@ const sourceInfoPath = path.join(repoRoot, "nix/sources/openclaw-source.nix");
 const outputDir = path.join(repoRoot, "nix/generated/openclaw-runtime-plugins");
 const defaultOutputPath = path.join(outputDir, "default.nix");
 const reportOutputPath = path.join(outputDir, "report.json");
+const prepareNpmScriptPath = path.join(scriptDir, "openclaw-runtime-plugin-prepare-npm.mjs");
 const checkMode = process.argv.includes("--check");
+const fetchJsonTimeoutMs = 30_000;
+let prefetchNpmDepsBin = null;
 
 const catalogFiles = [
   "official-external-channel-catalog.json",
@@ -36,7 +39,7 @@ function run(command, args, options = {}) {
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https
+    const request = https
       .get(url, { headers: { Accept: "application/json" } }, (response) => {
         if (
           response.statusCode >= 300
@@ -66,6 +69,9 @@ function fetchJson(url) {
         });
       })
       .on("error", reject);
+    request.setTimeout(fetchJsonTimeoutMs, () => {
+      request.destroy(new Error(`GET ${url} timed out after ${fetchJsonTimeoutMs}ms`));
+    });
   });
 }
 
@@ -239,6 +245,31 @@ function verifyShasum(filePath, shasum) {
   }
 }
 
+function verifySha256Hex(filePath, expectedSha256) {
+  const expected = optionalString(expectedSha256)?.replace(/^sha256[:-]?/i, "").toLowerCase();
+  if (!expected) {
+    throw new Error(`Missing SHA-256 digest for ${filePath}`);
+  }
+  const actual = crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+  if (actual !== expected) {
+    throw new Error(`Downloaded tarball SHA-256 mismatch for ${filePath}`);
+  }
+}
+
+function briefError(error) {
+  const lines = String(error?.message ?? error)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const interesting = lines.filter((line) =>
+    /npm error (?:request|code|Unsupported|Invalid|Missing)|ERROR: npm failed|cache mode is|Unsupported URL Type|No matching version|ERESOLVE|ENOTCACHED|EUNSUPPORTEDPROTOCOL/.test(line),
+  );
+  return (interesting.length > 0 ? interesting : lines.slice(-12))
+    .slice(0, 10)
+    .join(" | ")
+    .slice(0, 1600);
+}
+
 function parseCatalogEntries(raw) {
   if (Array.isArray(raw)) {
     return raw.filter(isRecord);
@@ -332,6 +363,15 @@ function parseNpmSpec(spec) {
   };
 }
 
+function parseClawHubSpec(spec) {
+  const normalized = optionalString(spec)?.replace(/^clawhub:/, "");
+  return normalized ? parseNpmSpec(normalized) : null;
+}
+
+function clawHubArtifactUrl(packageName, version) {
+  return `https://clawhub.ai/api/v1/packages/${encodeURIComponent(packageName)}/versions/${encodeURIComponent(version)}/artifact`;
+}
+
 function isExactVersion(version) {
   return /^[0-9]+(?:\.[0-9]+){1,2}(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?$/.test(version);
 }
@@ -416,6 +456,104 @@ function validateTarMembers(tarball) {
       throw new Error(`unexpected tar member outside package/ in ${tarball}: ${member}`);
     }
   }
+}
+
+function resolvePrefetchNpmDepsBin() {
+  if (prefetchNpmDepsBin) {
+    return prefetchNpmDepsBin;
+  }
+  const expr = `
+    let
+      flake = builtins.getFlake (toString ${repoRoot});
+      pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
+    in
+      pkgs.prefetch-npm-deps
+  `;
+  const outPath = run("nix", [
+    "build",
+    "--no-link",
+    "--print-out-paths",
+    "--impure",
+    "--expr",
+    expr,
+  ]).trim().split(/\r?\n/).pop();
+  prefetchNpmDepsBin = path.join(outPath, "bin/prefetch-npm-deps");
+  return prefetchNpmDepsBin;
+}
+
+function computeNpmDepsHash(shrinkwrapPath) {
+  const output = run(resolvePrefetchNpmDepsBin(), [
+    shrinkwrapPath,
+  ]).trim();
+  const hash = output.split(/\r?\n/).findLast((line) => line.startsWith("sha256-"));
+  if (!hash) {
+    throw new Error(`prefetch-npm-deps did not return an SRI hash for ${shrinkwrapPath}`);
+  }
+  return hash;
+}
+
+function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
+  const safeProbeName = attrNameForId(row.id);
+  const expr = `
+    let
+      flake = builtins.getFlake (toString ${repoRoot});
+      pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
+      npmHooksForNode = pkgs.npmHooks.override { nodejs = pkgs.nodejs_22; };
+      prepareNpmScript = ${prepareNpmScriptPath};
+      pluginSrc = pkgs.fetchurl {
+        url = ${nixString(artifact.tarballUrl)};
+        hash = ${nixString(artifact.nixHash)};
+      };
+    in
+      pkgs.stdenvNoCC.mkDerivation {
+        pname = ${nixString(`openclaw-runtime-plugin-${safeProbeName}-materialization-probe`)};
+        version = ${nixString(artifact.version)};
+        src = pluginSrc;
+        sourceRoot = "package";
+        nativeBuildInputs = [
+          pkgs.nodejs_22
+          pkgs.nodejs_22.python
+          npmHooksForNode.npmConfigHook
+        ] ++ pkgs.lib.optionals pkgs.stdenvNoCC.hostPlatform.isDarwin [
+          pkgs.cctools
+        ];
+        npmDeps = pkgs.fetchNpmDeps {
+          name = ${nixString(`openclaw-runtime-plugin-${safeProbeName}-npm-deps`)};
+          src = pluginSrc;
+          sourceRoot = "package";
+          hash = ${nixString(npmDepsHash)};
+        };
+        npmInstallFlags = [
+          "--omit=dev"
+          "--omit=peer"
+          "--legacy-peer-deps"
+        ];
+        npmRebuildFlags = [ "--ignore-scripts" ];
+        dontConfigure = true;
+        dontBuild = true;
+        env = {
+          OPENCLAW_RUNTIME_PLUGIN_ID = ${nixString(row.id)};
+          OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = ${nixString(artifact.packageName)};
+          OPENCLAW_RUNTIME_PLUGIN_VERSION = ${nixString(artifact.version)};
+          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+        };
+        postPatch = ''
+          ${"\${pkgs.nodejs_22}"}/bin/node ${"\${prepareNpmScript}"}
+        '';
+        installPhase = ''
+          mkdir -p "$out"
+          cp package.json npm-shrinkwrap.json "$out"/
+        '';
+      }
+  `;
+  run("nix", [
+    "build",
+    "--no-link",
+    "--print-out-paths",
+    "--impure",
+    "--expr",
+    expr,
+  ]);
 }
 
 function renderLock(lock) {
@@ -551,7 +689,7 @@ function readCatalogRows(openclawSourcePath) {
   return rows;
 }
 
-async function buildNpmLock(row, npmPackage) {
+async function resolveNpmArtifact(row, npmPackage) {
   const packageMetadata = await fetchJson(npmRegistryUrl(npmPackage.packageName));
   const versionMetadata = packageMetadata.versions?.[npmPackage.version];
   if (!versionMetadata) {
@@ -583,23 +721,167 @@ async function buildNpmLock(row, npmPackage) {
     return { skipped: skip(row, "missing-npm-integrity", `${npmPackage.packageName}@${npmPackage.version}`) };
   }
 
-  const prefetch = JSON.parse(
-    run("nix", [
-      "store",
-      "prefetch-file",
-      "--json",
-      versionMetadata.dist.tarball,
-    ]),
-  );
+  const prefetch = JSON.parse(run("nix", ["store", "prefetch-file", "--json", versionMetadata.dist.tarball]));
   verifyIntegrity(prefetch.storePath, versionMetadata.dist.integrity);
   verifyShasum(prefetch.storePath, versionMetadata.dist.shasum);
 
+  return {
+    artifact: {
+      selectedSource: "npm",
+      npmSpec: row.install?.npmSpec,
+      packageName: npmPackage.packageName,
+      version: npmPackage.version,
+      tarballUrl: versionMetadata.dist.tarball,
+      npmIntegrity: versionMetadata.dist.integrity,
+      npmShasum: versionMetadata.dist.shasum,
+      nixHash: prefetch.hash,
+      storePath: prefetch.storePath,
+      versionMetadata,
+      bundleDependencies: [
+        ...(versionMetadata.bundleDependencies ?? versionMetadata.bundledDependencies ?? []),
+      ].sort(),
+    },
+  };
+}
+
+async function resolveClawHubArtifact(row, clawhubPackage) {
+  const payload = await fetchJson(clawHubArtifactUrl(clawhubPackage.packageName, clawhubPackage.version));
+  const artifactMetadata = payload.artifact ?? payload.version?.artifact ?? payload.packageVersion?.artifact;
+  if (!isRecord(artifactMetadata)) {
+    return {
+      skipped: skip(row, "missing-clawhub-artifact", `${clawhubPackage.packageName}@${clawhubPackage.version}`),
+    };
+  }
+
+  const kind = optionalString(artifactMetadata.kind) ?? optionalString(artifactMetadata.type);
+  if (kind !== "npm-pack") {
+    return {
+      skipped: skip(
+        row,
+        "unsupported-clawhub-artifact-kind",
+        `ClawHub artifact kind is ${kind ?? "missing"}`,
+      ),
+    };
+  }
+
+  const tarballUrl =
+    optionalString(artifactMetadata.tarballUrl)
+    ?? optionalString(artifactMetadata.url)
+    ?? optionalString(artifactMetadata.downloadUrl);
+  if (!tarballUrl || !tarballUrl.startsWith("https://")) {
+    return { skipped: skip(row, "missing-clawhub-tarball", "ClawHub npm-pack artifact has no HTTPS tarball URL") };
+  }
+
+  const sha256 =
+    optionalString(artifactMetadata.sha256)
+    ?? optionalString(artifactMetadata.digest?.sha256)
+    ?? optionalString(artifactMetadata.digest);
+  if (!sha256) {
+    return { skipped: skip(row, "missing-clawhub-sha256", "ClawHub artifact has no SHA-256 digest") };
+  }
+
+  const npmIntegrity =
+    optionalString(artifactMetadata.npmIntegrity)
+    ?? optionalString(artifactMetadata.integrity)
+    ?? optionalString(artifactMetadata.dist?.integrity);
+  const npmShasum =
+    optionalString(artifactMetadata.npmShasum)
+    ?? optionalString(artifactMetadata.shasum)
+    ?? optionalString(artifactMetadata.dist?.shasum);
+
+  if (row.install?.expectedIntegrity && row.install.expectedIntegrity !== npmIntegrity) {
+    return {
+      skipped: skip(
+        row,
+        "clawhub-integrity-mismatch",
+        `catalog expected ${row.install.expectedIntegrity}; ClawHub returned ${npmIntegrity ?? "missing"}`,
+      ),
+    };
+  }
+
+  const prefetch = JSON.parse(run("nix", ["store", "prefetch-file", "--json", tarballUrl]));
+  verifySha256Hex(prefetch.storePath, sha256);
+  if (npmIntegrity) {
+    verifyIntegrity(prefetch.storePath, npmIntegrity);
+  }
+  verifyShasum(prefetch.storePath, npmShasum);
+
+  return {
+    artifact: {
+      selectedSource: "clawhub",
+      clawhubSpec: row.install?.clawhubSpec,
+      packageName: clawhubPackage.packageName,
+      version: clawhubPackage.version,
+      tarballUrl,
+      npmIntegrity: npmIntegrity ?? "",
+      npmShasum: npmShasum ?? "",
+      nixHash: prefetch.hash,
+      storePath: prefetch.storePath,
+      bundleDependencies: [],
+      clawhubPackageName: clawhubPackage.packageName,
+      clawhubVersion: clawhubPackage.version,
+      clawhubArtifactKind: kind,
+      clawhubArtifactSha256: sha256,
+    },
+  };
+}
+
+function dependencyModeForArtifact(row, artifact, packageRoot, hasRuntimeDependencies, bundledPackageRoots, shrinkwrap) {
+  if (!hasRuntimeDependencies && bundledPackageRoots.length > 0) {
+    return {
+      skipped: skip(
+        row,
+        "unexpected-bundled-dependencies",
+        "package bundles node_modules but declares no runtime dependencies",
+      ),
+    };
+  }
+  if (!hasRuntimeDependencies) {
+    return { dependencyMode: "none", npmDepsHash: undefined };
+  }
+
+  if (!shrinkwrap) {
+    return {
+      skipped: skip(
+        row,
+        "runtime-dependencies-without-shrinkwrap",
+        "package has runtime dependencies but no npm-shrinkwrap.json",
+      ),
+    };
+  }
+
+  if (bundledPackageRoots.length > 0) {
+    return { dependencyMode: "bundled", npmDepsHash: undefined };
+  }
+
+  const shrinkwrapPath = path.join(packageRoot, "npm-shrinkwrap.json");
+  let npmDepsHash;
+  try {
+    npmDepsHash = computeNpmDepsHash(shrinkwrapPath);
+  } catch (error) {
+    return {
+      skipped: skip(row, "shrinkwrap-npm-deps-hash-failed", briefError(error)),
+    };
+  }
+
+  try {
+    probeShrinkwrapMaterialization(row, artifact, npmDepsHash);
+  } catch (error) {
+    return {
+      skipped: skip(row, "shrinkwrap-materialization-failed", briefError(error)),
+    };
+  }
+
+  return { dependencyMode: "shrinkwrap", npmDepsHash };
+}
+
+async function buildArtifactLock(row, artifact) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-runtime-plugin-lock-"));
   try {
-    validateTarMembers(prefetch.storePath);
+    validateTarMembers(artifact.storePath);
     run("tar", [
       "-xzf",
-      prefetch.storePath,
+      artifact.storePath,
       "-C",
       tmpDir,
     ]);
@@ -622,10 +904,10 @@ async function buildNpmLock(row, npmPackage) {
     const shrinkwrapPackages = shrinkwrapSummary(shrinkwrap);
     const bundledPackageRoots = collectPackageRoots(path.join(packageRoot, "node_modules"));
 
-    if (packageJson.name !== npmPackage.packageName) {
+    if (packageJson.name !== artifact.packageName) {
       return { skipped: skip(row, "package-name-mismatch", `package.json name is ${packageJson.name}`) };
     }
-    if (packageJson.version !== npmPackage.version) {
+    if (packageJson.version !== artifact.version) {
       return { skipped: skip(row, "package-version-mismatch", `package.json version is ${packageJson.version}`) };
     }
     if (manifest.id !== row.id) {
@@ -672,44 +954,26 @@ async function buildNpmLock(row, npmPackage) {
       }
     }
 
-    const dependencies = sortedObject(packageJson.dependencies ?? versionMetadata.dependencies ?? {});
+    const dependencies = sortedObject(packageJson.dependencies ?? artifact.versionMetadata?.dependencies ?? {});
     const optionalDependencies = sortedObject(
-      packageJson.optionalDependencies ?? versionMetadata.optionalDependencies ?? {},
+      packageJson.optionalDependencies ?? artifact.versionMetadata?.optionalDependencies ?? {},
     );
     const hasRuntimeDependencies =
       Object.keys(dependencies).length > 0 || Object.keys(optionalDependencies).length > 0;
 
-    if (hasRuntimeDependencies && !shrinkwrap) {
-      return {
-        skipped: skip(
-          row,
-          "runtime-dependencies-without-shrinkwrap",
-          "package has runtime dependencies but no npm-shrinkwrap.json",
-        ),
-      };
+    const dependencyResult = dependencyModeForArtifact(
+      row,
+      artifact,
+      packageRoot,
+      hasRuntimeDependencies,
+      bundledPackageRoots,
+      shrinkwrap,
+    );
+    if (dependencyResult.skipped) {
+      return { skipped: dependencyResult.skipped };
     }
 
-    if (hasRuntimeDependencies && bundledPackageRoots.length === 0) {
-      return {
-        skipped: skip(
-          row,
-          "dependency-materialization-required",
-          "package has runtime dependencies but no bundled node_modules",
-        ),
-      };
-    }
-
-    if (!hasRuntimeDependencies && bundledPackageRoots.length > 0) {
-      return {
-        skipped: skip(
-          row,
-          "unexpected-bundled-dependencies",
-          "package bundles node_modules but declares no runtime dependencies",
-        ),
-      };
-    }
-
-    const lock = {
+    const lock = pickDefined({
       id: row.id,
       attrName: attrNameForId(row.id),
       label: row.label,
@@ -718,17 +982,19 @@ async function buildNpmLock(row, npmPackage) {
       catalogFile: row.catalogFile,
       catalogEntryName: row.catalogEntryName,
       catalogDefaultChoice: row.install?.defaultChoice ?? null,
-      selectedSource: "npm",
-      npmSpec: row.install?.npmSpec,
+      selectedSource: artifact.selectedSource,
+      npmSpec: artifact.npmSpec,
+      clawhubSpec: artifact.clawhubSpec,
       minHostVersion: row.install?.minHostVersion ?? "",
       expectedIntegrity: row.install?.expectedIntegrity ?? "",
-      packageName: npmPackage.packageName,
-      version: npmPackage.version,
-      tarballUrl: versionMetadata.dist.tarball,
-      npmIntegrity: versionMetadata.dist.integrity,
-      npmShasum: versionMetadata.dist.shasum,
-      nixHash: prefetch.hash,
-      dependencyMode: hasRuntimeDependencies ? "bundled" : "none",
+      packageName: artifact.packageName,
+      version: artifact.version,
+      tarballUrl: artifact.tarballUrl,
+      npmIntegrity: artifact.npmIntegrity,
+      npmShasum: artifact.npmShasum,
+      nixHash: artifact.nixHash,
+      dependencyMode: dependencyResult.dependencyMode,
+      npmDepsHash: dependencyResult.npmDepsHash,
       manifestId: manifest.id,
       openclawCompat,
       peerOpenClaw,
@@ -738,11 +1004,13 @@ async function buildNpmLock(row, npmPackage) {
       contracts: manifest.contracts ?? {},
       dependencies,
       optionalDependencies,
-      bundleDependencies: [
-        ...(versionMetadata.bundleDependencies ?? versionMetadata.bundledDependencies ?? []),
-      ].sort(),
+      bundleDependencies: dependencyResult.dependencyMode === "bundled" ? artifact.bundleDependencies : [],
       bundledPackageRoots,
-    };
+      clawhubPackageName: artifact.clawhubPackageName,
+      clawhubVersion: artifact.clawhubVersion,
+      clawhubArtifactKind: artifact.clawhubArtifactKind,
+      clawhubArtifactSha256: artifact.clawhubArtifactSha256,
+    });
 
     return { lock, supported: supportedReport(lock) };
   } finally {
@@ -766,13 +1034,33 @@ async function processRow(row, releaseVersion) {
       ),
     };
   }
-  if (row.selectedSource === "clawhub") {
-    return {
-      skipped: skip(row, "clawhub-adapter-required", "catalog-selected ClawHub artifacts are not implemented yet"),
-    };
-  }
   if (row.selectedSource === "local") {
     return { skipped: skip(row, "local-source-unsupported", "catalog-selected local paths are not reproducible Nix artifacts") };
+  }
+  if (row.selectedSource === "clawhub") {
+    const clawhubPackage = parseClawHubSpec(row.install.clawhubSpec);
+    if (!clawhubPackage) {
+      return { skipped: skip(row, "invalid-clawhub-spec", row.install.clawhubSpec ?? "") };
+    }
+    if (!clawhubPackage.packageName.startsWith("@openclaw/")) {
+      return {
+        skipped: skip(
+          row,
+          "non-openclaw-package-unsupported",
+          "official catalog support is currently limited to OpenClaw-owned @openclaw/* packages",
+        ),
+      };
+    }
+    if (!clawhubPackage.version) {
+      clawhubPackage.version = releaseVersion;
+    }
+    if (!isExactVersion(clawhubPackage.version)) {
+      return {
+        skipped: skip(row, "exact-version-required", `ClawHub version ${clawhubPackage.version} is not an exact version`),
+      };
+    }
+    const resolved = await resolveClawHubArtifact(row, clawhubPackage);
+    return resolved.artifact ? buildArtifactLock(row, resolved.artifact) : resolved;
   }
   if (row.selectedSource !== "npm") {
     return { skipped: skip(row, "unsupported-selected-source", `selected source is ${row.selectedSource ?? "missing"}`) };
@@ -802,7 +1090,8 @@ async function processRow(row, releaseVersion) {
     };
   }
 
-  return buildNpmLock(row, npmPackage);
+  const resolved = await resolveNpmArtifact(row, npmPackage);
+  return resolved.artifact ? buildArtifactLock(row, resolved.artifact) : resolved;
 }
 
 const releaseVersion = readSourceField("releaseVersion");
