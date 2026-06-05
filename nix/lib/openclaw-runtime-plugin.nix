@@ -7,7 +7,8 @@
   nodejs_22,
   cctools,
   cacert,
-  openclawPackage,
+  openclawPackage ? null,
+  linkOpenClawPeer ? openclawPackage != null,
 }:
 
 lock:
@@ -67,6 +68,7 @@ let
     (lock.dependencies or { }) != { } || (lock.optionalDependencies or { }) != { };
   safeName = lib.replaceStrings [ "@" "/" ":" ] [ "" "-" "-" ] lock.id;
   packageName = "openclaw-runtime-plugin-${safeName}";
+  peerLinkIsValid = !linkOpenClawPeer || openclawPackage != null;
 
   drv = stdenvNoCC.mkDerivation (
     {
@@ -102,7 +104,6 @@ let
       '';
 
       env = {
-        OPENCLAW_GATEWAY_PACKAGE = "${openclawPackage}";
         OPENCLAW_RUNTIME_PLUGIN_ID = lock.id;
         OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName or "";
         OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version or "";
@@ -114,6 +115,10 @@ let
           else
             "";
         OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
+        OPENCLAW_RUNTIME_PLUGIN_LINK_PEER_OPENCLAW = if linkOpenClawPeer then "1" else "0";
+      }
+      // lib.optionalAttrs linkOpenClawPeer {
+        OPENCLAW_GATEWAY_PACKAGE = "${openclawPackage}";
       }
       // lib.optionalAttrs ((lock.openclawCompat or null) != null) {
         OPENCLAW_RUNTIME_PLUGIN_COMPAT = lock.openclawCompat;
@@ -163,4 +168,6 @@ let
     }
   );
 in
+assert lib.assertMsg peerLinkIsValid
+  "openclaw-runtime-plugin ${lock.id} cannot link its OpenClaw peer without openclawPackage";
 drv

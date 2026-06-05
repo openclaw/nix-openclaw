@@ -106,6 +106,85 @@ function packageRootForName(packageName) {
   return `node_modules/${packageName}`;
 }
 
+function packageRootParts(packageName) {
+  if (packageName.startsWith("@")) {
+    const [scope, name] = packageName.split("/");
+    if (!scope || !name) {
+      fail(`invalid scoped package name ${packageName}`);
+    }
+    return [scope, name];
+  }
+  if (!packageName || packageName.includes("/")) {
+    fail(`invalid package name ${packageName}`);
+  }
+  return [packageName];
+}
+
+function dependencyNames(packageJson) {
+  return [
+    ...Object.keys(packageJson.dependencies ?? {}),
+    ...Object.keys(packageJson.optionalDependencies ?? {}),
+  ].sort();
+}
+
+function resolveDependencyRoot(pluginRoot, fromDir, dependencyName) {
+  const parts = packageRootParts(dependencyName);
+  let current = fromDir;
+  while (current === pluginRoot || current.startsWith(`${pluginRoot}${path.sep}`)) {
+    const candidate = path.join(current, "node_modules", ...parts);
+    if (fs.existsSync(path.join(candidate, "package.json"))) {
+      return path.relative(pluginRoot, candidate).split(path.sep).join("/");
+    }
+    if (current === pluginRoot) {
+      break;
+    }
+    current = path.dirname(current);
+  }
+  return null;
+}
+
+function reachablePackageRoots(pluginRoot, rootPackageJson) {
+  const reachable = new Set();
+  const queue = [];
+
+  function enqueue(fromDir, dependencyName) {
+    const relPath = resolveDependencyRoot(pluginRoot, fromDir, dependencyName);
+    if (!relPath || reachable.has(relPath)) {
+      return;
+    }
+    reachable.add(relPath);
+    queue.push(relPath);
+  }
+
+  for (const dependencyName of dependencyNames(rootPackageJson)) {
+    enqueue(pluginRoot, dependencyName);
+  }
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const relPath = queue[index];
+    const packageDir = path.join(pluginRoot, relPath);
+    const packageJson = readJson(path.join(packageDir, "package.json"));
+    for (const dependencyName of dependencyNames(packageJson)) {
+      enqueue(packageDir, dependencyName);
+    }
+  }
+
+  return reachable;
+}
+
+function pruneExtraneousShrinkwrapPackages(pluginRoot, rootPackageJson) {
+  const nodeModulesDir = path.join(pluginRoot, "node_modules");
+  if (!fs.existsSync(nodeModulesDir)) {
+    return;
+  }
+
+  const reachable = reachablePackageRoots(pluginRoot, rootPackageJson);
+  const actual = collectPackageRoots(nodeModulesDir);
+  for (const relPath of actual.filter((item) => !reachable.has(item)).sort((left, right) => right.length - left.length)) {
+    fs.rmSync(path.join(pluginRoot, relPath), { recursive: true, force: true });
+  }
+}
+
 function findInvalidSymlink(root, allowedExternalTarget) {
   const rootRealPath = fs.realpathSync(root);
   const allowedExternalRealPath = allowedExternalTarget ? fs.realpathSync(allowedExternalTarget) : null;
@@ -150,14 +229,12 @@ const runtimeEntriesFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_
 const bundledPackageRootsFile = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_BUNDLED_PACKAGE_ROOTS_FILE");
 const expectedHasRuntimeDependencies = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_HAS_RUNTIME_DEPENDENCIES");
 let dependencyMode = process.env.OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE ?? "";
-const openclawPackage = requiredEnv("OPENCLAW_GATEWAY_PACKAGE");
+const linkOpenClawPeer = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_LINK_PEER_OPENCLAW") !== "0";
+const openclawPackage = linkOpenClawPeer ? requiredEnv("OPENCLAW_GATEWAY_PACKAGE") : "";
 let allowedExternalSymlinkTarget = null;
 
 fs.mkdirSync(out, { recursive: true });
 fs.cpSync(".", out, { recursive: true, force: true, dereference: false });
-if (dependencyMode === "shrinkwrap") {
-  removeNodeModulesBinDirs(path.join(out, "node_modules"));
-}
 
 const packageJsonPath = path.join(out, "package.json");
 const manifestPath = path.join(out, "openclaw.plugin.json");
@@ -178,6 +255,11 @@ const hasRuntimeDependencies =
   expectedHasRuntimeDependencies
     ? expectedHasRuntimeDependencies === "1"
     : Object.keys(dependencies).length > 0 || Object.keys(optionalDependencies).length > 0;
+
+if (dependencyMode === "shrinkwrap") {
+  pruneExtraneousShrinkwrapPackages(out, packageJson);
+  removeNodeModulesBinDirs(path.join(out, "node_modules"));
+}
 
 if (expectedPackageName && packageName !== expectedPackageName) {
   fail(`package name mismatch: expected ${expectedPackageName}, got ${packageName}`);
@@ -296,7 +378,7 @@ if (hasRuntimeDependencies) {
   }
 }
 
-if (openclawPeer) {
+if (openclawPeer && linkOpenClawPeer) {
   const peerTarget = path.join(openclawPackage, "lib/openclaw");
   if (!fs.existsSync(path.join(peerTarget, "package.json"))) {
     fail(`OpenClaw peer target missing package.json: ${peerTarget}`);

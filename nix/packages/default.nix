@@ -19,11 +19,16 @@ let
     openclawToolPkgs = toolPkgs;
     inherit toolNamesOverride excludeToolNames;
   };
+  runtimePluginLocks = import ../generated/openclaw-runtime-plugins;
+  buildBundledRuntimePlugin = pkgs.callPackage ../lib/openclaw-runtime-plugin.nix {
+    linkOpenClawPeer = false;
+  };
+  bundledAcpx = buildBundledRuntimePlugin runtimePluginLocks.acpx;
   openclawGateway = pkgs.callPackage ./openclaw-gateway.nix {
     inherit sourceInfo;
     inherit pnpm_11;
+    inherit bundledAcpx;
   };
-  runtimePluginLocks = import ../generated/openclaw-runtime-plugins;
   buildOpenClawRuntimePlugin = pkgs.callPackage ../lib/openclaw-runtime-plugin.nix {
     openclawPackage = openclawGateway;
   };

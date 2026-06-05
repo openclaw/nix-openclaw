@@ -163,7 +163,6 @@ function resolveOpenClawSourcePath() {
   const strippedAttrs = [
     "pnpmDepsHash",
     "gatewayNpmDepsHash",
-    "acpxNpmDepsHash",
     "pnpmMajor",
     "releaseTag",
     "releaseVersion",

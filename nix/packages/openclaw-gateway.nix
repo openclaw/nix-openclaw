@@ -3,16 +3,17 @@
   sourceInfo,
   gatewaySrc ? null,
   pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
+  bundledAcpx ? null,
   ...
 }:
 
 let
   useNpmPackage =
-    gatewaySrc == null && sourceInfo ? gatewayNpmDepsHash && sourceInfo ? acpxNpmDepsHash;
+    gatewaySrc == null && sourceInfo ? gatewayNpmDepsHash && bundledAcpx != null;
 in
 if useNpmPackage then
   callPackage ./openclaw-gateway-npm.nix {
-    inherit sourceInfo;
+    inherit sourceInfo bundledAcpx;
   }
 else
   callPackage ./openclaw-gateway-source.nix {
