@@ -28,6 +28,7 @@ plugin PR.
 | `pr100-on99-acpx-convergence-2026-06-05` | `8c2595e682d1` | `f785b9d3b6fa` | stack on PR #99 and reuse generated ACPX lock | fewer knobs/files, faster pin apply, slightly smaller closure |
 | `pr100-on99-ci-apply-split-2026-06-05` | `ba3b6e65b07d` | `e93b21ed88e0` | split default CI/apply proof from exhaustive plugin catalog packaging | default CI schedules far less work while retaining explicit catalog proof |
 | `pr100-remote-ci-cache-2026-06-06` | `51aff7a59ba20` | `9d0ae60e8cbc` | measure real GitHub Actions/Garnix behavior and stop duplicate PR branch CI | one PR-branch workflow per SHA, cache behavior characterized |
+| `pr100-macos-hm-cache-split-2026-06-06` | `9d0ae60e8cbc` | `d7b1bca93146` | move macOS HM activation package into the cacheable flake check graph | fewer remote built derivations while retaining launchd/apply proof |
 
 ## Runs
 
@@ -283,6 +284,58 @@ Proof for measured commit:
 - `gh pr view 100 --repo openclaw/nix-openclaw --json headRefName,headRefOid,baseRefName,baseRefOid,mergeStateStatus,isDraft,url`
 - Latest measured PR-only run: `27045444112`, success,
   `2026-06-05T23:28:03Z` to `2026-06-05T23:31:20Z`.
+- PR status at measured commit: `CLEAN`; all GitHub Actions, Garnix, Socket,
+  and flake-evaluation checks passed.
+
+### `pr100-macos-hm-cache-split-2026-06-06`
+
+- PR: `#100`, stacked on PR `#99`
+  (`a528abcacd3903ac6898db02a757f9f7331122cf`).
+- Measured code commit: `d7b1bca93146f96f6194ab4b23e9e7b3f7bc2a4d`
+- Base commit: `9d0ae60e8cbc077d1969b0a4ca48863ec46a05b4`
+- Purpose:
+  - expose the macOS Home Manager activation package as
+    `checks.aarch64-darwin.hm-activation-macos-package`;
+  - include it in Darwin `ci` so Garnix can prebuild/cache it;
+  - keep `scripts/hm-activation-macos.sh` responsible for the impure runtime
+    activation, launchd assertion, and gateway health assertion.
+- Anti-regression review:
+  - This does not remove macOS apply confidence. The script still runs
+    `activate`, checks generated files/symlinks, checks launchd, and checks
+    gateway health.
+  - The main flake check and the nested consumer test flake resolved to the
+    same activation-package drv locally:
+    `/nix/store/s9axxmgixj273ai4z3idg21p6vfj14rf-home-manager-generation.drv`.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Remote CI wall time to completed PR run | `27045444112` at `9d0ae60e` | 197s | `27045908804` at `d7b1bca` | 156s | 20.8% faster | `gh run view <run> --json createdAt,updatedAt` |
+| Linux GitHub job duration | `27045444112` | 132s | `27045908804` | 149s | 12.9% slower | `gh run view <run> --json jobs` |
+| macOS GitHub job duration | `27045444112` | 193s | `27045908804` | 153s | 20.7% faster | same |
+| macOS Darwin aggregate step | `27045444112` | 103s | `27045908804` | 86s | 16.5% faster, cache-influenced | same |
+| macOS HM activation step | `27045444112` | 44s | `27045908804` | 22s | 50.0% faster | same |
+| Built derivation log lines in PR run | parsed log for `27045444112` | 91 | parsed log for `27045908804` | 33 | 63.7% fewer | `gh run view <run> --log \| rg "building '/nix/store" \| wc -l` |
+| Unique built derivations in PR run | parsed log for `27045444112` | 58 | parsed log for `27045908804` | 33 | 43.1% fewer | `gh run view <run> --log \| rg "building '/nix/store" \| sort -u \| wc -l` |
+| macOS HM activation built derivation lines | `27045444112` step log | 59 | `27045908804` step log | 1 | 98.3% fewer | parsed from `gh run view <run> --log` by step |
+| macOS Darwin aggregate built derivation lines | `27045444112` step log | 0 | `27045908804` step log | 0 | unchanged | same |
+| Remote copy lines | parsed log for `27045444112` | 1,165 | parsed log for `27045908804` | 1,168 | +3 | same |
+| Garnix selected PR checks | PR #100 checks at `9d0ae60e` | 6 targets, overall 26s, Darwin `ci` 10s | PR #100 checks at `d7b1bca` | 6 targets, overall 1m25s, Darwin `ci` 56s | slower first-run Garnix for larger Darwin `ci` | `gh pr checks 100 --repo openclaw/nix-openclaw --watch=false` |
+
+Local proof for measured commit:
+
+- `nix eval --accept-flake-config --raw .#checks.aarch64-darwin.hm-activation-macos-package.drvPath`
+- `nix eval --accept-flake-config --raw --impure --override-input nix-openclaw "path:$PWD" ./nix/tests/hm-activation-macos#homeConfigurations.hm-test.activationPackage.drvPath`
+- `nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.hm-activation-macos-package` (`8.70s`, 10 local derivations built)
+- `nix build --accept-flake-config --no-link --print-out-paths .#checks.aarch64-darwin.ci` (`37.53s` local rerun after activation-package build)
+- `scripts/hm-activation-macos.sh` (`27.25s` first local run, `23.85s` warm rerun)
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'attrs: builtins.attrNames attrs'`
+- `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml .github/workflows/pin-stable-openclaw-version.yml garnix.yaml`
+- `git diff --check`
+
+Remote proof for measured commit:
+
+- `27045908804`, success, `pull_request` only,
+  `2026-06-05T23:42:21Z` to `2026-06-05T23:44:57Z`.
 - PR status at measured commit: `CLEAN`; all GitHub Actions, Garnix, Socket,
   and flake-evaluation checks passed.
 
