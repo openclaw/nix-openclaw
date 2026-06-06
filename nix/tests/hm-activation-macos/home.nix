@@ -6,6 +6,11 @@
     homeDirectory = "/tmp/hm-activation-home";
     stateVersion = "23.11";
   };
+  manual = {
+    html.enable = false;
+    json.enable = false;
+    manpages.enable = false;
+  };
 
   programs.openclaw = {
     enable = true;
