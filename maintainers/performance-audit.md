@@ -30,6 +30,8 @@ plugin PR.
 | `pr100-remote-ci-cache-2026-06-06` | `51aff7a59ba20` | `9d0ae60e8cbc` | measure real GitHub Actions/Garnix behavior and stop duplicate PR branch CI | one PR-branch workflow per SHA, cache behavior characterized |
 | `pr100-macos-hm-cache-split-2026-06-06` | `9d0ae60e8cbc` | `d7b1bca93146` | move macOS HM activation package into the cacheable flake check graph | fewer remote built derivations while retaining launchd/apply proof |
 | `pr100-ci-meter-2026-06-06` | `3b70138463a9` | `5733ebdf9ed4` | add Nix build metering to opaque CI aggregate steps | no graph change; remaining cost is substitution volume plus 29 Linux proof drvs |
+| `pr100-gha-cache-rejected-2026-06-06` | `886ad5710ac1` | `a05e9981c943` | test Magic Nix Cache as a GitHub Actions Nix cache layer | rejected: Linux slower, macOS cache startup blocked proof |
+| `pr100-nix-eval-telemetry-2026-06-06` | `a05e9981c943` | `4d4ec0996548` | replace rejected cache action with Nix eval and phase telemetry | no graph change; eval cost is now visible in CI summaries |
 
 ## Runs
 
@@ -407,6 +409,85 @@ Remote proof for measured commit:
   `2026-06-06T00:15:29Z` to `2026-06-06T00:17:55Z`.
 - PR checks at measured commit: GitHub Actions Linux/macOS pass; Garnix
   flake evaluation, Darwin `ci`, and selected package targets pass.
+
+### `pr100-gha-cache-rejected-2026-06-06`
+
+- PR: `#100`
+- Baseline commit: `886ad5710ac1cb94bcf1f4e493db3858d9855560`
+- Candidate commits:
+  - `0802eb1d0a00da4779b3a795ff19f082cd87080d`: Magic Nix Cache on
+    Linux and macOS.
+  - `a05e9981c943140b65771bb67c17d3eb3aa2884e`: Magic Nix Cache on
+    Linux only.
+- Purpose:
+  - test whether GitHub Actions cache can replace some cold-runner
+    substitution cost now that Garnix is going away;
+  - keep upstream substituter proof intact and disable FlakeHub/diagnostics
+    in the action.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Remote PR run wall time | `27047041028` at `886ad571` | 144s | `27047323809` at `a05e998` | 166s | 15.3% slower | `gh run view <run> --json createdAt,updatedAt` |
+| Linux GitHub job duration | `27047041028` | 139s | `27047323809` | 155s | 11.5% slower | `gh run view <run> --json jobs` |
+| Linux aggregate step | `27047041028` | 128s | `27047323809` | 136s | 6.3% slower | same |
+| Linux cache setup step | `27047041028` | 0s | `27047323809` | 10s | added overhead | same |
+| Linux post-cache step | `27047041028` | 0s | `27047323809` | 1s | added overhead | same |
+| Linux copied path log lines | parsed log for `27047041028` | 937 | parsed log for `27047323809` | 1292 | 37.9% more lines | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Linux copied unique paths | parsed log for `27047041028` | 937 | parsed log for `27047323809` | 937 | unchanged | same |
+| Linux Garnix copy lines | parsed log for `27047041028` | 50 | parsed log for `27047323809` | 50 | unchanged | same |
+| Linux local cache proxy copy lines | parsed log for `27047041028` | 0 | parsed log for `27047323809` | 887 | added indirection | same |
+| macOS all-platform cache setup | no cache step in `27047041028` | 0s | `27047224090` at `0802eb1` | 183s then cancelled | blocked proof | `gh run view 27047224090 --json jobs` |
+| Magic cache workflow markers | `a05e998` workflows | 10 | `4d4ec099` workflows | 0 | removed | `git grep -n 'magic-nix-cache-action\|Cache Nix store' <rev> -- .github/workflows \| wc -l` |
+
+Interpretation:
+
+- Reject this cache action for PR `#100`.
+- It did not reduce unique substitution work, did not reduce Garnix reliance,
+  inflated Linux copy logs, added Linux setup overhead, and made the first
+  macOS candidate fail to reach the Darwin proof.
+- The next CI speed work should target closure volume, eval cost, public cache
+  topology, or runner shape rather than GitHub Actions store-cache wrapping.
+
+### `pr100-nix-eval-telemetry-2026-06-06`
+
+- PR: `#100`
+- Measured commit: `4d4ec0996548984a1f2e2a07e240b88b7e57d3e8`
+- Base commit: `a05e9981c943140b65771bb67c17d3eb3aa2884e`
+- Purpose:
+  - remove the rejected Magic Nix Cache workflow steps;
+  - timestamp the CI meter's raw Nix stderr sidecar without changing console
+    output;
+  - set `NIX_SHOW_STATS=1` for metered aggregate `nix build` calls and render
+    eval counters plus phase hints in the summary.
+- Tooling decision:
+  - `nix-output-monitor` remains a good local/human display, but the PR needs
+    parseable audit metrics more than a new CI display dependency.
+  - `json-log-path`, `--log-format internal-json`, `nix-eval-jobs`,
+    `nix-fast-build`, `nix path-info`, `nix derivation show`, `nix why-depends`,
+    and `nix-tree` are the drill-down toolbox for follow-up hotspot work.
+  - Do not use `nix-fast-build --skip-cached` as the default proof path because
+    skipping cached outputs would no longer prove the install/apply closure copy
+    behavior that users actually hit.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Magic cache workflow markers | `a05e998` workflows | 10 | `4d4ec099` workflows | 0 | removed | `git grep -n 'magic-nix-cache-action\|Cache Nix store' <rev> -- .github/workflows \| wc -l` |
+| Metered aggregate workflow calls | `886ad571` workflows | 4 | `4d4ec099` workflows | 4 | unchanged | `git grep -n 'scripts/ci-nix-build.sh .*checks\\.' <rev> -- .github/workflows \| wc -l` |
+| Cached local Darwin aggregate wall time | old meter had no eval stats | n/a | `4d4ec099` dirty worktree local run | 8s | recorded | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci --accept-flake-config --no-link .#checks.aarch64-darwin.ci` |
+| Cached local Darwin eval CPU | old meter had no eval stats | n/a | same local run | 6.62s | added | same |
+| Cached local Darwin eval thunks | old meter had no eval stats | n/a | same local run | 14,467,912 | added | same |
+| Cached local Darwin eval values | old meter had no eval stats | n/a | same local run | 29,254,120 | added | same |
+| Cached local Darwin eval function calls | old meter had no eval stats | n/a | same local run | 7,542,030 | added | same |
+| Historical Linux phase hints | `27047041028` parsed before telemetry | n/a | parser at `4d4ec099` over same log | input fetch +9.83s, plan +42s, copy +0.95s..+69s, build +56s..+123s | added | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27047041028.log` |
+
+Local proof for measured commit:
+
+- `node --check scripts/summarize-nix-build-log.mjs`
+- `bash -n scripts/ci-nix-build.sh`
+- `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "yaml ok"' .github/workflows/ci.yml .github/workflows/pin-stable-openclaw-version.yml garnix.yaml`
+- `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27047041028.log`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci --accept-flake-config --no-link .#checks.aarch64-darwin.ci`
+- `git diff --check`
 
 ## Add A Run
 
