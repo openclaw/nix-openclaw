@@ -104,6 +104,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-build-closure-meter-2026-06-06` | `7555c3bdb2cc` | `7ff4d4ddff82` | add CI build-closure hotspot attribution | no graph change; Linux/macOS CI now reports top closure paths |
 | `pr100-build-analysis-tooling-2026-06-06` | `76c45773853d` | `c99051b5dae3` | add optional `nix-eval-jobs` cache-status summarizer after current tooling survey | no graph change; attr-level cache probes available without default CI overhead |
 | `pr100-structured-nix-log-meter-2026-06-06` | `c99051b5dae3` | `4998f2759d99` | parse optional Nix internal-json build activity events | no graph change; opt-in runs can report structured activity spans |
+| `pr100-hm-manuals-off-2026-06-06` | `4cb703b54f44` | `2896ac3847e0` | disable Home Manager manual outputs in activation proof fixtures | fewer doc/options paths; `options.json` warning removed; apply proof retained |
 
 ## Runs
 
@@ -1061,6 +1062,56 @@ Local proof for measured commit:
 - `scripts/summarize-nix-build-log.mjs --label local-internal-json-config-validity /tmp/nix-openclaw-ci-meter/local-internal-json-config-validity.nix.log`
 - `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27051998719.log`
 - `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-internal-json-config-validity --accept-flake-config --log-format internal-json --rebuild --no-link .#checks.aarch64-darwin.config-validity`
+
+### `pr100-hm-manuals-off-2026-06-06`
+
+- PR: `#100`
+- Base commit: `4cb703b54f44b9f1e17f5155117e8fcc2f579355`
+- Measured code commit: `2896ac3847e046f151bec65b85e0dfa39b0bd42f`
+- Purpose:
+  - stop generating Home Manager manual outputs inside CI activation fixtures;
+  - remove Home Manager `options.json` eval warnings from the activation proof
+    path;
+  - keep user-facing Home Manager defaults unchanged and keep the OpenClaw
+    config/apply/service/gateway assertions intact.
+- Anti-regression review:
+  - The change is scoped to `nix/checks/openclaw-hm-activation.nix` and
+    `nix/tests/hm-activation-macos/home.nix`.
+  - It does not remove `programs.openclaw` assertions, workspace file checks,
+    runtime profile checks, launchd/systemd service checks, or gateway health
+    checks.
+  - It removes only Home Manager documentation/manual artifacts that the tests
+    never asserted on.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Linux HM derivation eval warning | `4cb703b` eval of `.hm-activation.drvPath` | `options.json` context warning present | `2896ac38` dirty eval | warning absent | removed | `nix eval --accept-flake-config --json .#checks.x86_64-linux.hm-activation.drvPath` |
+| Darwin HM derivation eval warning | `4cb703b` eval of `.hm-activation-macos-package.drvPath` | `options.json` context warning present | `2896ac38` dirty eval | warning absent | removed | `nix eval --accept-flake-config --json .#checks.aarch64-darwin.hm-activation-macos-package.drvPath` |
+| Linux HM derivation closure paths | old drv `/nix/store/wc6iczyzmbjmbxnxhgb9j6pjfdzmd3mf-vm-test-run-openclaw-hm-activation.drv` | 5,364 paths | new drv `/nix/store/dbjanaa7fw928rr1r7gljnxk0f9zppr9-vm-test-run-openclaw-hm-activation.drv` | 5,350 paths | 14 fewer | `nix-store -qR --include-outputs "$drv" \| wc -l` |
+| Darwin HM derivation closure paths | old drv `/nix/store/wc3sxqs6bifx9wf0lkiz8ajxbgx0y9mm-home-manager-generation.drv` | 2,676 paths | new drv `/nix/store/9wpjdg4c4a7mcrz86ky1p25j0jmnkkf3-home-manager-generation.drv` | 2,658 paths | 18 fewer | `nix-store -qR --include-outputs "$drv" \| wc -l` |
+| Removed HM doc paths | old/new closure name diff | `home-configuration-reference-manpage`, `home-manager.1`, `options.json`, `nixos-render-docs` present | new closure name diff | absent | removed from activation fixtures | `comm -23 /tmp/hm-old.names /tmp/hm-new.names` |
+| Local Darwin HM package rebuild | prior fixture with manuals enabled | n/a | `2896ac38` dirty local run | 6s, 7 planned/built derivations | recorded | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-hm-manuals-off --accept-flake-config --no-link .#checks.aarch64-darwin.hm-activation-macos-package` |
+| Local Linux HM VM proof | prior fixture with manuals enabled | n/a | `2896ac38` dirty local run | 69s, 15 planned derivations, VM proof passed | recorded | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-hm-manuals-off --accept-flake-config --no-link .#checks.x86_64-linux.hm-activation` |
+
+Interpretation:
+
+- This is a small real simplification of the activation proof closure. It does
+  not move the main Linux bottleneck: QEMU/NixOS VM proof, OpenClaw gateway,
+  default tools, and Node still dominate.
+- The expected remote CI effect is fewer generated Home Manager doc paths and
+  fewer warnings, not a large wall-time improvement.
+- Remote GitHub Actions proof is still required after pushing this commit.
+
+Local proof for measured commit:
+
+- `nix eval --accept-flake-config --json .#checks.aarch64-darwin.hm-activation-macos-package.drvPath`
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux.hm-activation.drvPath`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-hm-manuals-off --accept-flake-config --no-link .#checks.aarch64-darwin.hm-activation-macos-package`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-hm-manuals-off --accept-flake-config --no-link .#checks.x86_64-linux.hm-activation`
+- `scripts/hm-activation-macos.sh`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci-hm-manuals-off --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-ci-hm-manuals-off --accept-flake-config --no-link .#checks.x86_64-linux.ci`
+- `git diff --check`
 
 ## Add A Run
 
