@@ -102,6 +102,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-qmd-instance-split-2026-06-06` | `e9bf98d4c457` | `ff85f6bb3ad2` | split QMD module proof out of default instance CI | Linux aggregate 23.3% faster; QMD output copy/build removed from default CI |
 | `pr100-qmd-lazy-input-2026-06-06` | `3842f6732f0d` | `063d825de228` | stop forcing QMD while constructing default package/check attrs | QMD input fetch removed from default CI; no wall-time win on sampled runner |
 | `pr100-build-closure-meter-2026-06-06` | `7555c3bdb2cc` | `7ff4d4ddff82` | add CI build-closure hotspot attribution | no graph change; Linux/macOS CI now reports top closure paths |
+| `pr100-build-analysis-tooling-2026-06-06` | `76c45773853d` | `c99051b5dae3` | add optional `nix-eval-jobs` cache-status summarizer after current tooling survey | no graph change; attr-level cache probes available without default CI overhead |
 
 ## Runs
 
@@ -957,6 +958,55 @@ Remote proof:
   `2026-06-06T03:34:18Z` to `2026-06-06T03:35:00Z`.
 - GitHub reported `mergeStateStatus=CLEAN` at
   `7ff4d4ddff82db650123ec7a73a3bfaf685e081a`.
+
+### `pr100-build-analysis-tooling-2026-06-06`
+
+- PR: `#100`
+- Base commit: `76c45773853dc7f49befd1bfc27f55408f8d145c`
+- Measured code commit: `c99051b5dae377748ffa4b12705881bca696be07`
+- Purpose:
+  - check current Nix build-analysis tooling before adding more CI machinery;
+  - keep the default CI proof path unchanged;
+  - add a small parser for optional `nix-eval-jobs --check-cache-status`
+    probes, so cache-status audits can be recorded without forcing that tool
+    into every PR build.
+- Tooling survey:
+  - `nix-eval-jobs --check-cache-status` is the most direct answer to
+    attr-level `local` / `cached` / `notBuilt` questions.
+  - `nix-fast-build --skip-cached` is useful for cache-presence experiments,
+    but not for this PR's default proof path because it can optimize away the
+    install/apply copy behavior the user will hit on a clean machine.
+  - `nix-output-monitor` / `nom` remains a strong local UI for active builds,
+    but it does not replace the machine-readable CI summaries.
+  - `nix-diff`, `nix why-depends`, `nix-tree`, `nix-du`, and `nvd` remain
+    targeted drill-down tools after a hotspot or derivation delta is known.
+  - Determinate Nix `nix ps --json` is useful for in-flight local/macOS build
+    sampling, but Linux CI still uses upstream Nix through
+    `cachix/install-nix-action`, and no active local builds were running during
+    this probe.
+- Rejected candidate:
+  - Disabling NixOS test documentation in
+    `nix/checks/openclaw-hm-activation.nix` rebuilt 17 VM-related derivations
+    locally and still produced the same `options.json` eval warning. The local
+    closure summary remained at 1,647 build-closure paths and 6.7 GiB summed
+    NAR, with the same top hotspots. Rejected as churn without improvement.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Default CI installable | `76c45773` workflow | `.ci` aggregate | `c99051b5dae3` workflow | unchanged | no graph change | `git diff -- .github/workflows flake.nix` |
+| New cache-status parser | `76c45773` scripts | absent | `c99051b5dae3` scripts | present | added optional audit tool | `scripts/summarize-nix-eval-jobs.mjs --label <label> <jsonl>` |
+| Local Linux cache probe wall time | `76c45773` clean worktree | n/a | local probe on `76c45773` plus parser commit | 23s | measured overhead, not added to default CI | `nix run --accept-flake-config nixpkgs#nix-eval-jobs -- --flake .#checks.x86_64-linux --workers 1 --check-cache-status --show-input-drvs` |
+| Local Linux check attrs | same probe | n/a | warmed local store | 13 local, 1 notBuilt | `runtime-plugin-packages` only non-local attr | `scripts/summarize-nix-eval-jobs.mjs --label local-linux-cache-probe <jsonl>` |
+| Local Darwin cache probe wall time | `76c45773` clean worktree | n/a | local probe on `76c45773` plus parser commit | 24s | measured overhead, not added to default CI | `nix run --accept-flake-config nixpkgs#nix-eval-jobs -- --flake .#checks.aarch64-darwin --workers 1 --check-cache-status --show-input-drvs` |
+| Local Darwin check attrs | same probe | n/a | warmed local store | 14 local, 0 notBuilt | all attrs already local | `scripts/summarize-nix-eval-jobs.mjs --label local-darwin-cache-probe <jsonl>` |
+| Active-build sampler | local Determinate Nix `3.21.0` | n/a | no active local build | 0 active builds | command supported, no data in idle run | `nix ps --json \| jq '. \| length'` |
+
+Local proof for measured commit:
+
+- `node --check scripts/summarize-nix-eval-jobs.mjs`
+- `scripts/summarize-nix-eval-jobs.mjs --label local-linux-cache-probe --limit 6 /tmp/nix-openclaw-eval-jobs-linux.e3WWib.jsonl`
+- `scripts/summarize-nix-eval-jobs.mjs --label local-darwin-cache-probe --limit 6 /tmp/nix-openclaw-eval-jobs-darwin.Z0KqsY.jsonl`
+- `git diff --check`
 
 ## Add A Run
 
