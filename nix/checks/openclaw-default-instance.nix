@@ -3,6 +3,7 @@
   pkgs,
   stdenv,
   nodejs_22,
+  includeQmdChecks ? false,
 }:
 
 let
@@ -139,23 +140,14 @@ let
       attempted = builtins.tryEval (builtins.deepSeq value "ok");
     in
     if attempted.success then throw "${name}: expected evaluation failure." else "ok";
-  generatedConfig =
-    eval: path:
-    builtins.fromJSON eval.config.home.file."${path}".text;
+  generatedConfig = eval: path: builtins.fromJSON eval.config.home.file."${path}".text;
 
-  qmdPath =
-    if pkgs.openclawPackages ? qmd then
-      builtins.unsafeDiscardStringContext "${pkgs.openclawPackages.qmd}/bin"
-    else
-      null;
   packageHasQmd =
     pkg:
     let
-      pathText = builtins.unsafeDiscardStringContext (
-        (pkg.OPENCLAW_TOOLS_PATH or "") + ":" + (pkg.OPENCLAW_QMD_PATH or "")
-      );
+      qmdPath = builtins.unsafeDiscardStringContext (pkg.OPENCLAW_QMD_PATH or "");
     in
-    qmdPath != null && lib.hasInfix qmdPath pathText;
+    qmdPath != "";
   isPluginSkillPath =
     path: lib.hasSuffix "/skill" path || lib.hasSuffix "-openclaw-plugin-skill-skill" path;
 
@@ -448,8 +440,7 @@ let
       };
     };
   };
-  secretRefPassthroughConfig =
-    generatedConfig secretRefPassthroughEval ".openclaw/openclaw.json";
+  secretRefPassthroughConfig = generatedConfig secretRefPassthroughEval ".openclaw/openclaw.json";
   secretRefGroqApiKey =
     ((secretRefPassthroughConfig.models or { }).providers or { }).groq.apiKey or { };
   secretRefFileApiKey =
@@ -574,8 +565,7 @@ let
       "discord"
     ];
   };
-  runtimePluginCatalogGeneratedConfig =
-    generatedConfig runtimePluginCatalogGeneratedEval ".openclaw/openclaw.json";
+  runtimePluginCatalogGeneratedConfig = generatedConfig runtimePluginCatalogGeneratedEval ".openclaw/openclaw.json";
   runtimePluginCatalogGeneratedLoadPaths =
     ((runtimePluginCatalogGeneratedConfig.plugins or { }).load or { }).paths or [ ];
   runtimePluginCatalogGeneratedEntries = (
@@ -613,10 +603,8 @@ let
       "diagnostics-prometheus"
     ];
   };
-  runtimePluginInstanceOneConfig =
-    generatedConfig runtimePluginInstanceEval ".openclaw-one/openclaw.json";
-  runtimePluginInstanceTwoConfig =
-    generatedConfig runtimePluginInstanceEval ".openclaw-two/openclaw.json";
+  runtimePluginInstanceOneConfig = generatedConfig runtimePluginInstanceEval ".openclaw-one/openclaw.json";
+  runtimePluginInstanceTwoConfig = generatedConfig runtimePluginInstanceEval ".openclaw-two/openclaw.json";
   runtimePluginInstanceOneLoadPaths =
     ((runtimePluginInstanceOneConfig.plugins or { }).load or { }).paths or [ ];
   runtimePluginInstanceTwoLoadPaths =
@@ -816,50 +804,59 @@ let
     npmRuntimePluginEval.config.home.file.".openclaw/openclaw.json".text
   );
 
-  checkKey = builtins.deepSeq [
-    defaultCheck
-    customPluginCheck
-    multiAgentPluginSkillCheck
-    duplicateSkillCheck
-    userPluginSkillCollisionCheck
-    userSkillCheck
-    workspaceBootstrapCheck
-    documentsRemovedCheck
-    bootstrapSeedConflictCheck
-    workspaceFileCollisionCheck
-    workspaceRuntimeFileCollisionCheck
-    invalidWorkspaceFileCheck
-    secretProviderCheck
-    secretRefPassthroughCheck
-    qmdPrewarmCheck
-    qmdMemoryCheck
-    runtimeProfileCheck
-    customRuntimePluginRootCheck
-    runtimePluginCheck
-    runtimePluginCatalogGeneratedCheck
-    runtimePluginInstanceCheck
-    runtimePluginDuplicateCheck
-    runtimePluginUnsupportedCheck
-    runtimePluginRawLoadPathCheck
-    runtimePluginInstallRecordCheck
-    runtimePluginDisabledCheck
-    runtimePluginDeniedCheck
-    runtimePluginSourceCheck
-    runtimePluginSourceDuplicateCheck
-    runtimePluginSourceAmbiguousCheck
-    runtimePluginSourceInvalidSpecCheck
-    runtimePluginSourceInvalidUrlCheck
-    runtimePluginSourceRawLoadPathCheck
-    npmRuntimePluginCheck
-  ] "ok";
+  checkKey = builtins.deepSeq (
+    [
+      defaultCheck
+      customPluginCheck
+      multiAgentPluginSkillCheck
+      duplicateSkillCheck
+      userPluginSkillCollisionCheck
+      userSkillCheck
+      workspaceBootstrapCheck
+      documentsRemovedCheck
+      bootstrapSeedConflictCheck
+      workspaceFileCollisionCheck
+      workspaceRuntimeFileCollisionCheck
+      invalidWorkspaceFileCheck
+      secretProviderCheck
+      secretRefPassthroughCheck
+    ]
+    ++ lib.optionals includeQmdChecks [
+      qmdPrewarmCheck
+      qmdMemoryCheck
+    ]
+    ++ [
+      runtimeProfileCheck
+      customRuntimePluginRootCheck
+      runtimePluginCheck
+      runtimePluginCatalogGeneratedCheck
+      runtimePluginInstanceCheck
+      runtimePluginDuplicateCheck
+      runtimePluginUnsupportedCheck
+      runtimePluginRawLoadPathCheck
+      runtimePluginInstallRecordCheck
+      runtimePluginDisabledCheck
+      runtimePluginDeniedCheck
+      runtimePluginSourceCheck
+      runtimePluginSourceDuplicateCheck
+      runtimePluginSourceAmbiguousCheck
+      runtimePluginSourceInvalidSpecCheck
+      runtimePluginSourceInvalidUrlCheck
+      runtimePluginSourceRawLoadPathCheck
+      npmRuntimePluginCheck
+    ]
+  ) "ok";
 
 in
 stdenv.mkDerivation {
-  pname = "openclaw-default-instance";
+  pname = if includeQmdChecks then "openclaw-qmd-instance" else "openclaw-default-instance";
   version = "1";
   dontUnpack = true;
   # Evaluation alone missed installPhase regressions in the QMD wrapper.
-  nativeBuildInputs = [ nodejs_22 ] ++ lib.optional (qmdMemoryPackage != null) qmdMemoryPackage;
+  nativeBuildInputs = [
+    nodejs_22
+  ]
+  ++ lib.optional (includeQmdChecks && qmdMemoryPackage != null) qmdMemoryPackage;
   env = {
     OPENCLAW_DEFAULT_INSTANCE = checkKey;
   };

@@ -111,7 +111,9 @@
               package-contents = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
-              default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix { };
+              default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+                includeQmdChecks = false;
+              };
               runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
               workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
               config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
@@ -122,6 +124,9 @@
               };
             };
             qmdChecks = pkgs.lib.optionalAttrs (qmdPackage != null) {
+              qmd-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+                includeQmdChecks = true;
+              };
               qmd-runtime = pkgs.callPackage ./nix/checks/openclaw-qmd-runtime.nix {
                 openclawPackage = packageSetStable.openclaw;
                 inherit qmdPackage;
