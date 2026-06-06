@@ -105,8 +105,7 @@
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = false;
               };
-              runtime-path = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
-                includeRuntimePathChecks = true;
+              runtime-path = pkgs.callPackage ./nix/checks/openclaw-runtime-path.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
               source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
