@@ -91,6 +91,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-macos-max-jobs-2-2026-06-06` | `6e87b41a28df` | `debf0c1ce94c` | test hosted macOS Nix concurrency after npm shrinkwrap removes source gateway build | accepted; warm run fast, but speedup is cache-influenced |
 | `pr100-contextful-config-json-2026-06-06` | `6197f2f2f543` | `6ce39fb68fca` | track store references in generated OpenClaw config JSON | OpenClaw config improper-context warnings removed; package metrics unchanged |
 | `pr100-qmd-instance-split-2026-06-06` | `e9bf98d4c457` | `ff85f6bb3ad2` | split QMD module proof out of default instance CI | Linux aggregate 23.3% faster; QMD output copy/build removed from default CI |
+| `pr100-qmd-lazy-input-2026-06-06` | `3842f6732f0d` | `063d825de228` | stop forcing QMD while constructing default package/check attrs | QMD input fetch removed from default CI; no wall-time win on sampled runner |
 
 ## Runs
 
@@ -812,6 +813,63 @@ Remote proof:
   `2026-06-06T02:55:19Z` to `2026-06-06T02:56:07Z`.
 - GitHub reported `mergeStateStatus=CLEAN` at
   `ff85f6bb3ad264a75c0eafb7a9dac0e22871288c`.
+
+### `pr100-qmd-lazy-input-2026-06-06`
+
+- PR: `#100`
+- Measured commit: `063d825de22814eb30a22e45978a43815d493ed1`
+- Base commit: `3842f6732f0d3570d9acb0564ed5526688d018c6`
+- Purpose:
+  - keep the QMD package/check outputs available;
+  - avoid forcing `qmdPackage != null` while constructing default package and
+    check attrsets;
+  - remove the remaining `github:tobi/qmd` input unpack from default CI eval.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Clean-cache Linux `ci.drvPath` QMD input unpack | `3842f673` remote log `27050743619` | 1 | `063d825` clean local eval and remote log `27050932456` | 0 | removed | `XDG_CACHE_HOME=$(mktemp -d) nix eval --accept-flake-config --option eval-cache false --raw .#checks.x86_64-linux.ci.drvPath` |
+| Linux CI QMD log lines | `27050743619` | 1 | `27050932456` | 0 | removed | `rg -n 'qmd\|openclaw-qmd\|github:tobi/qmd' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Linux aggregate input fetches | `27050743619` | 2 | `27050932456` | 1 | 50.0% fewer | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Linux aggregate copied paths | `27050743619` | 931 | `27050932456` | 930 | 0.1% fewer | same |
+| Linux aggregate Garnix copies | `27050743619` | 46 | `27050932456` | 45 | 2.2% fewer | same |
+| Linux eval thunks | `27050743619` | 14,488,466 | `27050932456` | 14,304,918 | 1.3% fewer | same |
+| Linux eval values | `27050743619` | 28,507,042 | `27050932456` | 27,971,449 | 1.9% fewer | same |
+| Linux eval function calls | `27050743619` | 10,651,729 | `27050932456` | 10,510,394 | 1.3% fewer | same |
+| Linux aggregate step | `27050743619` | 119s | `27050932456` | 124s | 4.2% slower, runner variance | same |
+| Linux job duration | `27050743619` | 127s | `27050932456` | 131s | 3.1% slower, runner variance | `gh run view <run> --json jobs` |
+| macOS aggregate step | `27050743619` | 85s | `27050932456` | 88s | 3.5% slower, runner variance | parser command above |
+| Package `qmd` outputs | `3842f673` package attrs | present on Linux and Darwin | `063d825` package attrs | present on Linux and Darwin | preserved | `nix eval --accept-flake-config --json .#packages.<system>.qmd.name` |
+| Explicit QMD checks | `3842f673` check attrs | `qmd-instance`, `qmd-runtime` | `063d825` check attrs | unchanged | preserved | `nix eval --accept-flake-config --json .#checks.<system> --apply 'attrs: builtins.attrNames attrs'` |
+
+Local proof for measured commit:
+
+- `XDG_CACHE_HOME=$(mktemp -d) nix eval --accept-flake-config --option eval-cache false --raw .#checks.x86_64-linux.ci.drvPath`
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'attrs: builtins.attrNames attrs'`
+- `nix eval --accept-flake-config --json .#checks.aarch64-darwin --apply 'attrs: builtins.attrNames attrs'`
+- `nix eval --accept-flake-config --json .#packages.x86_64-linux.qmd.name`
+- `nix eval --accept-flake-config --json .#packages.aarch64-darwin.qmd.name`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-ci-qmd-lazy-ci-only --accept-flake-config --no-link .#checks.x86_64-linux.ci`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci-qmd-lazy-ci-only --accept-flake-config --no-link .#checks.aarch64-darwin.ci`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-qmd-explicit-after-lazy --accept-flake-config --no-link .#checks.x86_64-linux.qmd-instance .#checks.x86_64-linux.qmd-runtime .#checks.aarch64-darwin.qmd-instance .#checks.aarch64-darwin.qmd-runtime`
+- `nix run --accept-flake-config nixpkgs#nix-eval-jobs -- --flake .#checks.x86_64-linux --workers 1 --check-cache-status --show-input-drvs`
+- `git diff --check`
+
+Remote proof:
+
+- GitHub Actions `27050932456`, `pull_request`, success on
+  `063d825de22814eb30a22e45978a43815d493ed1`.
+- GitHub Actions jobs: Linux `2m11s`, macOS `2m39s`.
+- Parser summary: Linux aggregate `124s`, 926 fetched paths, 936 MiB download,
+  4.2 GiB unpacked, 29 planned/built derivations; macOS aggregate `88s`, 226
+  fetched paths, 286 MiB download, 1.8 GiB unpacked.
+- `rg` over the GitHub log found no QMD lines. This removes the last default
+  CI QMD fetch that remained after `ff85f6bb`.
+- Garnix on PR head `063d825de22814eb30a22e45978a43815d493ed1`, success,
+  `2026-06-06T03:09:22Z` to `2026-06-06T03:10:01Z`.
+  Garnix time was slower than the previous sampled docs-only head, so this is
+  not counted as a Garnix wall-time win.
+- GitHub reported `mergeStateStatus=CLEAN` at
+  `063d825de22814eb30a22e45978a43815d493ed1`.
 
 ## Add A Run
 
