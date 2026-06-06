@@ -11,12 +11,14 @@ GitHub Actions, local `/tmp` captures, or ignored `.agent/` notes.
 ## Current Snapshot
 
 - Compared refs:
-  - main before PR #101: `d69b1fc1e736bbe78b46bd886fcc1791b5b9d942`
+  - pre-#101 baseline: `d69b1fc1e736bbe78b46bd886fcc1791b5b9d942`
+  - current main: `4f0a37d3068f6b98e7da1fa26014b2ba72342d00`
   - PR #100 remote head before this slice:
     `4db66bdb2ced44fcf4e476cb30afdde7e09dc5c1`
-  - this slice: pending commit on `codex/npm-shrinkwrap-default`
-- PR #100 intentionally remains based on the pre-#101 main commit. PR #101
-  changed Garnix/CI behavior and is not incorporated into this branch.
+  - this slice local head: `416fe6288f74e7e1cfc2607378fea0040601e602`
+- PR #100 now merges current `main` so it is mergeable. The #101 overlap is
+  intentionally replaced: Garnix no longer references the deleted `ci` aggregate
+  and remains a small cache-publication target set.
 - Product change: stable `openclaw-gateway` uses the upstream npm package and
   `npm-shrinkwrap.json` through `buildNpmPackage`; source/pnpm remains available
   for explicit `gatewayPath` source overrides.
@@ -65,7 +67,7 @@ Deleted surface:
 | Workflow/Garnix YAML parse | pass | `.github/workflows/ci.yml`, pin workflow, `garnix.yaml` |
 | `git diff --check` | pass | No whitespace errors. |
 | Darwin supported surface, cold local pass | pass, 288s | 42 planned/built derivations; runtime plugin catalog dominated cost. |
-| Darwin supported surface, current warm pass | pass, 27s | Rebuilt only `openclaw-module-render` after adding `source-override-render`. |
+| Darwin supported surface, post-merge warm pass | pass, 28s | 0 planned/built derivations; validates the mergeable head uses the cached supported surface. |
 | Darwin `source-override-render` | pass | Catches `gatewayPath` module/source builder wiring. |
 | Linux supported surface dry-run | pass | 58 planned derivations, including `openclaw-source-override-instance`. |
 | Linux `source-override-render` dry-run | pass | Verifies source-override attr resolves on Linux. |
