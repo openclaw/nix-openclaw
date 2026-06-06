@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
+        uses: cachix/install-nix-action@v31
 
       - name: Build Darwin CI aggregator
         timeout-minutes: 25
