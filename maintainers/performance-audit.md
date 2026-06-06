@@ -139,6 +139,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-linux-hm-test-timing-2026-06-06` | `54af8ba86897` | `d672cd2bcd51` | add remote NixOS VM apply-proof timing after current Nix build tooling scan | no graph change; Linux VM bottleneck split into boot/HM/gateway phases |
 | `pr100-linux-gateway-startup-trace-2026-06-06` | `a69a1b583f35` | `fd4ff9947235` | expose upstream gateway startup spans in the Linux HM timing summary | no speed win; remaining TCP wait is larger than measured gateway spans |
 | `pr100-linux-hm-default-fixture-simplification-2026-06-06` | `621be9a52fda` | `76b2013f806` | remove custom plugin fixture from the default Linux HM apply proof | simpler default proof; favorable timing sample, no direct-input graph win |
+| `pr100-ci-drop-direct-gateway-path-2026-06-06` | `aa0eba41d075` | `6f41cd694240` | remove redundant direct gateway path from the default CI aggregate | `ci` direct inputs 12 -> 11 on both systems; gateway remains in closure |
 
 ## Runs
 
@@ -2082,6 +2083,77 @@ Remote proof for measured commit:
   Home Manager success `7.76s`, and VM boot `7.55s`.
 - macOS job `1m41s`; Darwin aggregate step `64s`; HM activation parsed step
   `1.39s`.
+- PR merge state after the run: `CLEAN`.
+- Garnix checks remained green on the same head.
+
+### `pr100-ci-drop-direct-gateway-path-2026-06-06`
+
+- PR: `#100`
+- Base commit: `aa0eba41d0750dd0cbd60b558835114bb92aba59`
+- Measured code commit: `6f41cd694240a0555a23be33dcb9e55e9e6a649b`
+- Purpose:
+  - stop the synthetic `ci` aggregate from directly listing
+    `openclaw-gateway`;
+  - keep the explicit `checks.gateway` output for Garnix/debugging;
+  - rely on the `openclaw` package's direct dependency on
+    `openclaw-gateway`, plus package-contents and gateway-smoke checks, to
+    preserve gateway proof.
+- Anti-regression review:
+  - `checks.<system>.gateway` still evaluates to the same gateway derivation.
+  - The `openclaw` package still directly depends on `openclaw-gateway`, so the
+    gateway remains in the aggregate build closure.
+  - Package contents and gateway smoke checks still exercise the gateway package
+    directly.
+  - This is not a wall-clock claim: remote copied/fetched path counts and built
+    derivation counts stayed effectively unchanged.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Linux `ci` direct derivation inputs | `aa0eba41` CI drv `/nix/store/i7av...nix-openclaw-ci.drv` | 12 | `6f41cd69` CI drv `/nix/store/mn16...nix-openclaw-ci.drv` | 11 | 1 fewer | `nix derivation show "$drv" \| jq '.derivations[] \| .inputs.drvs \| keys \| length'` |
+| Darwin `ci` direct derivation inputs | `aa0eba41` CI drv `/nix/store/njql...nix-openclaw-ci.drv` | 12 | `6f41cd69` CI drv `/nix/store/3yld...nix-openclaw-ci.drv` | 11 | 1 fewer | same |
+| Direct gateway input in Linux `ci` | same Linux CI drv | 1 | measured Linux CI drv | 0 | removed | `nix derivation show "$drv" \| jq -r '.derivations[] \| .inputs.drvs \| keys[]' \| rg -c 'openclaw-gateway-2026\\.6\\.1\\.drv'` |
+| Direct gateway input in Darwin `ci` | same Darwin CI drv | 1 | measured Darwin CI drv | 0 | removed | same |
+| Gateway still in Linux aggregate closure | measured Linux CI drv | n/a | measured Linux CI drv | 1 | retained | `nix-store -qR "$drv" \| rg -c 'openclaw-gateway-2026\\.6\\.1\\.drv'` |
+| Gateway still in Darwin aggregate closure | measured Darwin CI drv | n/a | measured Darwin CI drv | 1 | retained | same |
+| Local Linux aggregate proof | previous local proof | n/a | dirty worktree matching `6f41cd69` source | 3s, success, built only `nix-openclaw-ci` | proof retained | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-linux-ci-drop-direct-gateway --accept-flake-config --no-link .#checks.x86_64-linux.ci` |
+| Local Darwin aggregate proof | previous local proof | n/a | dirty worktree matching `6f41cd69` source | 11s, success, built only `nix-openclaw-ci` | proof retained | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-darwin-ci-drop-direct-gateway --accept-flake-config --no-link .#checks.aarch64-darwin.ci` |
+| Remote Linux aggregate parsed step | run `27058365117`, head `aa0eba41` | 120s, 922 fetched paths, 926 copied paths, 29 built drvs | run `27058648981`, head `6f41cd69` | 124s, 922 fetched paths, 926 copied paths, 29 built drvs | no wall-clock win; graph fan-out only | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote Linux wrapper seconds | run `27058365117` | 118s | run `27058648981` | 118s | unchanged | `rg -n 'nix-meter: end label=linux-ci' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote Linux VM test script timing | run `27058365117` timing summary | 30.1s | run `27058648981` timing summary | 32.3s | 2.2s slower sample | `rg -n 'run the VM test script' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote macOS aggregate parsed step | run `27058365117` | 66s, 226 fetched paths, 230 copied paths, 0 built drvs | run `27058648981` | 66s, 226 fetched paths, 230 copied paths, 0 built drvs | unchanged | parser command above |
+| Remote macOS job duration | run `27058365117` | 1m45s | run `27058648981` | 1m46s | unchanged sample | `gh run view <run> --json jobs` |
+| Garnix all checks | PR status at `aa0eba41` | success | PR status at `6f41cd69` | success | green | `gh pr view 100 --json statusCheckRollup` |
+
+Interpretation:
+
+- Count this as a small CI-graph simplification. The default aggregate no longer
+  has a redundant direct gateway path, but the gateway package remains built and
+  tested through `openclaw`, package contents, and gateway smoke checks.
+- Do not count this as a remote wall-clock speed win. The latest remote run
+  copied the same number of paths and built the same number of derivations; the
+  remaining cost is still substitution volume plus the Linux VM apply proof.
+- This is still useful because it removes one direct edge from the aggregate and
+  keeps the check graph closer to the user-facing package contract.
+
+Local proof for measured commit:
+
+- `git diff --check`
+- `nix eval --accept-flake-config --raw .#checks.x86_64-linux.ci.drvPath`
+- `nix eval --accept-flake-config --raw .#checks.aarch64-darwin.ci.drvPath`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-linux-ci-drop-direct-gateway --accept-flake-config --no-link .#checks.x86_64-linux.ci`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-darwin-ci-drop-direct-gateway --accept-flake-config --no-link .#checks.aarch64-darwin.ci`
+
+Remote proof for measured commit:
+
+- GitHub Actions run: `27058648981`, success, `pull_request`, head
+  `6f41cd694240a0555a23be33dcb9e55e9e6a649b`.
+- Linux job `2m20s`; aggregate step `124s`; wrapper `118s`; timing step `7s`;
+  `922` planned fetched paths; `926` copied paths; `29` planned/built
+  derivations.
+- Linux timing summary reported VM test script `32.3s`, TCP readiness `14.5s`,
+  Home Manager success `12.2s`, and VM boot `11.9s`.
+- macOS job `1m46s`; Darwin aggregate step `66s`; HM activation parsed step
+  `1.68s`.
 - PR merge state after the run: `CLEAN`.
 - Garnix checks remained green on the same head.
 
