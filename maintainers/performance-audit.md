@@ -119,7 +119,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-internal-json-build-count-2026-06-06` | `5f218197770f` | `233acba0a508` | count Nix internal-json Build activities as built derivations | no graph change; structured probes no longer report false zero built drvs |
 | `pr100-runtime-plugin-smoke-split-2026-06-06` | `148be063849b` | `196d6377fa13` | split runtime plugin smokes out of the default CI gate | default CI no longer depends on Slack/diagnostics plugin packages; explicit plugin smokes retained |
 | `pr100-single-nix-installer-action-2026-06-06` | `bde5f61d5508` | `7295cda03e52` | use `cachix/install-nix-action` for macOS workflows too | macOS job faster; workflow still Linux-bound |
-| `pr100-acpx-store-symlink-2026-06-06` | `2c0a5286490e` | `432c93725f85` | symlink bundled ACPX from generated runtime plugin package | gateway output much smaller; runtime closure intentionally unchanged |
+| `pr100-acpx-store-symlink-2026-06-06` | `2c0a5286490e` | `432c93725f85` | symlink bundled ACPX from generated runtime plugin package | gateway output much smaller; warm CI returns to baseline speed |
 
 ## Runs
 
@@ -1521,8 +1521,37 @@ Local proof for measured commit:
 
 Remote proof for measured commit:
 
-- Pending. Push `432c9372` plus this audit note and measure the real GitHub
-  Actions run before claiming remote wall-clock improvement.
+- First remote run: `27054880448`, attempt 1, success, `pull_request`,
+  `2026-06-06T06:22:17Z` to `2026-06-06T06:25:27Z`.
+  - Head: `6bece97f4d87a12bb4fcf764641633d56d307014`.
+  - macOS job passed in `3m06s`; Linux job passed in `2m38s`.
+  - macOS aggregate was slower than the previous green head: `63s -> 143s`.
+    It planned/built the new ACPX and gateway outputs, copied `1.5 GiB`, and
+    built 19 derivations.
+  - Linux aggregate was slower than the previous green head: `120s -> 149s`.
+    It planned/built the new ACPX and gateway outputs, copied `1.9 GiB`, and
+    built 30 derivations.
+  - Interpretation: first run populated new output paths; do not count attempt
+    1 as a steady-state CI speed win.
+- Warm remote rerun: `27054880448`, attempt 2, success,
+  `2026-06-06T06:26:25Z` to `2026-06-06T06:28:35Z`.
+  - macOS job passed in `1m50s`; Linux job passed in `2m08s`.
+  - macOS aggregate was effectively baseline: `63s -> 66s`, `225 -> 226`
+    planned paths, `328 MiB -> 328 MiB` download, `0 -> 0` built derivations.
+  - Linux aggregate returned to baseline: `120s -> 120s`, `923 -> 924`
+    planned paths, `932 MiB -> 932 MiB` download, `27 -> 27` built
+    derivations.
+  - Both warm aggregates copied `openclaw-runtime-plugin-acpx-2026.6.1` and
+    `openclaw-gateway-2026.6.1` from Garnix instead of rebuilding them.
+- Remote conclusion:
+  - Correctness remains green on the real PR workflow and PR #99 stack.
+  - Warm CI speed is roughly unchanged, but the gateway artifact in that same
+    proof is much smaller: Darwin `702,623,720 B -> 274,810,712 B`; Linux
+    `1,005,736,880 B -> 274,746,968 B`.
+  - This is still valuable for cache storage/upload/download pressure, release
+    artifacts, and avoiding duplicated ACPX bytes. It is not a wall-clock CI
+    breakthrough while GitHub Actions remains dominated by substitution volume,
+    eval, and VM/apply proof.
 
 ## Add A Run
 
