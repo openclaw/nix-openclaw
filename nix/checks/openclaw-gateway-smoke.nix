@@ -4,10 +4,15 @@
   stdenv,
   nodejs_22,
   openclawGateway,
+  includeRuntimePluginSmoke ? false,
 }:
 
 stdenv.mkDerivation {
-  pname = "openclaw-gateway-smoke";
+  pname =
+    if includeRuntimePluginSmoke then
+      "openclaw-runtime-plugin-gateway-smoke"
+    else
+      "openclaw-gateway-smoke";
   version = lib.getVersion openclawGateway;
 
   dontUnpack = true;
@@ -18,6 +23,8 @@ stdenv.mkDerivation {
 
   env = {
     OPENCLAW_GATEWAY = openclawGateway;
+  }
+  // lib.optionalAttrs includeRuntimePluginSmoke {
     OPENCLAW_RUNTIME_PLUGIN_SMOKE_ID = "diagnostics-prometheus";
     OPENCLAW_RUNTIME_PLUGIN_SMOKE_ROOT = "${pkgs.openclawRuntimePlugins.diagnostics-prometheus}";
   };

@@ -118,9 +118,11 @@
               workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
               config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
+                includeRuntimePluginSmoke = false;
               };
               gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
+                includeRuntimePluginSmoke = false;
               };
             };
             qmdChecks = {
@@ -139,6 +141,14 @@
               };
             };
             runtimePluginChecks = {
+              runtime-plugin-config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
+                openclawGateway = packageSetStable.openclaw-gateway;
+                includeRuntimePluginSmoke = true;
+              };
+              runtime-plugin-gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
+                openclawGateway = packageSetStable.openclaw-gateway;
+                includeRuntimePluginSmoke = true;
+              };
               runtime-plugin-packages = pkgs.symlinkJoin {
                 name = "openclaw-runtime-plugin-packages";
                 paths = builtins.attrValues packageSetStable.openclawRuntimePlugins;
