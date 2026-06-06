@@ -46,6 +46,9 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 - Cache/eval probes:
   - use `nix-eval-jobs --check-cache-status` for explicit local/cached/not-built
     attribution across many attrs;
+  - use `scripts/summarize-nix-eval-jobs.mjs` to turn that JSONL into a
+    commit-tied cache-status summary when doing manual or periodic cache
+    audits;
   - use `nix-fast-build` for separate cache-presence experiments, not the
     default proof path, because skip-cached modes can stop proving the cold
     install/apply closure copy behavior users hit.
