@@ -49,6 +49,12 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
   - use it as an optional sampler for long local/macOS builds, not as a required
     CI metric while Linux CI still uses upstream Nix through
     `cachix/install-nix-action`.
+- NixOS VM test drill-down:
+  - use `nix log <test.drv>` plus `scripts/summarize-nixos-test-log.mjs` for
+    NixOS test-driver timing lines after the Linux aggregate builds;
+  - this is the best low-overhead way to split Linux apply-proof time into VM
+    boot, Home Manager activation, gateway readiness, and cleanup without
+    forcing structured JSON logs on every CI run.
 - Cache/eval probes:
   - use `nix-eval-jobs --check-cache-status` for explicit local/cached/not-built
     attribution across many attrs;
@@ -130,6 +136,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-json-log-sidecar-opt-in-2026-06-06` | `c8d1baca6cb6` | `03eff14f0de1` | make the Nix internal-json sidecar opt-in | default CI log/parser overhead removed; no proven wall-clock win |
 | `pr100-darwin-activation-reuse-2026-06-06` | `786cc73dc4aa` | `6d329708bd51` | reuse the Darwin CI aggregate activation package for the impure launchd smoke | macOS activation step faster; apply proof retained |
 | `pr100-runtime-plugin-lock-split-2026-06-06` | `198df99f82bc` | `afc82b33b683` | split broad runtime plugin lock proof out of the default CI gate | default `ci` inputs 13 -> 12 on both systems; explicit lock proof retained |
+| `pr100-linux-hm-test-timing-2026-06-06` | `54af8ba86897` | `d672cd2bcd51` | add remote NixOS VM apply-proof timing after current Nix build tooling scan | no graph change; Linux VM bottleneck split into boot/HM/gateway phases |
 
 ## Runs
 
@@ -1851,6 +1858,83 @@ Remote proof for measured commit:
 - macOS job `2m08s`; Darwin aggregate step `84s`; wrapper `82s`; `226`
   planned fetched paths; `230` copied paths; `0` built derivations; HM
   activation parsed step `1.87s`.
+- PR merge state after the run: `CLEAN`.
+- Garnix checks remained green on the same head.
+
+### `pr100-linux-hm-test-timing-2026-06-06`
+
+- PR: `#100`
+- Base commit: `54af8ba86897c9673ce9b353b7ffa12fd1a27895`
+- Measured code commit: `d672cd2bcd51243e848d10141883ff8d4b3fcb94`
+- Purpose:
+  - verify current Nix build-analysis tooling before adding more dependencies;
+  - keep the default CI meter on native Nix evidence instead of adopting an
+    interactive or skip-cached tool as the proof path;
+  - expose the remaining Linux Home Manager/NixOS VM apply-proof time from the
+    existing `nix log` output.
+- SOTA scan result:
+  - keep `NIX_SHOW_STATS`, timestamped stderr, build-result JSON, closure
+    summaries, optional `json-log-path`, optional `--log-format internal-json`,
+    optional `nix-eval-jobs --check-cache-status`, and local eval profiles as
+    the useful build-analysis stack;
+  - keep `nix-output-monitor`, `nix ps --json`, `nix-fast-build`,
+    `nix-log-check`, `nix-tree`, `nix-du`, `nix-diff`, `nvd`, `nix-deps`, and
+    `nixard` as manual/local drill-down tools rather than default PR proof;
+  - add only the low-overhead NixOS test-log parser because it answers the
+    remaining remote Linux question that aggregate logs could not answer.
+- Anti-regression review:
+  - No Nix package/check graph changed.
+  - The new workflow step runs after the Linux aggregate and is non-blocking;
+    it cannot make a failed aggregate pass.
+  - The parser consumes the existing NixOS test-driver log and does not require
+    enabling remote internal-json logs by default.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Linux HM timing workflow steps | `54af8ba8` workflows | 0 | `d672cd2b` workflows | 2 | added in PR CI and pin validation | `rg -n 'Summarize Linux HM activation timing' .github/workflows/*.yml` |
+| New default Nix analysis dependencies | `54af8ba8` scripts | 0 | `d672cd2b` scripts | 0 | unchanged | manual diff review; no flake/package input changes |
+| Local HM timing summary rows | no parser | n/a | `d672cd2b` local cached log | 24 rows | added | `RUNNER_TEMP=/tmp scripts/summarize-hm-activation-timing.sh x86_64-linux local-linux-hm-activation-timing` |
+| Local VM test script timing | same | n/a | same local summary | 21.3s | measured | same |
+| Local gateway TCP readiness timing | same | n/a | same local summary | 10.5s | measured | same |
+| Local Home Manager success timing | same | n/a | same local summary | 7.05s | measured | same |
+| Local VM boot timing | same | n/a | same local summary | 6.87s | measured | same |
+| Remote Linux aggregate parsed step | run `27057031841`, head `54af8ba8` | 111s, 26 planned/built derivations | run `27057315856`, head `d672cd2b` | 118s, 26 planned/built derivations | 7s slower sample; graph unchanged | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote Linux timing step | no timing step | n/a | run `27057315856` | 6s, success | added post-build meter | `gh run view 27057315856 --json jobs` |
+| Remote Linux job duration | run `27057031841` | 1m58s | run `27057315856` | 2m11s | 13s slower sample, including 6s timing step | same |
+| Remote HM VM test script timing | no parser | n/a | run `27057315856` timing summary | 30.2s | measured | `rg -n 'run the VM test script' /tmp/nix-openclaw-ci-logs/run-27057315856.log` |
+| Remote gateway TCP readiness timing | no parser | n/a | run `27057315856` timing summary | 13.3s | measured | same |
+| Remote Home Manager success timing | no parser | n/a | run `27057315856` timing summary | 11.1s | measured | same |
+| Remote VM boot timing | no parser | n/a | run `27057315856` timing summary | 10.8s | measured | same |
+| Remote macOS job duration | run `27057031841` | 1m41s | run `27057315856` | 1m50s | 9s slower sample | `gh run view <run> --json jobs` |
+| Garnix all checks | PR status at `54af8ba8` | success | PR status at `d672cd2b` | success, 25s | green | `gh pr view 100 --json statusCheckRollup` |
+
+Interpretation:
+
+- Do not count this as a CI speed win. It adds a small post-build timing step
+  so the next speed pass can target concrete phases rather than the opaque VM
+  derivation.
+- The remaining Linux cost is still dominated by substitute/copy volume plus
+  the NixOS VM apply proof. In the remote sample, the VM proof itself reported
+  `30.2s`, with gateway TCP readiness at `13.3s`, Home Manager success at
+  `11.1s`, and VM boot at `10.8s`.
+- The next likely improvement target is the Linux apply proof shape or gateway
+  startup path, not another generic Nix build analyzer.
+
+Local proof for measured commit:
+
+- `node --check scripts/summarize-nixos-test-log.mjs`
+- `bash -n scripts/summarize-hm-activation-timing.sh scripts/ci-nix-build.sh`
+- `git diff --check`
+- `RUNNER_TEMP=/tmp scripts/summarize-hm-activation-timing.sh x86_64-linux local-linux-hm-activation-timing`
+
+Remote proof for measured commit:
+
+- GitHub Actions run: `27057315856`, success, `pull_request`, head
+  `d672cd2bcd51243e848d10141883ff8d4b3fcb94`.
+- Linux job `2m11s`; aggregate step `118s`; timing step `6s`; `924`
+  planned fetched paths; `928` copied paths; `26` planned/built derivations.
+- macOS job `1m50s`; Darwin aggregate step `70s`; HM activation parsed step
+  `1.67s`.
 - PR merge state after the run: `CLEAN`.
 - Garnix checks remained green on the same head.
 
