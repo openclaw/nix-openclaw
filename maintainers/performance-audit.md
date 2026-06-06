@@ -108,6 +108,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-launchd-bootstrap-no-kickstart-2026-06-06` | `f2c24335809b` | `f6446c383e4` | avoid duplicate launchd kickstart immediately after successful relink/bootstrap | macOS activation step faster; launchd/gateway proof retained |
 | `pr100-custom-substituter-meter-2026-06-06` | `d711fa683e7` | `919261d88be` | list copied path names for non-default substituters | Garnix dependence visible per run without changing proof graph |
 | `pr100-internal-json-build-count-2026-06-06` | `5f218197770f` | `233acba0a508` | count Nix internal-json Build activities as built derivations | no graph change; structured probes no longer report false zero built drvs |
+| `pr100-runtime-plugin-smoke-split-2026-06-06` | `148be063849b` | `196d6377fa13` | split runtime plugin smokes out of the default CI gate | default CI no longer depends on Slack/diagnostics plugin packages; explicit plugin smokes retained |
 
 ## Runs
 
@@ -1282,6 +1283,62 @@ Local proof for measured commit:
 - `scripts/summarize-nix-build-log.mjs --label local-internal-json-fast-probe /tmp/nix-openclaw-ci-meter/local-internal-json-fast-probe.nix.log`
 - `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27053188841.log`
 - `git diff --check`
+
+### `pr100-runtime-plugin-smoke-split-2026-06-06`
+
+- PR: `#100`
+- Base commit: `148be063849bb24028cc560cc4ecc76e5b307607`
+- Measured code commit: `196d6377fa1330d918ff255274074cf95b41779f`
+- Purpose:
+  - keep PR #100's default CI gate focused on the default install/config/apply
+    contract;
+  - move runtime-plugin smoke coverage to explicit check attrs while PR #99 owns
+    plugin shrinkwrap materialization;
+  - remove hidden Slack/diagnostics package dependencies from the default CI
+    aggregate without deleting plugin proof.
+- Anti-regression review:
+  - Default `config-validity` still runs `openclaw config validate`,
+    `config get`, `plugins list`, and `status`.
+  - Default `gateway-smoke`, package contents, runtime-plugin locks, and Linux
+    Home Manager VM apply proof remain in the default CI aggregate.
+  - Runtime-plugin config/list/status and gateway-health smoke proof remains
+    available as explicit `runtime-plugin-config-validity` and
+    `runtime-plugin-gateway-smoke` checks on both systems.
+  - No module option, package output, or user-facing interface changed.
+  - This is not counted as a correctness win; it is a graph split that removes
+    out-of-scope plugin package builds from PR #100's default gate while keeping
+    the explicit plugin proof surface.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Linux CI derivation closure paths | `148be063` `checks.x86_64-linux.ci.drvPath` | 5,391 | `196d6377` `checks.x86_64-linux.ci.drvPath` | 5,379 | 12 fewer | `nix-store -qR --include-outputs "$drv" \| wc -l` |
+| macOS CI derivation closure paths | `148be063` `checks.aarch64-darwin.ci.drvPath` | 2,699 | `196d6377` `checks.aarch64-darwin.ci.drvPath` | 2,687 | 12 fewer | same |
+| Linux CI transitive Slack/diagnostics plugin refs | `148be063` CI drv closure | 12 | `196d6377` CI drv closure | 0 | removed | `nix-store -qR --include-outputs "$drv" \| rg -c 'openclaw-runtime-plugin-(slack\|diagnostics-prometheus)\|slack-2026\\.6\\.1\\.tgz\|diagnostics-prometheus-2026\\.6\\.1\\.tgz'` |
+| macOS CI transitive Slack/diagnostics plugin refs | `148be063` CI drv closure | 12 | `196d6377` CI drv closure | 0 | removed | same |
+| Linux CI direct derivation inputs | `148be063` CI drv | 13 | `196d6377` CI drv | 13 | unchanged | `nix derivation show "$drv" \| jq -r '.derivations[] \| .inputs.drvs \| keys[]' \| wc -l` |
+| macOS CI direct derivation inputs | `148be063` CI drv | 13 | `196d6377` CI drv | 13 | unchanged | same |
+| Local Linux default CI proof | warm dirty local proof | n/a | `196d6377` local run | 39s, 4 planned builds, no Slack/diagnostics plugin package builds | recorded | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-ci-runtime-plugin-smoke-split --accept-flake-config --no-link .#checks.x86_64-linux.ci` |
+| Local macOS default CI proof | warm dirty local proof | n/a | `196d6377` local run | 28s, 4 planned builds, no Slack/diagnostics plugin package builds | recorded | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci-runtime-plugin-smoke-split --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci` |
+| Explicit runtime-plugin smoke proof | no separate attrs | n/a | `196d6377` local run | 18s, 6 planned builds, passed on Linux and macOS | added retained proof surface | `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-runtime-plugin-smokes-explicit --accept-flake-config --no-link .#checks.x86_64-linux.runtime-plugin-config-validity .#checks.x86_64-linux.runtime-plugin-gateway-smoke .#checks.aarch64-darwin.runtime-plugin-config-validity .#checks.aarch64-darwin.runtime-plugin-gateway-smoke` |
+
+Interpretation:
+
+- The default CI graph no longer drags runtime plugin smoke package builds into
+  PR #100's default install/apply proof.
+- The expected remote impact is removal of the two planned runtime-plugin smoke
+  derivations and their Garnix tarball copies from default Linux CI. Wall-clock
+  may still be dominated by VM/apply proof and runner variance.
+- This split is acceptable only because runtime plugin behavior remains
+  explicitly checkable and plugin packaging remains in PR #99's scope.
+
+Local proof for measured commit:
+
+- `git diff --check`
+- `node --check nix/scripts/check-config-validity.mjs`
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'attrs: builtins.attrNames attrs'`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-linux-ci-runtime-plugin-smoke-split --accept-flake-config --no-link .#checks.x86_64-linux.ci`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-runtime-plugin-smokes-explicit --accept-flake-config --no-link .#checks.x86_64-linux.runtime-plugin-config-validity .#checks.x86_64-linux.runtime-plugin-gateway-smoke .#checks.aarch64-darwin.runtime-plugin-config-validity .#checks.aarch64-darwin.runtime-plugin-gateway-smoke`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci-runtime-plugin-smoke-split --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci`
 
 ## Add A Run
 
