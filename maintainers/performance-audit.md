@@ -142,6 +142,37 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-ci-drop-direct-gateway-path-2026-06-06` | `aa0eba41d075` | `6f41cd694240` | remove redundant direct gateway path from the default CI aggregate | `ci` direct inputs 12 -> 11 on both systems; gateway remains in closure |
 | `pr100-plugin-instance-split-2026-06-06` | `623713a59a13` | `a9fa1d4e3e46` | split plugin instance fixture checks out of default instance CI | default-instance no longer depends on Node/plugin fixture; explicit plugin proof retained |
 
+## Current Main-vs-PR Snapshot
+
+- Baseline ref: `origin/main` at `6bd88e582c44b689cc1bf413d294197944a42c4b`.
+- PR ref: `codex/npm-shrinkwrap-default` at
+  `d3e63129c6670fda5fbd4d764d8c22490313ad5f`.
+- Stack note: PR `#100` is based on PR `#99`
+  (`codex/runtime-plugin-shrinkwrap-materialization`), not directly on
+  `origin/main`.
+
+| Metric | `origin/main` | Current PR | Change | Command |
+| --- | ---: | ---: | ---: | --- |
+| Gateway closure | 2,273,877,888 B | 904,981,328 B | 60.2% smaller | `nix path-info -S "$gateway"` |
+| `openclaw` closure | 3,215,431,032 B | 1,846,534,464 B | 42.6% smaller | `nix path-info -S "$openclaw"` |
+| Gateway output | 2,169,012,224 B | 339,697,664 B | 84.3% smaller | `du -sk "$gateway"` |
+| Package manifests | 1,452 | 541 | 62.7% fewer | `find "$gateway/lib/openclaw" -name package.json \| wc -l` |
+| Files under `lib/openclaw` | 97,909 | 32,840 | 66.5% fewer | `find "$gateway/lib/openclaw" -type f \| wc -l` |
+| Darwin `ci` direct input drvs | 41 | 11 | 73.2% fewer | `nix derivation show "$(nix eval --raw <ref>#checks.aarch64-darwin.ci.drvPath)"` |
+| Linux `ci` direct input drvs | 43 | 11 | 74.4% fewer | same |
+| Direct runtime plugin package inputs in `ci` | 28 per system | 0 per system | removed from default gate | same |
+| Darwin `default-instance` closure paths | 2,879 | 863 | 70.0% fewer | `nix-store -qR --include-outputs "$drv" \| wc -l` |
+| Linux `default-instance` closure paths | 3,695 | 357 | 90.3% fewer | same |
+| Darwin `default-instance` closure size | 9,072,568 B | 2,652,688 B | 70.8% smaller | `nix path-info --json --closure-size "$drv"` |
+| Linux `default-instance` closure size | 19,021,248 B | 2,185,584 B | 88.5% smaller | same |
+| Garnix include targets | 10 | 5 | 50.0% fewer | `ruby -e 'require "yaml"; ...'` |
+| Gateway forced rebuild | 399.37s then determinism failure | 56.27s success | deterministic npm path | `/usr/bin/time -p nix build --rebuild --no-link <ref>#packages.aarch64-darwin.openclaw-gateway` |
+
+Remote CI status for the PR snapshot: GitHub Actions run `27059389891`,
+Garnix, and Socket were green at head `d3e63129c`. Main did not have the same
+Nix metering scripts, so remote phase/copy/build counts are not directly
+comparable against `origin/main`.
+
 ## Runs
 
 ### `pr100-npm-default-2026-06-05`
@@ -2220,15 +2251,15 @@ Local proof for measured commit:
 
 Remote proof for pushed head:
 
-- GitHub Actions run: `27059226421`, success, `pull_request`, head
-  `467e80235ed1dcc0d2c10167407825a0981dabce`.
-- Linux job `2m11s`; aggregate step `118s`; wrapper `116s`; timing step `6s`;
+- GitHub Actions run: `27059389891`, success, `pull_request`, head
+  `d3e63129c6670fda5fbd4d764d8c22490313ad5f`.
+- Linux job `2m16s`; aggregate step `119s`; wrapper `115s`; timing step `6s`;
   `923` planned fetched paths; `927` copied paths; `28` planned/built
   derivations; build closure `1,526` paths, summed NAR `4.2 GiB`.
-- Linux timing summary reported VM test script `29.7s`, TCP readiness `13.2s`,
-  Home Manager success `10.9s`, VM boot `10.6s`, and config file wait `2.58s`.
-- macOS job `1m58s`; Darwin aggregate step `75s`; wrapper `73s`; HM
-  activation parsed step `1.75s`; `226` planned fetched paths; `230` copied
+- Linux timing summary reported VM test script `30.1s`, TCP readiness `13.2s`,
+  Home Manager success `11.1s`, VM boot `10.8s`, and config file wait `2.72s`.
+- macOS job `1m35s`; Darwin aggregate step `58s`; wrapper `56s`; HM
+  activation parsed step `1.49s`; `226` planned fetched paths; `230` copied
   paths; `0` built derivations; build closure `632` paths, summed NAR
   `1.8 GiB`.
 - Garnix and Socket checks passed on the same head; PR merge state returned to
