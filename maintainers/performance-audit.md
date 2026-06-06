@@ -106,6 +106,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-structured-nix-log-meter-2026-06-06` | `c99051b5dae3` | `4998f2759d99` | parse optional Nix internal-json build activity events | no graph change; opt-in runs can report structured activity spans |
 | `pr100-hm-manuals-off-2026-06-06` | `4cb703b54f44` | `2896ac3847e0` | disable Home Manager manual outputs in activation proof fixtures | fewer doc/options paths; `options.json` warning removed; apply proof retained |
 | `pr100-launchd-bootstrap-no-kickstart-2026-06-06` | `f2c24335809b` | `f6446c383e4` | avoid duplicate launchd kickstart immediately after successful relink/bootstrap | macOS activation step faster; launchd/gateway proof retained |
+| `pr100-custom-substituter-meter-2026-06-06` | `d711fa683e7` | `919261d88be` | list copied path names for non-default substituters | Garnix dependence visible per run without changing proof graph |
 
 ## Runs
 
@@ -1189,6 +1190,55 @@ Remote proof for measured commit:
   macOS, Garnix, Socket Security, and flake evaluation checks passed.
 - `rg -n "options\\.json|home-configuration-reference-manpage|nixos-render-docs|Using 'builtins\\.toFile'" /tmp/nix-openclaw-ci-logs/run-27052905095.log`
   returned no matches.
+
+### `pr100-custom-substituter-meter-2026-06-06`
+
+- PR: `#100`
+- Base commit: `d711fa683e739d8e5fb01f267e2585c3feb810d6`
+- Measured code commit: `919261d88bed3913253b093534761245dbabd3c6`
+- Purpose:
+  - make Garnix/cache dependence actionable in every CI run;
+  - keep default CI proof graph unchanged;
+  - avoid adding new build steps or external cache probes.
+- Anti-regression review:
+  - The change only affects `scripts/summarize-nix-build-log.mjs`.
+  - It records names already present in raw Nix copy log lines.
+  - It suppresses default `cache.nixos.org` and Determinate cache names so the
+    summary stays focused on custom substituters.
+  - It does not change Nix build arguments, check selection, package outputs,
+    launchd/systemd/apply proof, or substituter configuration.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Custom substituter copied-name summary | parser at `d711fa68` | absent | `919261d8` parser | present | added | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27053112373.log` |
+| Remote Linux Garnix copied names | `27052991416` summary | source count only: 44 copied lines | `27053112373` summary | copied names rendered; 44 copied lines | attribution added | `rg -n 'Copied from https://cache\\.garnix\\.io' /tmp/nix-openclaw-ci-logs/run-27053112373.log` |
+| Remote macOS Garnix copied names | `27052991416` summary | source count only: 32 copied lines | `27053112373` summary | copied names rendered; 32 copied lines | attribution added | same |
+| Remote Linux aggregate graph | `27052991416` parsed log | 925 fetched paths, 929 copied paths, 29 built drvs, 1,539 build-closure paths | `27053112373` parsed log | 925 fetched paths, 929 copied paths, 29 built drvs, 1,539 build-closure paths | unchanged | parser plus closure summary |
+| Remote macOS aggregate graph | `27052991416` parsed log | 225 fetched paths, 229 copied paths, 0 built drvs, 640 build-closure paths | `27053112373` parsed log | 225 fetched paths, 229 copied paths, 0 built drvs, 640 build-closure paths | unchanged | parser plus closure summary |
+
+Interpretation:
+
+- This is observability for the Garnix shutdown problem, not a speedup.
+- Current PR runs still copy OpenClaw package outputs, runtime profile/default
+  artifacts, `pnpm-11.2.2`, generated Home Manager outputs, and selected
+  nix-openclaw-tools outputs from Garnix.
+- The next cache-topology decision should target those concrete names rather
+  than treating `cache.garnix.io` as an opaque count.
+
+Local proof for measured commit:
+
+- `node --check scripts/summarize-nix-build-log.mjs`
+- `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27052991416.log`
+- `git diff --check`
+
+Remote proof for measured commit:
+
+- `27053112373`, success, `pull_request`,
+  `2026-06-06T04:54:35Z` to `2026-06-06T04:56:57Z`.
+- PR status at measured head `919261d88be`: `CLEAN`; GitHub Actions Linux and
+  macOS, Garnix, Socket Security, and flake evaluation checks passed.
+- Remote summary includes `Copied from https://cache.garnix.io:` lines for the
+  Linux and macOS aggregate steps.
 
 ## Add A Run
 
