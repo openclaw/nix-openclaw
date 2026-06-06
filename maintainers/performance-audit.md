@@ -140,6 +140,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-linux-gateway-startup-trace-2026-06-06` | `a69a1b583f35` | `fd4ff9947235` | expose upstream gateway startup spans in the Linux HM timing summary | no speed win; remaining TCP wait is larger than measured gateway spans |
 | `pr100-linux-hm-default-fixture-simplification-2026-06-06` | `621be9a52fda` | `76b2013f806` | remove custom plugin fixture from the default Linux HM apply proof | simpler default proof; favorable timing sample, no direct-input graph win |
 | `pr100-ci-drop-direct-gateway-path-2026-06-06` | `aa0eba41d075` | `6f41cd694240` | remove redundant direct gateway path from the default CI aggregate | `ci` direct inputs 12 -> 11 on both systems; gateway remains in closure |
+| `pr100-plugin-instance-split-2026-06-06` | `623713a59a13` | `a9fa1d4e3e46` | split plugin instance fixture checks out of default instance CI | default-instance no longer depends on Node/plugin fixture; explicit plugin proof retained |
 
 ## Runs
 
@@ -2156,6 +2157,66 @@ Remote proof for measured commit:
   `1.68s`.
 - PR merge state after the run: `CLEAN`.
 - Garnix checks remained green on the same head.
+
+### `pr100-plugin-instance-split-2026-06-06`
+
+- PR: `#100`
+- Base commit: `623713a59a13cf531e65456f7d7bc02159d49cdf`
+- Measured code commit: `a9fa1d4e3e4650ce31a49db8b3d2ddcbaef21c2d`
+- Purpose:
+  - keep plugins out of the default CI aggregate for this PR;
+  - preserve the plugin/runtime-plugin instance assertions as an explicit
+    `plugin-instance` check;
+  - remove the Node/plugin fixture dependency from `default-instance`.
+- SOTA/tooling refresh:
+  - current Nix build-analysis tooling still points at the existing audit stack:
+    timestamped Nix logs, `NIX_SHOW_STATS`, build-result JSON, optional
+    internal-json sidecars, `nix-eval-jobs --check-cache-status`, eval
+    flamegraphs, `nix ps --json`, and targeted closure tools;
+  - `nix-fast-build`, NixCI, Avrea-style runner/cache telemetry, and larger
+    GitHub runners are provider/workflow benchmark candidates, not replacements
+    for the default proof meter in this PR.
+- Anti-regression review:
+  - `default-instance` still checks default OpenClaw config, user skills,
+    secret refs, exec-secret passthrough, and runtime profile behavior.
+  - Plugin/runtime-plugin instance checks still exist in
+    `checks.<system>.plugin-instance`.
+  - The default package/module interface is unchanged.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Darwin `default-instance` direct input drvs | `623713a59` drv `/nix/store/r44...openclaw-default-instance-1.drv` | 3 | `a9fa1d4e` drv `/nix/store/jgv...openclaw-default-instance-1.drv` | 2 | 1 fewer | `nix derivation show "$drv" \| jq -r '.derivations[] \| .inputs.drvs \| keys[]' \| wc -l` |
+| Linux `default-instance` direct input drvs | `623713a59` drv `/nix/store/0cq...openclaw-default-instance-1.drv` | 3 | `a9fa1d4e` drv `/nix/store/zx2...openclaw-default-instance-1.drv` | 2 | 1 fewer | same |
+| Darwin `default-instance` drv closure paths | `623713a59` old default-instance drv | 1,111 | `a9fa1d4e` new default-instance drv | 863 | 22.3% fewer | `nix-store -qR --include-outputs "$drv" \| wc -l` |
+| Linux `default-instance` drv closure paths | `623713a59` old default-instance drv | 732 | `a9fa1d4e` new default-instance drv | 356 | 51.4% fewer | same |
+| Darwin `default-instance` drv closure size | same old drv | 3,422,528 B | same new drv | 2,652,688 B | 22.5% smaller | `nix path-info --json --json-format 2 --closure-size "$drv"` |
+| Linux `default-instance` drv closure size | same old drv | 3,163,864 B | same new drv | 2,185,584 B | 30.9% smaller | same |
+| Explicit plugin proof surface | no separate attr | 0 | `a9fa1d4e` checks attr list | 1 per system | retained separately | `nix eval --accept-flake-config --json .#checks.<system> --apply 'attrs: builtins.attrNames attrs'` |
+| Local Darwin aggregate proof | previous local proof | n/a | dirty worktree matching `a9fa1d4e` source | 3s, built only `nix-openclaw-ci` | proof retained | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-darwin-ci-plugin-instance-split --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci` |
+| Local Linux aggregate proof | previous local proof | n/a | dirty worktree matching `a9fa1d4e` source | 6s, built only `nix-openclaw-ci` | proof retained | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-linux-ci-plugin-instance-split --accept-flake-config --no-link .#checks.x86_64-linux.ci` |
+| Explicit plugin instance proof | no separate attr | n/a | dirty worktree matching `a9fa1d4e` source | 4s, passed Linux and Darwin | proof retained | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-plugin-instance-explicit --accept-flake-config --no-link .#checks.aarch64-darwin.plugin-instance .#checks.x86_64-linux.plugin-instance` |
+| Local cache-status probe | previous explicit attrs | n/a | `a9fa1d4e` source, warmed local store | 17 attrs, 14 local, 3 notBuilt on each system | recorded | `nix-eval-jobs --check-cache-status --show-input-drvs` |
+
+Interpretation:
+
+- Count this as a default-check simplification, not yet a remote wall-clock win.
+  It removes the Node/plugin fixture edge from default-instance and keeps plugin
+  assertions explicit for maintainers.
+- The remaining local `notBuilt` attrs are `qmd-instance`, `qmd-runtime`, and
+  `runtime-plugin-packages`; this matches the deliberate split of optional/QMD
+  and broad plugin work out of the default PR proof path.
+- No user-facing package, module, option, or install contract changed.
+
+Local proof for measured commit:
+
+- `git diff --check`
+- `nix eval --accept-flake-config --json .#checks.aarch64-darwin --apply 'attrs: builtins.attrNames attrs'`
+- `nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'attrs: builtins.attrNames attrs'`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-darwin-ci-plugin-instance-split --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-linux-ci-plugin-instance-split --accept-flake-config --no-link .#checks.x86_64-linux.ci`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-plugin-instance-explicit --accept-flake-config --no-link .#checks.aarch64-darwin.plugin-instance .#checks.x86_64-linux.plugin-instance`
+- `nix-eval-jobs --check-cache-status --show-input-drvs` for Linux and Darwin
+  cache-status probes.
 
 ## Add A Run
 
