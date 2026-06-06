@@ -2218,6 +2218,28 @@ Local proof for measured commit:
 - `nix-eval-jobs --check-cache-status --show-input-drvs` for Linux and Darwin
   cache-status probes.
 
+Remote proof for pushed head:
+
+- GitHub Actions run: `27059226421`, success, `pull_request`, head
+  `467e80235ed1dcc0d2c10167407825a0981dabce`.
+- Linux job `2m11s`; aggregate step `118s`; wrapper `116s`; timing step `6s`;
+  `923` planned fetched paths; `927` copied paths; `28` planned/built
+  derivations; build closure `1,526` paths, summed NAR `4.2 GiB`.
+- Linux timing summary reported VM test script `29.7s`, TCP readiness `13.2s`,
+  Home Manager success `10.9s`, VM boot `10.6s`, and config file wait `2.58s`.
+- macOS job `1m58s`; Darwin aggregate step `75s`; wrapper `73s`; HM
+  activation parsed step `1.75s`; `226` planned fetched paths; `230` copied
+  paths; `0` built derivations; build closure `632` paths, summed NAR
+  `1.8 GiB`.
+- Garnix and Socket checks passed on the same head; PR merge state returned to
+  `CLEAN`.
+- Remote conclusion:
+  - Linux structural work improved by one planned/built derivation and one
+    build-closure path versus the previous docs head, but wall-clock did not
+    improve on this sample.
+  - macOS wall-clock stayed dominated by substitution/copy and installer time.
+  - Count this as proof-surface simplification, not a CI-speed breakthrough.
+
 ## Add A Run
 
 Use this shape and append below the previous run:
