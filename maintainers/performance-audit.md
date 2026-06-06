@@ -105,6 +105,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-build-analysis-tooling-2026-06-06` | `76c45773853d` | `c99051b5dae3` | add optional `nix-eval-jobs` cache-status summarizer after current tooling survey | no graph change; attr-level cache probes available without default CI overhead |
 | `pr100-structured-nix-log-meter-2026-06-06` | `c99051b5dae3` | `4998f2759d99` | parse optional Nix internal-json build activity events | no graph change; opt-in runs can report structured activity spans |
 | `pr100-hm-manuals-off-2026-06-06` | `4cb703b54f44` | `2896ac3847e0` | disable Home Manager manual outputs in activation proof fixtures | fewer doc/options paths; `options.json` warning removed; apply proof retained |
+| `pr100-launchd-bootstrap-no-kickstart-2026-06-06` | `f2c24335809b` | `f6446c383e4` | avoid duplicate launchd kickstart immediately after successful relink/bootstrap | macOS activation step faster; launchd/gateway proof retained |
 
 ## Runs
 
@@ -1131,6 +1132,62 @@ Remote proof for pushed head:
 - PR status at pushed head `950f33fdcf88`: `CLEAN`; GitHub Actions Linux and
   macOS, Garnix, Socket Security, and flake evaluation checks passed.
 - `rg -n "options\\.json|home-configuration-reference-manpage|nixos-render-docs|Using 'builtins\\.toFile'" /tmp/nix-openclaw-ci-logs/run-27052580718.log`
+  returned no matches.
+
+### `pr100-launchd-bootstrap-no-kickstart-2026-06-06`
+
+- PR: `#100`
+- Base commit: `f2c24335809bbda0ff0c4ae312296ff8bae91f08`
+- Measured code commit: `f6446c383e4a34cefdea67579bdfa41affbbd548`
+- Purpose:
+  - avoid a duplicate `launchctl kickstart -k` immediately after
+    `launchctl bootstrap` succeeds for a newly relinked LaunchAgent;
+  - keep restart behavior for unchanged plist targets and failed bootstrap
+    attempts;
+  - keep the macOS activation proof's launchd state and gateway health checks.
+- Anti-regression review:
+  - Generated OpenClaw LaunchAgents already set `RunAtLoad = true` and
+    `KeepAlive = true`.
+  - The code still calls `kickstart -k` when the link target did not change,
+    which preserves config-only activation restart behavior.
+  - The code still falls back to `kickstart -k` if bootstrap fails.
+  - `scripts/hm-activation-macos.sh` still activates Home Manager, verifies the
+    plist, waits for launchd running state, reads the launched gateway binary,
+    and checks gateway health over WebSocket.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Local macOS activation wrapper | current worktree before `f6446c38` | 19.22s | dirty worktree after patch | 11.38s | 40.8% faster | `/usr/bin/time -p scripts/hm-activation-macos.sh` |
+| Remote macOS HM activation GitHub step | `27052716384` at `f2c24335` | 20s | `27052905095` at `f6446c38` | 11s | 45.0% faster | `gh run view <run> --json jobs` |
+| Remote macOS HM activation parsed Nix step | `27052716384` parsed log | 17s | `27052905095` parsed log | 6.13s | 63.9% faster | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote `openclawLaunchdRelink` wall gap | `27052716384` log timestamps, relink entry to next activation entry | 10.04s | `27052905095` log timestamps | 0.027s | duplicate wait removed | `rg -n 'Activating openclawLaunchdRelink\\|Activating openclawPluginGuard' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote macOS job duration | `27052716384` | 168s | `27052905095` | 141s | 16.1% faster, includes runner variance | `gh run view <run> --json jobs` |
+| Remote Darwin aggregate graph | `27052716384` parsed log | 225 fetched paths, 229 copied paths, 0 built drvs, 640 build-closure paths | `27052905095` parsed log | 225 fetched paths, 229 copied paths, 0 built drvs, 640 build-closure paths | unchanged | parser plus closure summary |
+| Remote Linux aggregate graph | `27052716384` parsed log | 925 fetched paths, 929 copied paths, 29 built drvs, 1,539 build-closure paths | `27052905095` parsed log | 925 fetched paths, 929 copied paths, 29 built drvs, 1,539 build-closure paths | unchanged | parser plus closure summary |
+
+Interpretation:
+
+- This is a real macOS CI speedup in the apply proof step, not a package graph
+  simplification.
+- The important durable signal is the relink phase shrinking from roughly ten
+  seconds to effectively zero while the activation script still passes.
+- Overall job duration improved on this sample, but aggregate substitution
+  volume is unchanged; do not credit this change for cache or closure wins.
+
+Local proof for measured commit:
+
+- `bash -n nix/modules/home-manager/openclaw-launchd-relink.sh scripts/hm-activation-macos.sh`
+- `/usr/bin/time -p scripts/hm-activation-macos.sh`
+- `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci-launchd-bootstrap --accept-flake-config --option max-jobs 2 --no-link .#checks.aarch64-darwin.ci`
+- `git diff --check`
+
+Remote proof for measured commit:
+
+- `27052905095`, success, `pull_request`,
+  `2026-06-06T04:44:47Z` to `2026-06-06T04:47:10Z`.
+- PR status at measured head `f6446c383e4`: `CLEAN`; GitHub Actions Linux and
+  macOS, Garnix, Socket Security, and flake evaluation checks passed.
+- `rg -n "options\\.json|home-configuration-reference-manpage|nixos-render-docs|Using 'builtins\\.toFile'" /tmp/nix-openclaw-ci-logs/run-27052905095.log`
   returned no matches.
 
 ## Add A Run
