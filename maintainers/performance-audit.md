@@ -2083,7 +2083,7 @@ Remote proof for measured commit:
 - macOS job `1m41s`; Darwin aggregate step `64s`; HM activation parsed step
   `1.39s`.
 - PR merge state after the run: `CLEAN`.
-- Garnix and Socket checks remained green on the same head.
+- Garnix checks remained green on the same head.
 
 ## Add A Run
 
