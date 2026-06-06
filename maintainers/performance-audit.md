@@ -479,6 +479,14 @@ Interpretation:
 | Cached local Darwin eval values | old meter had no eval stats | n/a | same local run | 29,254,120 | added | same |
 | Cached local Darwin eval function calls | old meter had no eval stats | n/a | same local run | 7,542,030 | added | same |
 | Historical Linux phase hints | `27047041028` parsed before telemetry | n/a | parser at `4d4ec099` over same log | input fetch +9.83s, plan +42s, copy +0.95s..+69s, build +56s..+123s | added | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27047041028.log` |
+| Remote PR run wall time | `27047323809` cache candidate | 166s | `27047822497` at `2b9ec611` | 156s | 6.0% faster than rejected cache | `gh run view <run> --json createdAt,updatedAt` |
+| Remote Linux job duration | `27047323809` cache candidate | 155s | `27047822497` | 125s | 19.4% faster than rejected cache | `gh run view <run> --json jobs` |
+| Remote Linux aggregate step | `27047323809` cache candidate | 136s | `27047822497` | 115s | 15.4% faster than rejected cache | `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27047822497.log` |
+| Remote Darwin aggregate step | `27047041028` pre-cache baseline | 79s | `27047822497` | 85s | 7.6% slower, variance plus stats output | same |
+| Remote Linux aggregate eval CPU | telemetry not present before `4d4ec099` | n/a | `27047822497` | 15s | added | same |
+| Remote Darwin aggregate eval CPU | telemetry not present before `4d4ec099` | n/a | `27047822497` | 14s | added | same |
+| Remote Linux copied unique paths | `27047041028` pre-cache baseline | 937 | `27047822497` | 937 | unchanged | same |
+| Remote Linux copied path log lines | `27047323809` cache candidate | 1292 | `27047822497` | 937 | 27.5% fewer than rejected cache | same |
 
 Local proof for measured commit:
 
@@ -488,6 +496,19 @@ Local proof for measured commit:
 - `scripts/summarize-nix-build-log.mjs --github-log /tmp/nix-openclaw-ci-logs/run-27047041028.log`
 - `RUNNER_TEMP=/tmp scripts/ci-nix-build.sh local-darwin-ci --accept-flake-config --no-link .#checks.aarch64-darwin.ci`
 - `git diff --check`
+
+Remote proof:
+
+- `27047822497`, success, `pull_request`,
+  `2026-06-06T00:50:53Z` to `2026-06-06T00:53:29Z`.
+- PR checks at `2b9ec6114f3728306ac512984c1ac9661484274f`: GitHub
+  Actions Linux/macOS pass; Garnix flake evaluation, Darwin `ci`, and selected
+  package targets pass; Socket checks pass.
+- Parsed summary:
+  - Linux aggregate: 115s, 932 paths fetched, 1.2 GiB download, 5.2 GiB
+    unpacked, 937 unique copied paths, 29 built derivations, eval CPU 15s.
+  - Darwin aggregate: 85s, 227 paths fetched, 286 MiB download, 1.8 GiB
+    unpacked, 231 unique copied paths, 0 built derivations, eval CPU 14s.
 
 ## Add A Run
 
