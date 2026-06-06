@@ -66,6 +66,7 @@ function emptyGroup(label) {
     copiedPathLines: 0,
     copiedPaths: new Set(),
     copySources: new Map(),
+    copiedNamesBySource: new Map(),
     builtDrvLines: 0,
     builtDrvs: new Set(),
     builtNames: new Map(),
@@ -153,6 +154,7 @@ function recordLine(group, rawLine) {
     group.copiedPathLines += 1;
     group.copiedPaths.add(copied[1]);
     group.copySources.set(copied[2], (group.copySources.get(copied[2]) || 0) + 1);
+    incrementNestedCount(group.copiedNamesBySource, copied[2], storePathName(copied[1]));
   }
 
   const built = plainLine.match(/building '([^']+\.drv)'/);
@@ -369,6 +371,18 @@ function drvName(path) {
     .replace(/^[0-9a-z]{32}-/, "");
 }
 
+function storePathName(path) {
+  return path.replace(/^.*\//, "").replace(/^[0-9a-z]{32}-/, "");
+}
+
+function incrementNestedCount(map, outerKey, innerKey) {
+  if (!map.has(outerKey)) {
+    map.set(outerKey, new Map());
+  }
+  const inner = map.get(outerKey);
+  inner.set(innerKey, (inner.get(innerKey) || 0) + 1);
+}
+
 function parseRawLog(label, seconds, text) {
   const group = emptyGroup(label);
   group.elapsedSeconds = seconds;
@@ -458,6 +472,9 @@ function render(groups, title) {
     }
     if (group.copySources.size > 0) {
       lines.push(`Copy sources: ${formatTopMap(group.copySources, 4)}`);
+      for (const sourceLine of formatCustomCopySourceNames(group.copiedNamesBySource)) {
+        lines.push(sourceLine);
+      }
     }
     if (group.builtNames.size > 0) {
       lines.push(`Built derivations: ${formatTopMap(group.builtNames, 20)}`);
@@ -511,6 +528,20 @@ function formatTopMap(map, limit) {
     shown.push(`and ${hidden} more`);
   }
   return shown.join(", ");
+}
+
+function formatCustomCopySourceNames(copiedNamesBySource) {
+  return [...copiedNamesBySource.entries()]
+    .filter(([source]) => isCustomCopySource(source))
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([source, names]) => `Copied from ${source}: ${formatTopMap(names, 50)}`);
+}
+
+function isCustomCopySource(source) {
+  return ![
+    "https://cache.nixos.org",
+    "https://install.determinate.systems",
+  ].includes(source);
 }
 
 function hasPhaseHints(group) {
