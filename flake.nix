@@ -114,7 +114,6 @@
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = false;
               };
-              runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
               workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
               config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
@@ -149,6 +148,7 @@
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = true;
               };
+              runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
               runtime-plugin-packages = pkgs.symlinkJoin {
                 name = "openclaw-runtime-plugin-packages";
                 paths = builtins.attrValues packageSetStable.openclawRuntimePlugins;
@@ -179,7 +179,7 @@
           // {
             # CI aggregator: prove the default package/config/apply path without
             # rebuilding optional opt-in surfaces on every push. Exhaustive
-            # runtime plugin package builds and QMD runtime proof remain
+            # runtime plugin catalog/smoke/package checks and QMD runtime proof remain
             # available as explicit checks.
             ci = pkgs.symlinkJoin {
               name = "nix-openclaw-ci";
