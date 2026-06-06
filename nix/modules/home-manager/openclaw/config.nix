@@ -189,6 +189,7 @@ let
       ];
       mergedConfigWithoutRuntimePath = lib.recursiveUpdate mergedConfigWithoutLoadPaths generatedLoadConfig;
       qmdEnabled = (((mergedConfigWithoutRuntimePath.memory or { }).backend or null) == "qmd");
+      # runtimePackages stay inside OpenClaw-managed process/config paths, not the user's shell PATH.
       runtimePackages = lib.unique (
         openclawLib.toolSets.tools
         ++ (lib.optional (qmdEnabled && qmdPackage != null) qmdPackage)
@@ -198,6 +199,31 @@ let
       );
       runtimePath = lib.makeBinPath runtimePackages;
       runtimePathEntries = map (package: "${lib.getBin package}/bin") runtimePackages;
+      codexAppServerPath = lib.concatStringsSep ":" (
+        lib.optionals (runtimePath != "") [ runtimePath ]
+        ++ [
+          "/run/current-system/sw/bin"
+          "/usr/bin"
+          "/bin"
+          "/usr/sbin"
+          "/sbin"
+        ]
+      );
+      codexAppServerArgs = lib.concatStringsSep " " [
+        "-c"
+        "shell_environment_policy.set.PATH=${codexAppServerPath}"
+        "app-server"
+        "--listen"
+        "stdio://"
+      ];
+      codexAppServerBin =
+        let
+          codexPluginPackage = (pkgs.openclawRuntimePlugins or { }).codex or null;
+        in
+        if codexPluginPackage == null then
+          null
+        else
+          "${codexPluginPackage}/node_modules/@openai/codex/bin/codex.js";
       prefixRuntimePathEntries =
         entries: lib.unique (runtimePathEntries ++ (if entries == null then [ ] else entries));
       addRuntimePathToExec =
@@ -282,10 +308,6 @@ let
       gatewayWrapper = pkgs.writeShellScriptBin "openclaw-gateway-${name}" ''
         set -euo pipefail
 
-        if [ -n "${runtimePath}" ]; then
-          export PATH="${runtimePath}:$PATH"
-        fi
-
         ${lib.concatStringsSep "\n" (
           map (
             entry:
@@ -310,6 +332,20 @@ let
             ''
           ) runtimeEnvAll
         )}
+
+        if [ -n "${runtimePath}" ]; then
+          export PATH="${runtimePath}:''${PATH:-}"
+        fi
+
+        ${lib.optionalString (codexAppServerBin != null) ''
+          if [ -z "''${OPENCLAW_CODEX_APP_SERVER_BIN:-}" ]; then
+            export OPENCLAW_CODEX_APP_SERVER_BIN=${lib.escapeShellArg codexAppServerBin}
+          fi
+        ''}
+
+        if [ -z "''${OPENCLAW_CODEX_APP_SERVER_ARGS:-}" ]; then
+          export OPENCLAW_CODEX_APP_SERVER_ARGS=${lib.escapeShellArg codexAppServerArgs}
+        fi
 
         exec "${gatewayRuntimePackage}/bin/openclaw" "$@"
       '';
@@ -409,7 +445,6 @@ let
       appInstall = appInstall;
       package = package;
       qmdEnabled = qmdEnabled;
-      stateDir = inst.stateDir;
       runtimePluginPackages = runtimePluginConfig.packages;
       assertions = runtimePluginConfig.assertions ++ bootstrapAssertions;
       launchdLabel =
@@ -423,7 +458,6 @@ let
   runtimePluginPackagesAll = lib.unique (
     lib.flatten (map (item: item.runtimePluginPackages) instanceConfigs)
   );
-  stateDirs = lib.unique (map (item: item.stateDir) instanceConfigs);
 
   appDefaults = lib.foldl' (acc: item: lib.recursiveUpdate acc item.appDefaults) { } instanceConfigs;
   appDefaultsEnabled = lib.filterAttrs (_: inst: inst.appDefaults.enable) enabledInstances;
@@ -496,10 +530,6 @@ in
           item: "run --quiet ${lib.getExe' pkgs.coreutils "ln"} -sfn ${item.configFile} ${item.configPath}"
         ) instanceConfigs
       )}
-    '';
-
-    home.activation.openclawLegacyCodexRuntimeProfiles = lib.hm.dag.entryAfter [ "openclawDirs" ] ''
-      run --quiet ${../openclaw-clean-legacy-codex-home-runtime-profile.sh} ${lib.concatStringsSep " " (map lib.escapeShellArg stateDirs)}
     '';
 
     home.activation.openclawRuntimePlugins = lib.mkIf (runtimePluginPackagesAll != [ ]) (

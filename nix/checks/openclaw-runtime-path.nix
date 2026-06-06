@@ -4,9 +4,16 @@
   stdenv,
   nodejs_22,
   openclawGateway,
+  openclawCodexRuntimePlugin,
 }:
 
 let
+  modulePkgs = pkgs // {
+    openclawRuntimePlugins = {
+      codex = openclawCodexRuntimePlugin;
+    };
+  };
+
   testLib = lib.extend (
     _final: _prev: {
       hm.dag = {
@@ -84,15 +91,17 @@ let
               lib.file.mkOutOfStoreSymlink = path: path;
               programs.openclaw = {
                 enable = true;
-                launchd.enable = pkgs.stdenv.hostPlatform.isDarwin;
-                systemd.enable = pkgs.stdenv.hostPlatform.isLinux;
+                launchd.enable = modulePkgs.stdenv.hostPlatform.isDarwin;
+                systemd.enable = modulePkgs.stdenv.hostPlatform.isLinux;
               }
               // openclawConfig;
             };
           }
         )
       ];
-      specialArgs = { inherit pkgs; };
+      specialArgs = {
+        pkgs = modulePkgs;
+      };
     };
 
   failedAssertions =
@@ -110,49 +119,56 @@ let
     eval: path:
     builtins.fromJSON (builtins.unsafeDiscardStringContext eval.config.home.file."${path}".text);
 
-  runtimeSmokePackage = pkgs.openssl;
-  runtimeSmokePackageBin = lib.getBin runtimeSmokePackage;
-  runtimeSmokeBin = builtins.unsafeDiscardStringContext "${runtimeSmokePackageBin}/bin";
-  runtimeSmokeCommand = "openssl";
+  runtimePathProbe = pkgs.writeShellApplication {
+    name = "openclaw-runtime-path-probe";
+    text = builtins.readFile ../tests/openclaw-runtime-path-probe.sh;
+  };
+  runtimePathProbeBin = lib.getBin runtimePathProbe;
+  runtimePathProbeBinDir = builtins.unsafeDiscardStringContext "${runtimePathProbeBin}/bin";
+  runtimePathProbeName = "openclaw-runtime-path-probe";
+  runtimePathProbeOutput = "openclaw-runtime-path-probe-ok";
   normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
-  pathPrependHasRuntimeSmokePackage =
-    entries: lib.any (entry: normalizePathEntry entry == runtimeSmokeBin) entries;
+  pathPrependHasRuntimePath =
+    entries: lib.any (entry: normalizePathEntry entry == runtimePathProbeBinDir) entries;
   pathPrependStartsWithStorePath =
     entries:
     entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
 
   runtimePathEval = moduleEval {
-    runtimePackages = [ runtimeSmokePackage ];
+    runtimePackages = [ runtimePathProbe ];
   };
   runtimePathConfig = generatedConfig runtimePathEval ".openclaw/openclaw.json";
   runtimePathPrepend = ((runtimePathConfig.tools or { }).exec or { }).pathPrepend or [ ];
-  runtimePathSmokePathPrepend = lib.concatStringsSep ":" (map normalizePathEntry runtimePathPrepend);
+  runtimePathPrependText = lib.concatStringsSep ":" (map normalizePathEntry runtimePathPrepend);
   runtimePathActivation = builtins.toJSON runtimePathEval.config.home.activation;
-  runtimePathLegacyCleanupActivation = builtins.toJSON runtimePathEval.config.home.activation.openclawLegacyCodexRuntimeProfiles;
-  runtimePathService = builtins.toJSON (
+  runtimePathService =
     (runtimePathEval.config.systemd.user.services.openclaw-gateway or { })
-    // (runtimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { })
-  );
+    // (runtimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { });
+  runtimePathServiceText = builtins.toJSON runtimePathService;
+  runtimePathWrapper =
+    if pkgs.stdenv.hostPlatform.isLinux then
+      builtins.head (lib.splitString " " runtimePathService.Service.ExecStart)
+    else
+      builtins.head runtimePathService.config.ProgramArguments;
   runtimePathCheck = builtins.deepSeq (requireNoAssertionFailures "runtime path" runtimePathEval) (
-    if !(pathPrependHasRuntimeSmokePackage runtimePathPrepend) then
+    if !(pathPrependHasRuntimePath runtimePathPrepend) then
       throw "runtimePackages did not render into tools.exec.pathPrepend."
-    else if !(lib.hasInfix "openclaw-gateway-default" runtimePathService) then
-      throw "runtimePackages did not flow through the gateway wrapper."
+    else if !(lib.hasInfix "openclaw-gateway-default" runtimePathServiceText) then
+      throw "runtimePackages did not flow through the OpenClaw gateway wrapper."
+    else if ((runtimePathConfig.plugins or { }).entries or { }) ? codex then
+      throw "runtimePackages must not create or enable a Codex plugin entry."
     else if
       lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation
       || lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation
+      || lib.hasInfix "openclaw-clean-legacy-codex-home-runtime-profile.sh" runtimePathActivation
     then
-      throw "runtimePackages must flow through the gateway runtime PATH, not a Codex-home profile activation."
-    else if
-      !(lib.hasInfix "openclaw-clean-legacy-codex-home-runtime-profile.sh" runtimePathLegacyCleanupActivation)
-    then
-      throw "runtimePackages did not wire legacy Codex-home runtime profile cleanup."
+      throw "runtimePackages must flow through runtime paths, not Codex-home profile activation."
     else
       "ok"
   );
 
   runtimePathOverrideEval = moduleEval {
-    runtimePackages = [ runtimeSmokePackage ];
+    runtimePackages = [ runtimePathProbe ];
     config = {
       tools.exec.pathPrepend = [ "/custom/global" ];
       agents.list = [
@@ -175,17 +191,17 @@ let
     builtins.deepSeq (requireNoAssertionFailures "runtime path overrides" runtimePathOverrideEval)
       (
         if
-          !(pathPrependHasRuntimeSmokePackage runtimePathOverrideGlobal)
+          !(pathPrependHasRuntimePath runtimePathOverrideGlobal)
           || !(pathPrependStartsWithStorePath runtimePathOverrideGlobal)
           || !(lib.elem "/custom/global" runtimePathOverrideGlobal)
         then
-          throw "runtimePackages did not prefix the global tools.exec.pathPrepend while preserving user entries."
+          throw "runtimePackages did not prefix the global runtime path while preserving user entries."
         else if
-          !(pathPrependHasRuntimeSmokePackage runtimePathOverrideAgentPrepend)
+          !(pathPrependHasRuntimePath runtimePathOverrideAgentPrepend)
           || !(pathPrependStartsWithStorePath runtimePathOverrideAgentPrepend)
           || !(lib.elem "/custom/agent" runtimePathOverrideAgentPrepend)
         then
-          throw "runtimePackages did not prefix agent tools.exec.pathPrepend while preserving user entries."
+          throw "runtimePackages did not prefix the agent runtime path while preserving user entries."
         else
           "ok"
       );
@@ -206,17 +222,18 @@ stdenv.mkDerivation {
     nodejs_22
     pkgs.bash
     pkgs.coreutils
-    runtimeSmokePackageBin
   ];
   env = {
     OPENCLAW_RUNTIME_PATH_CHECK = checkKey;
     OPENCLAW_GATEWAY = openclawGateway;
-    OPENCLAW_RUNTIME_BASE_PATH = "${pkgs.coreutils}/bin:${pkgs.bash}/bin";
-    OPENCLAW_RUNTIME_EXPECTED_BIN_DIR = runtimeSmokeBin;
-    OPENCLAW_RUNTIME_EXPECTED_COMMAND = runtimeSmokeCommand;
-    OPENCLAW_RUNTIME_EXPECTED_OUTPUT_PREFIX = "help:";
-    OPENCLAW_RUNTIME_PATH_PREPEND = runtimePathSmokePathPrepend;
-    OPENCLAW_RUNTIME_SHELL = "${pkgs.bash}/bin/bash";
+    OPENCLAW_GATEWAY_WRAPPER = runtimePathWrapper;
+    OPENCLAW_RUNTIME_PATH_CODEX_APP_SERVER_BIN = "${openclawCodexRuntimePlugin}/node_modules/@openai/codex/bin/codex.js";
+    OPENCLAW_RUNTIME_PATH_BASE_PATH = "${nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin";
+    OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR = runtimePathProbeBinDir;
+    OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND = runtimePathProbeName;
+    OPENCLAW_RUNTIME_PATH_EXPECTED_OUTPUT = runtimePathProbeOutput;
+    OPENCLAW_RUNTIME_PATH_PREPEND = runtimePathPrependText;
+    OPENCLAW_RUNTIME_PATH_SHELL = "${pkgs.bash}/bin/bash";
   };
   doCheck = true;
   checkPhase = "${nodejs_22}/bin/node ${../scripts/openclaw-runtime-path-smoke.mjs}";

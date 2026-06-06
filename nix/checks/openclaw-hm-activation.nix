@@ -39,11 +39,6 @@ pkgs.testers.nixosTest {
               json.enable = false;
               manpages.enable = false;
             };
-            home.activation.seedLegacyOpenClawCodexRuntimeProfile =
-              lib.hm.dag.entryBefore [ "openclawLegacyCodexRuntimeProfiles" ]
-                ''
-                  run --quiet ${../tests/seed-legacy-codex-runtime-profile.sh} /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin
-                '';
 
             programs.openclaw = {
               enable = true;

@@ -107,6 +107,7 @@
               };
               runtime-path = pkgs.callPackage ./nix/checks/openclaw-runtime-path.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
+                openclawCodexRuntimePlugin = packageSetStable.openclawRuntimePlugins.codex;
               };
               source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeSourceOverrideChecks = true;

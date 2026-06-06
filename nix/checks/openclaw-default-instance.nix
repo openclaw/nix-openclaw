@@ -893,8 +893,6 @@ stdenv.mkDerivation {
       "openclaw-default-instance";
   version = "1";
   dontUnpack = true;
-  dontConfigure = true;
-  dontBuild = true;
   # Evaluation alone missed installPhase regressions in helper scripts.
   nativeBuildInputs =
     lib.optionals includePluginChecks [
