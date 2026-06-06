@@ -15,10 +15,12 @@ GitHub Actions, local `/tmp` captures, or ignored `.agent/` notes.
   - current main: `4f0a37d3068f6b98e7da1fa26014b2ba72342d00`
   - PR #100 remote head before this slice:
     `4db66bdb2ced44fcf4e476cb30afdde7e09dc5c1`
-  - this slice local head: `416fe6288f74e7e1cfc2607378fea0040601e602`
-- PR #100 now merges current `main` so it is mergeable. The #101 overlap is
-  intentionally replaced: Garnix no longer references the deleted `ci` aggregate
-  and remains a small cache-publication target set.
+  - local merge/proof head before this audit edit:
+    `9e5fb2cb12f4b5d93ab26a192311925195c70e91`
+- The local branch now contains current `main`; remote PR #100 remains dirty
+  until this branch is pushed and GitHub recomputes mergeability. The #101
+  overlap is intentionally replaced: Garnix no longer references the deleted
+  `ci` aggregate and remains a small cache-publication target set.
 - Product change: stable `openclaw-gateway` uses the upstream npm package and
   `npm-shrinkwrap.json` through `buildNpmPackage`; source/pnpm remains available
   for explicit `gatewayPath` source overrides.
