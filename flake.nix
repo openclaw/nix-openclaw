@@ -133,6 +133,11 @@
                 inherit qmdPackage;
               };
             };
+            pluginChecks = {
+              plugin-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+                includePluginChecks = true;
+              };
+            };
             dogfoodChecks = {
               package-contents-dogfood = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetDogfood.openclaw-gateway;
@@ -173,6 +178,7 @@
           in
           stableChecks
           // qmdChecks
+          // pluginChecks
           // runtimePluginChecks
           // dogfoodChecks
           // linuxOnlyChecks

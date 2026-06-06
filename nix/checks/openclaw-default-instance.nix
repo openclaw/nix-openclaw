@@ -3,6 +3,7 @@
   pkgs,
   stdenv,
   nodejs_22,
+  includePluginChecks ? false,
   includeQmdChecks ? false,
 }:
 
@@ -807,10 +808,6 @@ let
   checkKey = builtins.deepSeq (
     [
       defaultCheck
-      customPluginCheck
-      multiAgentPluginSkillCheck
-      duplicateSkillCheck
-      userPluginSkillCollisionCheck
       userSkillCheck
       workspaceBootstrapCheck
       documentsRemovedCheck
@@ -821,12 +818,20 @@ let
       secretProviderCheck
       secretRefPassthroughCheck
     ]
+    ++ lib.optionals includePluginChecks [
+      customPluginCheck
+      multiAgentPluginSkillCheck
+      duplicateSkillCheck
+      userPluginSkillCollisionCheck
+    ]
     ++ lib.optionals includeQmdChecks [
       qmdPrewarmCheck
       qmdMemoryCheck
     ]
     ++ [
       runtimeProfileCheck
+    ]
+    ++ lib.optionals includePluginChecks [
       customRuntimePluginRootCheck
       runtimePluginCheck
       runtimePluginCatalogGeneratedCheck
@@ -849,16 +854,25 @@ let
 
 in
 stdenv.mkDerivation {
-  pname = if includeQmdChecks then "openclaw-qmd-instance" else "openclaw-default-instance";
+  pname =
+    if includePluginChecks then
+      "openclaw-plugin-instance"
+    else if includeQmdChecks then
+      "openclaw-qmd-instance"
+    else
+      "openclaw-default-instance";
   version = "1";
   dontUnpack = true;
   # Evaluation alone missed installPhase regressions in the QMD wrapper.
-  nativeBuildInputs = [
-    nodejs_22
-  ]
-  ++ lib.optional (includeQmdChecks && qmdMemoryPackage != null) qmdMemoryPackage;
+  nativeBuildInputs =
+    lib.optionals includePluginChecks [
+      nodejs_22
+    ]
+    ++ lib.optional (includeQmdChecks && qmdMemoryPackage != null) qmdMemoryPackage;
   env = {
     OPENCLAW_DEFAULT_INSTANCE = checkKey;
   };
-  installPhase = "node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/openclaw-runtime-plugin-install.mjs} && ${../scripts/empty-install.sh}";
+  installPhase =
+    lib.optionalString includePluginChecks "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/openclaw-runtime-plugin-install.mjs} && "
+    + "${../scripts/empty-install.sh}";
 }
