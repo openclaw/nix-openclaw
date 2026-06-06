@@ -59,4 +59,4 @@ jobs:
 
       - name: Run HM activation
         timeout-minutes: 10
-        run: scripts/hm-activation-macos.sh
+        run: OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result" scripts/hm-activation-macos.sh

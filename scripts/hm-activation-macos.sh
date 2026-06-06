@@ -25,11 +25,20 @@ export HOME="$home_dir"
 export USER="runner"
 export LOGNAME="$USER"
 
-cd "$test_dir"
+activation_package="${OPENCLAW_HM_ACTIVATION_PACKAGE:-}"
 
-nix build --accept-flake-config "$repo_root#checks.aarch64-darwin.hm-activation-macos-package"
+if [ -n "$activation_package" ]; then
+  if [ ! -x "$activation_package/activate" ]; then
+    echo "OPENCLAW_HM_ACTIVATION_PACKAGE must point at a package with an activate script: $activation_package" >&2
+    exit 1
+  fi
+else
+  cd "$test_dir"
+  nix build --accept-flake-config "$repo_root#checks.aarch64-darwin.hm-activation-macos-package"
+  activation_package="$test_dir/result"
+fi
 
-./result/activate
+"$activation_package/activate"
 
 test -f "$HOME/.openclaw/openclaw.json"
 test -f "$plist"

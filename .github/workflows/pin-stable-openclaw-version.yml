@@ -193,7 +193,7 @@ jobs:
         if: steps.materialize.outcome == 'success' && steps.ci.outcome == 'success'
         continue-on-error: true
         timeout-minutes: 10
-        run: scripts/hm-activation-macos.sh
+        run: OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result" scripts/hm-activation-macos.sh
 
       - name: Record validation result
         id: validation
