@@ -120,8 +120,8 @@
               gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
-            }
-            // pkgs.lib.optionalAttrs (qmdPackage != null) {
+            };
+            qmdChecks = pkgs.lib.optionalAttrs (qmdPackage != null) {
               qmd-runtime = pkgs.callPackage ./nix/checks/openclaw-qmd-runtime.nix {
                 openclawPackage = packageSetStable.openclaw;
                 inherit qmdPackage;
@@ -156,15 +156,16 @@
             };
           in
           stableChecks
+          // qmdChecks
           // runtimePluginChecks
           // dogfoodChecks
           // linuxOnlyChecks
           // darwinOnlyChecks
           // {
             # CI aggregator: prove the default package/config/apply path without
-            # rebuilding every generated runtime plugin package on every push.
-            # Exhaustive runtime plugin package builds remain available as the
-            # explicit runtime-plugin-packages check.
+            # rebuilding optional opt-in surfaces on every push. Exhaustive
+            # runtime plugin package builds and QMD runtime proof remain
+            # available as explicit checks.
             ci = pkgs.symlinkJoin {
               name = "nix-openclaw-ci";
               paths = [
