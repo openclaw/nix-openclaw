@@ -30,8 +30,11 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
   - this preserves exact copy-source lines, build lines, warning text, phase
     hints, and evaluator counters in a commit-tied summary.
 - Structured drill-down:
-  - the CI wrapper captures Nix's `json-log-path` internal-json sidecar while
-    leaving normal stderr readable;
+  - the CI wrapper can capture Nix's `json-log-path` internal-json sidecar while
+    leaving normal stderr readable; enable it with `NIX_METER_JSON_LOG=1`;
+  - keep this off by default because remote probes parsed up to `980,452`
+    Linux events and `451,189` macOS events and added tail work without changing
+    the required proof target;
   - use `nix build --log-format internal-json` with the same timestamp sidecar
     only when exact per-activity spans are needed;
   - `json-log-path` records the same event stream but does not include
@@ -124,6 +127,7 @@ nixpkgs `16c7794d0a28b5a37904d55bcca36003b9109aaa`.
 | `pr100-single-nix-installer-action-2026-06-06` | `bde5f61d5508` | `7295cda03e52` | use `cachix/install-nix-action` for macOS workflows too | macOS job faster; workflow still Linux-bound |
 | `pr100-acpx-store-symlink-2026-06-06` | `2c0a5286490e` | `432c93725f85` | symlink bundled ACPX from generated runtime plugin package | gateway output much smaller; warm CI returns to baseline speed |
 | `pr100-json-log-sidecar-2026-06-06` | `98aa2691ac12` | `979ee4e6b076` | capture Nix internal-json sidecars in CI meter | no package/check graph change; structured build events available by default |
+| `pr100-json-log-sidecar-opt-in-2026-06-06` | `c8d1baca6cb6` | `03eff14f0de1` | make the Nix internal-json sidecar opt-in | default CI log/parser overhead removed; no proven wall-clock win |
 
 ## Runs
 
@@ -1640,6 +1644,71 @@ Remote proof for measured commit:
   - structured sidecar: `447,629` events, `2,016` starts, `2,016` stops,
     `443,369` results.
 - Garnix and Socket checks passed on the same head.
+
+### `pr100-json-log-sidecar-opt-in-2026-06-06`
+
+- PR: `#100`
+- Base commit: `c8d1baca6cb6e5d637917be91ef344e476d7a046`
+- Measured code commit: `03eff14f0de1068ab55c41f9d6842d8625f080fa`
+- Purpose:
+  - keep timestamped stderr and closure summaries in default CI;
+  - stop creating/parsing the `json-log-path` sidecar by default;
+  - preserve deep structured telemetry behind `NIX_METER_JSON_LOG=1`.
+- Anti-regression review:
+  - This changes only the CI wrapper's instrumentation default.
+  - It does not change flake outputs, derivations, package outputs, checks,
+    module options, or user-facing install behavior.
+  - The local opt-in probe still produced a structured summary from the
+    `json-log-path` sidecar.
+
+| Metric | Baseline provenance | Baseline | Measured provenance | Measured | Change | Command |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Default `json-log-path` sidecar | `c8d1baca`, wrapper default | enabled | `03eff14f`, wrapper default | disabled | default overhead removed | `scripts/ci-nix-build.sh` |
+| Local default structured summary | sidecar default-on behavior | present | local default-off probe | absent | removed from default | `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-json-sidecar-default-off --accept-flake-config --no-link .#checks.aarch64-darwin.config-validity` |
+| Local opt-in structured summary | n/a | n/a | local opt-in probe | 25 events, 6 starts, 6 stops, 12 results | opt-in retained | `RUNNER_TEMP=/tmp NIX_METER_JSON_LOG=1 NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-json-sidecar-opt-in --accept-flake-config --no-link .#checks.aarch64-darwin.config-validity` |
+| Remote Linux structured summary | `27055529535` at `c8d1baca` | `980,452` events | `27055818921` attempt 2 at `03eff14f` | 0 | removed from default CI | `rg -n 'linux-ci-structured|Structured Nix events|json-log=' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote macOS structured summary | `27055529535` at `c8d1baca` | `451,189` events | `27055818921` attempt 2 at `03eff14f` | 0 | removed from default CI | `rg -n 'darwin-ci-structured|Structured Nix events|json-log=' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote Linux sidecar parse tail | `27055529535` at `c8d1baca`, normal summary to structured summary | about 6.1s | `27055818921` attempt 2 | 0 | tail parser removed | log timestamps around `Nix Build Meter: linux-ci` |
+| Remote macOS sidecar parse tail | `27055529535` at `c8d1baca`, normal summary to structured summary | about 1.8s | `27055818921` attempt 2 | 0 | tail parser removed | log timestamps around `Nix Build Meter: darwin-ci` |
+| Remote Linux aggregate step | `27055529535` at `c8d1baca` | 102s | `27055818921` attempt 2 at `03eff14f` | 102s | unchanged | `scripts/summarize-nix-build-log.mjs --github-log <log>` |
+| Remote Linux wrapper seconds | `27055529535` at `c8d1baca` | 95s | `27055818921` attempt 2 at `03eff14f` | 101s | 6s slower from Nix phase variance | `rg -n 'nix-meter: end label=linux-ci' /tmp/nix-openclaw-ci-logs/run-<run>.log` |
+| Remote Linux job duration | `27055529535` at `c8d1baca` | 1m50s | `27055818921` attempt 2 at `03eff14f` | 1m52s | 2s slower | `gh run view <run> --json jobs` |
+| Remote macOS aggregate step | `27055529535` at `c8d1baca` | 68s | `27055818921` attempt 2 at `03eff14f` | 77s | 9s slower from copy/fetch variance | `scripts/summarize-nix-build-log.mjs --github-log <log>` |
+| Remote macOS job duration | `27055529535` at `c8d1baca` | 1m51s | `27055818921` attempt 2 at `03eff14f` | 2m06s | 15s slower | `gh run view <run> --json jobs` |
+
+Interpretation:
+
+- Accept this as a CI simplification, not a wall-clock speed win.
+- The previous default sidecar was useful for investigation but parsed hundreds
+  of thousands of events on every normal run.
+- Attempt 1 at `03eff14f` was much slower (`linux` `2m30s`, macOS `2m13s`);
+  attempt 2 returned Linux to the previous aggregate baseline but macOS stayed
+  slower. The stable finding is that default structured parser work is gone.
+
+Local proof for measured commit:
+
+- `bash -n scripts/ci-nix-build.sh`
+- `node --check scripts/summarize-nix-build-log.mjs`
+- `RUNNER_TEMP=/tmp NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-json-sidecar-default-off --accept-flake-config --no-link .#checks.aarch64-darwin.config-validity`
+- `test ! -e /tmp/nix-openclaw-ci-meter/local-json-sidecar-default-off.nix.jsonl`
+- `RUNNER_TEMP=/tmp NIX_METER_JSON_LOG=1 NIX_METER_BUILD_CLOSURE=0 scripts/ci-nix-build.sh local-json-sidecar-opt-in --accept-flake-config --no-link .#checks.aarch64-darwin.config-validity`
+- `test -s /tmp/nix-openclaw-ci-meter/local-json-sidecar-opt-in.nix.jsonl`
+- `git diff --check`
+
+Remote proof for measured commit:
+
+- GitHub Actions run: `27055818921`, success, `pull_request`, head
+  `03eff14f0de1068ab55c41f9d6842d8625f080fa`.
+- Attempt 1:
+  - Linux job `2m30s`, aggregate step `142s`, wrapper `140s`;
+  - macOS job `2m13s`, aggregate step `85s`, wrapper `83s`;
+  - no `json-log=` startup line and no `*-structured` summary.
+- Attempt 2:
+  - Linux job `1m52s`, aggregate step `102s`, wrapper `101s`;
+  - macOS job `2m06s`, aggregate step `77s`, wrapper `76s`;
+  - no `json-log=` startup line and no `*-structured` summary.
+- PR merge state after attempt 2: `CLEAN`.
+- Garnix checks remained green on the same head.
 
 ## Add A Run
 
