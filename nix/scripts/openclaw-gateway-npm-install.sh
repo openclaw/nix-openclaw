@@ -90,14 +90,8 @@ stage_acpx() {
 
   acpx_root="$root/dist-runtime/extensions/acpx"
   rm -rf "$acpx_root"
-  mkdir -p "$acpx_root"
-  cp -R "$OPENCLAW_BUNDLED_ACPX/." "$acpx_root/"
-
-  for entry in index.js register.runtime.js runtime-api.js setup-api.js; do
-    if [ -f "$acpx_root/dist/$entry" ] && [ ! -e "$acpx_root/$entry" ]; then
-      cp "$acpx_root/dist/$entry" "$acpx_root/$entry"
-    fi
-  done
+  mkdir -p "$(dirname "$acpx_root")"
+  ln -s "$OPENCLAW_BUNDLED_ACPX" "$acpx_root"
 }
 
 ensure_legacy_node_module_entry() {

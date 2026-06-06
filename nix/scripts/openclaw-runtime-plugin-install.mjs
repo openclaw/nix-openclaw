@@ -32,6 +32,33 @@ function safeRelativePath(value, label) {
   return normalized;
 }
 
+const ROOT_FACADE_BASENAMES = [
+  "register.runtime.js",
+  "runtime-api.js",
+  "setup-api.js",
+];
+
+function linkDistRootAlias(pluginRoot, basename) {
+  const distPath = path.join(pluginRoot, "dist", basename);
+  const rootPath = path.join(pluginRoot, basename);
+  if (!fs.existsSync(distPath) || fs.existsSync(rootPath)) {
+    return;
+  }
+  fs.symlinkSync(path.posix.join("dist", basename), rootPath);
+}
+
+function exposeDistRootAliases(pluginRoot, runtimeEntries) {
+  for (const runtimeEntry of runtimeEntries) {
+    const relPath = safeRelativePath(runtimeEntry, `runtime entry alias`);
+    if (path.dirname(relPath) === "dist") {
+      linkDistRootAlias(pluginRoot, path.basename(relPath));
+    }
+  }
+  for (const basename of ROOT_FACADE_BASENAMES) {
+    linkDistRootAlias(pluginRoot, basename);
+  }
+}
+
 function collectPackageRoots(nodeModulesDir, baseRel = "node_modules") {
   if (!fs.existsSync(nodeModulesDir)) {
     return [];
@@ -303,6 +330,7 @@ for (const runtimeEntry of runtimeEntries) {
     fail(`runtime entry missing for ${expectedId}: ${runtimeEntry}`);
   }
 }
+exposeDistRootAliases(out, runtimeEntries);
 
 const expectedPackageRoots = new Set(
   fs
