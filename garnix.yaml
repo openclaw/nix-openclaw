@@ -1,9 +1,8 @@
 builds:
   include:
-    # GitHub Actions owns the Linux CI aggregate. Garnix evaluates requested
-    # derivations under a memory-limited dry-run, and the Linux aggregate now
-    # exceeds that cap before any build starts.
+    # CI aggregators prove package contracts.
     - "checks.aarch64-darwin.ci"
+    - "checks.x86_64-linux.ci"
     # User-facing/component packages must also be top-level Garnix artifacts,
     # otherwise downstream machines can see green CI but miss the binary cache.
     - "packages.aarch64-darwin.openclaw"
