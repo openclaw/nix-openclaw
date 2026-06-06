@@ -5,7 +5,9 @@
   nodejs_22,
   includePluginChecks ? false,
   includeQmdChecks ? false,
+  includeRuntimePathChecks ? false,
   includeSourceOverrideChecks ? false,
+  openclawGateway ? null,
 }:
 
 let
@@ -142,7 +144,9 @@ let
       attempted = builtins.tryEval (builtins.deepSeq value "ok");
     in
     if attempted.success then throw "${name}: expected evaluation failure." else "ok";
-  generatedConfig = eval: path: builtins.fromJSON eval.config.home.file."${path}".text;
+  generatedConfig =
+    eval: path:
+    builtins.fromJSON (builtins.unsafeDiscardStringContext eval.config.home.file."${path}".text);
 
   packageHasQmd =
     pkg:
@@ -150,6 +154,21 @@ let
       qmdPath = builtins.unsafeDiscardStringContext (pkg.OPENCLAW_QMD_PATH or "");
     in
     qmdPath != "";
+  runtimeSmokePackage = pkgs.openssl;
+  runtimeSmokePackageBin = lib.getBin runtimeSmokePackage;
+  runtimeSmokeBin = builtins.unsafeDiscardStringContext "${runtimeSmokePackageBin}/bin";
+  runtimeSmokeCommand = "openssl";
+  runtimeSmokeGateway =
+    if openclawGateway == null then
+      throw "runtime path smoke requires openclawGateway"
+    else
+      openclawGateway;
+  normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
+  pathPrependHasRuntimeSmokePackage =
+    entries: lib.any (entry: normalizePathEntry entry == runtimeSmokeBin) entries;
+  pathPrependStartsWithStorePath =
+    entries:
+    entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
   isPluginSkillPath =
     path: lib.hasSuffix "/skill" path || lib.hasSuffix "-openclaw-plugin-skill-skill" path;
 
@@ -178,35 +197,36 @@ let
     };
   };
   sourceOverrideConfig = generatedConfig sourceOverrideEval ".openclaw-dev/openclaw.json";
-  sourceOverrideCheck = builtins.deepSeq (requireNoAssertionFailures "source override" sourceOverrideEval) (
-    if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
-      throw "Source override instance lost gateway.mode."
-    else if pkgs.stdenv.hostPlatform.isLinux then
-      let
-        services = sourceOverrideEval.config.systemd.user.services;
-        execStart = services.openclaw-gateway-dev.Service.ExecStart or "";
-      in
-      if !(builtins.hasAttr "openclaw-gateway-dev" services) then
-        throw "Source override instance missing systemd unit."
-      else if !(lib.hasInfix "/bin/openclaw-gateway-dev gateway --port " execStart) then
-        throw "Source override instance did not wire the dev gateway wrapper."
-      else
-        "ok"
-    else if pkgs.stdenv.hostPlatform.isDarwin then
-      let
-        agents = sourceOverrideEval.config.launchd.agents;
-        programArgs =
-          agents."com.steipete.openclaw.gateway.dev".config.ProgramArguments or [ ];
-      in
-      if !(builtins.hasAttr "com.steipete.openclaw.gateway.dev" agents) then
-        throw "Source override instance missing launchd agent."
-      else if !(lib.any (arg: lib.hasSuffix "/bin/openclaw-gateway-dev" arg) programArgs) then
-        throw "Source override instance did not wire the dev gateway wrapper."
-      else
-        "ok"
-    else
-      "ok"
-  );
+  sourceOverrideCheck =
+    builtins.deepSeq (requireNoAssertionFailures "source override" sourceOverrideEval)
+      (
+        if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
+          throw "Source override instance lost gateway.mode."
+        else if pkgs.stdenv.hostPlatform.isLinux then
+          let
+            services = sourceOverrideEval.config.systemd.user.services;
+            execStart = services.openclaw-gateway-dev.Service.ExecStart or "";
+          in
+          if !(builtins.hasAttr "openclaw-gateway-dev" services) then
+            throw "Source override instance missing systemd unit."
+          else if !(lib.hasInfix "/bin/openclaw-gateway-dev gateway --port " execStart) then
+            throw "Source override instance did not wire the dev gateway wrapper."
+          else
+            "ok"
+        else if pkgs.stdenv.hostPlatform.isDarwin then
+          let
+            agents = sourceOverrideEval.config.launchd.agents;
+            programArgs = agents."com.steipete.openclaw.gateway.dev".config.ProgramArguments or [ ];
+          in
+          if !(builtins.hasAttr "com.steipete.openclaw.gateway.dev" agents) then
+            throw "Source override instance missing launchd agent."
+          else if !(lib.any (arg: lib.hasSuffix "/bin/openclaw-gateway-dev" arg) programArgs) then
+            throw "Source override instance did not wire the dev gateway wrapper."
+          else
+            "ok"
+        else
+          "ok"
+      );
 
   customPluginEval = moduleEval {
     customPlugins = [
@@ -530,18 +550,74 @@ let
   qmdMemoryPackages = lib.filter packageHasQmd qmdMemoryEval.config.home.packages;
   qmdMemoryPackage = if qmdMemoryPackages == [ ] then null else builtins.head qmdMemoryPackages;
 
-  runtimeProfileEval = moduleEval {
-    runtimePackages = [ pkgs.jq ];
+  runtimePathEval = moduleEval {
+    runtimePackages = [ runtimeSmokePackage ];
     environment.OPENCLAW_TEST_SECRET = "/tmp/openclaw-secret";
   };
-  runtimeProfileActivation = builtins.toJSON runtimeProfileEval.config.home.activation.openclawCodexRuntimeProfiles;
-  runtimeProfileCheck =
-    builtins.deepSeq (requireNoAssertionFailures "runtime profile" runtimeProfileEval)
+  runtimePathConfig = generatedConfig runtimePathEval ".openclaw/openclaw.json";
+  runtimePathPrepend = ((runtimePathConfig.tools or { }).exec or { }).pathPrepend or [ ];
+  runtimePathSmokePathPrepend = lib.concatStringsSep ":" (map normalizePathEntry runtimePathPrepend);
+  runtimePathActivation = builtins.toJSON runtimePathEval.config.home.activation;
+  runtimePathLegacyCleanupActivation = builtins.toJSON runtimePathEval.config.home.activation.openclawLegacyCodexRuntimeProfiles;
+  runtimePathService = builtins.toJSON (
+    (runtimePathEval.config.systemd.user.services.openclaw-gateway or { })
+    // (runtimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { })
+  );
+  runtimePathCheck = builtins.deepSeq (requireNoAssertionFailures "runtime path" runtimePathEval) (
+    if !(pathPrependHasRuntimeSmokePackage runtimePathPrepend) then
+      throw "runtimePackages did not render into tools.exec.pathPrepend."
+    else if !(lib.hasInfix "openclaw-gateway-default" runtimePathService) then
+      throw "runtimePackages did not flow through the gateway wrapper."
+    else if
+      !(lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation)
+      && !(lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation)
+    then
+      if
+        lib.hasInfix "openclaw-clean-legacy-codex-home-runtime-profile.sh" runtimePathLegacyCleanupActivation
+      then
+        "ok"
+      else
+        throw "runtimePackages did not wire legacy Codex-home runtime profile cleanup."
+    else
+      throw "runtimePackages must flow through the gateway runtime PATH, not a Codex-home profile activation."
+  );
+  runtimePathOverrideEval = moduleEval {
+    runtimePackages = [ runtimeSmokePackage ];
+    config = {
+      tools.exec.pathPrepend = [ "/custom/global" ];
+      agents.list = [
+        {
+          id = "worker";
+          tools.exec.pathPrepend = [ "/custom/agent" ];
+        }
+      ];
+    };
+  };
+  runtimePathOverrideConfig = generatedConfig runtimePathOverrideEval ".openclaw/openclaw.json";
+  runtimePathOverrideGlobal = (
+    ((runtimePathOverrideConfig.tools or { }).exec or { }).pathPrepend or [ ]
+  );
+  runtimePathOverrideAgent = builtins.head (((runtimePathOverrideConfig.agents or { }).list or [ ]));
+  runtimePathOverrideAgentPrepend = (
+    ((runtimePathOverrideAgent.tools or { }).exec or { }).pathPrepend or [ ]
+  );
+  runtimePathOverrideCheck =
+    builtins.deepSeq (requireNoAssertionFailures "runtime path overrides" runtimePathOverrideEval)
       (
-        if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimeProfileActivation then
-          "ok"
+        if
+          !(pathPrependHasRuntimeSmokePackage runtimePathOverrideGlobal)
+          || !(pathPrependStartsWithStorePath runtimePathOverrideGlobal)
+          || !(lib.elem "/custom/global" runtimePathOverrideGlobal)
+        then
+          throw "runtimePackages did not prefix the global tools.exec.pathPrepend while preserving user entries."
+        else if
+          !(pathPrependHasRuntimeSmokePackage runtimePathOverrideAgentPrepend)
+          || !(pathPrependStartsWithStorePath runtimePathOverrideAgentPrepend)
+          || !(lib.elem "/custom/agent" runtimePathOverrideAgentPrepend)
+        then
+          throw "runtimePackages did not prefix agent tools.exec.pathPrepend while preserving user entries."
         else
-          throw "runtimePackages did not wire the Codex runtime profile activation."
+          "ok"
       );
 
   customRuntimePluginRootEval = moduleEval {
@@ -870,8 +946,9 @@ let
     ++ lib.optionals includeSourceOverrideChecks [
       sourceOverrideCheck
     ]
-    ++ [
-      runtimeProfileCheck
+    ++ lib.optionals includeRuntimePathChecks [
+      runtimePathCheck
+      runtimePathOverrideCheck
     ]
     ++ lib.optionals includePluginChecks [
       customRuntimePluginRootCheck
@@ -901,21 +978,44 @@ stdenv.mkDerivation {
       "openclaw-plugin-instance"
     else if includeQmdChecks then
       "openclaw-qmd-instance"
+    else if includeRuntimePathChecks then
+      "openclaw-runtime-path"
     else if includeSourceOverrideChecks then
       "openclaw-source-override-instance"
     else
       "openclaw-default-instance";
   version = "1";
   dontUnpack = true;
+  dontConfigure = true;
+  dontBuild = true;
   # Evaluation alone missed installPhase regressions in helper scripts.
   nativeBuildInputs =
     lib.optionals includePluginChecks [
       nodejs_22
     ]
+    ++ lib.optionals includeRuntimePathChecks [
+      nodejs_22
+      pkgs.bash
+      pkgs.coreutils
+      runtimeSmokePackageBin
+    ]
     ++ lib.optional (includeQmdChecks && qmdMemoryPackage != null) qmdMemoryPackage;
   env = {
     OPENCLAW_DEFAULT_INSTANCE = checkKey;
+  }
+  // lib.optionalAttrs includeRuntimePathChecks {
+    OPENCLAW_GATEWAY = runtimeSmokeGateway;
+    OPENCLAW_RUNTIME_BASE_PATH = "${pkgs.coreutils}/bin:${pkgs.bash}/bin";
+    OPENCLAW_RUNTIME_EXPECTED_BIN_DIR = runtimeSmokeBin;
+    OPENCLAW_RUNTIME_EXPECTED_COMMAND = runtimeSmokeCommand;
+    OPENCLAW_RUNTIME_EXPECTED_OUTPUT_PREFIX = "help:";
+    OPENCLAW_RUNTIME_PATH_PREPEND = runtimePathSmokePathPrepend;
+    OPENCLAW_RUNTIME_SHELL = "${pkgs.bash}/bin/bash";
   };
+  doCheck = includeRuntimePathChecks;
+  checkPhase = lib.optionalString includeRuntimePathChecks ''
+    ${nodejs_22}/bin/node ${../scripts/openclaw-runtime-path-smoke.mjs}
+  '';
   installPhase =
     lib.optionalString includePluginChecks "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/openclaw-runtime-plugin-install.mjs} && "
     + "${../scripts/empty-install.sh}";

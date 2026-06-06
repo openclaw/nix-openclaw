@@ -21,6 +21,10 @@ rm -rf "$home_dir"
 mkdir -p "$home_dir"
 cleanup
 
+legacy_profile_bin="$home_dir/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+mkdir -p "$(dirname "$legacy_profile_bin")"
+ln -sfn /tmp/legacy-openclaw-runtime-profile-bin "$legacy_profile_bin"
+
 export HOME="$home_dir"
 export USER="runner"
 export LOGNAME="$USER"
@@ -42,8 +46,8 @@ fi
 
 test -f "$HOME/.openclaw/openclaw.json"
 test -f "$plist"
-test -L "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
-test -x "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"
+test ! -e "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+test ! -L "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
 
 if command -v launchctl >/dev/null 2>&1; then
   state_file="$home_dir/launchd-state.txt"
@@ -62,6 +66,9 @@ if command -v launchctl >/dev/null 2>&1; then
 
   openclaw_bin=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist")
   grep -q OPENCLAW_TEST_SECRET "$openclaw_bin"
+  grep -Eq 'jq-[^/]+/bin' "$openclaw_bin"
+  grep -q '"pathPrepend"' "$HOME/.openclaw/openclaw.json"
+  grep -Eq 'jq-[^/]+/bin' "$HOME/.openclaw/openclaw.json"
   health_file="$home_dir/gateway-health.json"
   healthy=false
   for _ in {1..30}; do

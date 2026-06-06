@@ -73,7 +73,7 @@
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      description = "Extra packages visible to this OpenClaw instance and its isolated Codex harness only. These are not added to the user's PATH.";
+      description = "Extra packages added to this OpenClaw instance's gateway runtime PATH and tools.exec.pathPrepend. These packages are not added to the user's shell PATH.";
     };
 
     environment = lib.mkOption {
