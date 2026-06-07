@@ -8,6 +8,29 @@ This changelog starts with the current pre-1.0 nix-openclaw Home Manager module
 API transition.
 Older repository history is available in git.
 
+## 2026-06-07
+
+### Changed
+
+- Changed `programs.openclaw.runtimePackages` from a Codex-home profile-linking
+  mechanism into the supported OpenClaw command-tool environment. The same
+  packages now feed the generated gateway wrapper PATH, global
+  `tools.exec.pathPrepend`, agent-level `tools.exec.pathPrepend`, and the
+  Nix-managed Codex app-server PATH policy.
+
+  User config stays the same:
+
+  ```nix
+  programs.openclaw.runtimePackages = [ pkgs.jq ];
+  ```
+
+  Before this change, pre-1.0 deployments could also observe those packages
+  through an internal `agents/<id>/agent/codex-home/home/.nix-profile/bin`
+  symlink. That internal Codex-home profile path is no longer managed. Put
+  command-line tools in `runtimePackages` and let OpenClaw receive them through
+  `tools.exec.pathPrepend` instead of depending on the Codex-home filesystem
+  layout.
+
 ## 2026-06-06
 
 ### Changed

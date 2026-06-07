@@ -16,7 +16,7 @@ function requireEnv(name) {
 
 const gateway = requireEnv("OPENCLAW_GATEWAY");
 const gatewayWrapper = requireEnv("OPENCLAW_GATEWAY_WRAPPER");
-const codexAppServerBin = requireEnv("OPENCLAW_RUNTIME_PATH_CODEX_APP_SERVER_BIN");
+const codexPluginRoot = requireEnv("OPENCLAW_RUNTIME_PATH_CODEX_PLUGIN_ROOT");
 const expectedBinDir = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR");
 const expectedCommand = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND");
 const expectedOutput = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_OUTPUT");
@@ -34,9 +34,9 @@ if (!pathPrepend.includes(expectedBinDir)) {
   throw new Error(`generated tools.exec.pathPrepend does not include ${expectedBinDir}`);
 }
 
-const distDir = path.join(gateway, "lib", "openclaw", "dist");
+const codexDistDir = path.join(codexPluginRoot, "dist");
 const gatewayWrapperText = await fs.readFile(gatewayWrapper, "utf8");
-await fs.access(codexAppServerBin);
+await fs.access(path.join(codexPluginRoot, "node_modules", "@openai", "codex", "package.json"));
 
 function readShellExport(name) {
   const match = gatewayWrapperText.match(
@@ -49,14 +49,8 @@ const appServerArgs = readShellExport("OPENCLAW_CODEX_APP_SERVER_ARGS");
 if (!appServerArgs) {
   throw new Error("gateway wrapper does not export OPENCLAW_CODEX_APP_SERVER_ARGS");
 }
-const appServerBin = readShellExport("OPENCLAW_CODEX_APP_SERVER_BIN");
-if (!appServerBin) {
-  throw new Error("gateway wrapper does not export OPENCLAW_CODEX_APP_SERVER_BIN");
-}
-if (appServerBin !== codexAppServerBin) {
-  throw new Error(
-    `gateway wrapper Codex app-server bin was ${appServerBin}, expected ${codexAppServerBin}`,
-  );
+if (gatewayWrapperText.includes("OPENCLAW_CODEX_APP_SERVER_BIN")) {
+  throw new Error("gateway wrapper must not override OpenClaw's managed Codex app-server binary");
 }
 if (!appServerArgs.includes("shell_environment_policy.set.PATH=")) {
   throw new Error(
@@ -68,11 +62,11 @@ if (!appServerArgs.includes(expectedBinDir)) {
 }
 
 async function findPackagedFunction(modulePattern, functionName) {
-  for (const file of await fs.readdir(distDir)) {
+  for (const file of await fs.readdir(codexDistDir)) {
     if (!modulePattern.test(file)) {
       continue;
     }
-    const mod = await import(pathToFileURL(path.join(distDir, file)).href);
+    const mod = await import(pathToFileURL(path.join(codexDistDir, file)).href);
     const fn = Object.values(mod).find(
       (value) => typeof value === "function" && value.name === functionName,
     );
@@ -80,7 +74,7 @@ async function findPackagedFunction(modulePattern, functionName) {
       return fn;
     }
   }
-  throw new Error(`could not find packaged ${functionName} in ${distDir}`);
+  throw new Error(`could not find packaged ${functionName} in ${codexDistDir}`);
 }
 
 const requestCodexAppServerJson = await findPackagedFunction(
@@ -132,12 +126,13 @@ if (!wrapperTrace.includes(expectedBinDir)) {
   throw new Error(`gateway wrapper did not prepend ${expectedBinDir}: ${wrapperTrace}`);
 }
 if (
-  !wrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=") ||
-  !wrapperTrace.includes(codexAppServerBin) ||
   !wrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
   !wrapperTrace.includes("shell_environment_policy.set.PATH=")
 ) {
   throw new Error(`gateway wrapper did not export Codex app-server env: ${wrapperTrace}`);
+}
+if (wrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")) {
+  throw new Error(`gateway wrapper overrode OpenClaw's managed Codex app-server: ${wrapperTrace}`);
 }
 if (!wrapperTrace.includes("exec ") || !wrapperTrace.includes("/bin/openclaw")) {
   throw new Error(`gateway wrapper did not exec packaged OpenClaw: ${wrapperTrace}`);
@@ -177,9 +172,9 @@ async function runCodexCommand(startOptions) {
 }
 
 function assertRuntimePathArg(startOptions) {
-  if (startOptions.command !== codexAppServerBin) {
+  if (startOptions.command !== "codex" || startOptions.commandSource !== "managed") {
     throw new Error(
-      `Codex app-server command was ${startOptions.command}, expected ${codexAppServerBin}`,
+      `Codex app-server should use OpenClaw managed resolution: ${JSON.stringify(startOptions)}`,
     );
   }
   const configIndex = startOptions.args.indexOf("-c");
@@ -198,7 +193,6 @@ function assertRuntimePathArg(startOptions) {
 }
 
 const missingStartOptions = startOptionsFromEnv({
-  OPENCLAW_CODEX_APP_SERVER_BIN: appServerBin,
   OPENCLAW_CODEX_APP_SERVER_ARGS: "",
 });
 const missingResult = await runCodexCommand(missingStartOptions);
@@ -209,7 +203,6 @@ if (missingResult?.exitCode === 0) {
 }
 
 const startOptions = startOptionsFromEnv({
-  OPENCLAW_CODEX_APP_SERVER_BIN: appServerBin,
   OPENCLAW_CODEX_APP_SERVER_ARGS: appServerArgs,
 });
 assertRuntimePathArg(startOptions);
@@ -235,3 +228,13 @@ if (lines[1] !== `${expectedBinDir}/${expectedCommand}`) {
 if ((lines[2] ?? "") !== expectedOutput) {
   throw new Error(`${expectedCommand} output missing from exec result: ${output}`);
 }
+
+console.log(
+  [
+    "openclaw-runtime-path proof:",
+    `- generated tools.exec.pathPrepend includes ${expectedCommand}`,
+    "- wrapper exports Codex app-server PATH args without overriding the managed Codex binary",
+    "- Codex command/exec fails when isolated Codex config masks inherited wrapper PATH",
+    `- Codex command/exec succeeds when generated PATH resolves ${expectedBinDir}/${expectedCommand}`,
+  ].join("\n"),
+);

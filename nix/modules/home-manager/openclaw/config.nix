@@ -199,31 +199,17 @@ let
       );
       runtimePath = lib.makeBinPath runtimePackages;
       runtimePathEntries = map (package: "${lib.getBin package}/bin") runtimePackages;
-      codexAppServerPath = lib.concatStringsSep ":" (
-        lib.optionals (runtimePath != "") [ runtimePath ]
-        ++ [
-          "/run/current-system/sw/bin"
-          "/usr/bin"
-          "/bin"
-          "/usr/sbin"
-          "/sbin"
-        ]
-      );
-      codexAppServerArgs = lib.concatStringsSep " " [
-        "-c"
-        "shell_environment_policy.set.PATH=${codexAppServerPath}"
-        "app-server"
-        "--listen"
-        "stdio://"
-      ];
-      codexAppServerBin =
-        let
-          codexPluginPackage = (pkgs.openclawRuntimePlugins or { }).codex or null;
-        in
-        if codexPluginPackage == null then
-          null
+      codexAppServerArgs =
+        if runtimePath == "" then
+          ""
         else
-          "${codexPluginPackage}/node_modules/@openai/codex/bin/codex.js";
+          lib.concatStringsSep " " [
+            "-c"
+            "shell_environment_policy.set.PATH=${runtimePath}"
+            "app-server"
+            "--listen"
+            "stdio://"
+          ];
       prefixRuntimePathEntries =
         entries: lib.unique (runtimePathEntries ++ (if entries == null then [ ] else entries));
       addRuntimePathToExec =
@@ -337,15 +323,13 @@ let
           export PATH="${runtimePath}:''${PATH:-}"
         fi
 
-        ${lib.optionalString (codexAppServerBin != null) ''
-          if [ -z "''${OPENCLAW_CODEX_APP_SERVER_BIN:-}" ]; then
-            export OPENCLAW_CODEX_APP_SERVER_BIN=${lib.escapeShellArg codexAppServerBin}
+        ${lib.optionalString (codexAppServerArgs != "") ''
+          # Nix owns the command-tool PATH, not the Codex binary lifecycle. OpenClaw
+          # still resolves its managed Codex app-server from the packaged plugin.
+          if [ -z "''${OPENCLAW_CODEX_APP_SERVER_ARGS:-}" ]; then
+            export OPENCLAW_CODEX_APP_SERVER_ARGS=${lib.escapeShellArg codexAppServerArgs}
           fi
         ''}
-
-        if [ -z "''${OPENCLAW_CODEX_APP_SERVER_ARGS:-}" ]; then
-          export OPENCLAW_CODEX_APP_SERVER_ARGS=${lib.escapeShellArg codexAppServerArgs}
-        fi
 
         exec "${gatewayRuntimePackage}/bin/openclaw" "$@"
       '';

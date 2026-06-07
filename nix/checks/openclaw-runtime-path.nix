@@ -227,7 +227,7 @@ stdenv.mkDerivation {
     OPENCLAW_RUNTIME_PATH_CHECK = checkKey;
     OPENCLAW_GATEWAY = openclawGateway;
     OPENCLAW_GATEWAY_WRAPPER = runtimePathWrapper;
-    OPENCLAW_RUNTIME_PATH_CODEX_APP_SERVER_BIN = "${openclawCodexRuntimePlugin}/node_modules/@openai/codex/bin/codex.js";
+    OPENCLAW_RUNTIME_PATH_CODEX_PLUGIN_ROOT = openclawCodexRuntimePlugin;
     OPENCLAW_RUNTIME_PATH_BASE_PATH = "${nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin";
     OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR = runtimePathProbeBinDir;
     OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND = runtimePathProbeName;
