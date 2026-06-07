@@ -55,6 +55,7 @@ pkgs.testers.nixosTest {
               };
               installApp = false;
               launchd.enable = false;
+              runtimePackages = [ pkgs.hello ];
               instances.default = {
                 gatewayPort = 18999;
                 config = {

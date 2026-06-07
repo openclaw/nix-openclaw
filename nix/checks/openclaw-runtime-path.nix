@@ -117,6 +117,26 @@ let
   runtimePathProbeName = "hello";
   runtimePathProbeOutput = "Hello, world!";
   normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
+  pathEntryIndex =
+    needle: entries:
+    let
+      go =
+        index: remaining:
+        if remaining == [ ] then
+          null
+        else if normalizePathEntry (builtins.head remaining) == needle then
+          index
+        else
+          go (index + 1) (builtins.tail remaining);
+    in
+    go 0 entries;
+  pathEntryBefore =
+    earlier: later: entries:
+    let
+      earlierIndex = pathEntryIndex earlier entries;
+      laterIndex = pathEntryIndex later entries;
+    in
+    earlierIndex != null && laterIndex != null && earlierIndex < laterIndex;
   pathPrependHasRuntimePath =
     entries: lib.any (entry: normalizePathEntry entry == runtimePathProbeBinDir) entries;
   pathPrependStartsWithStorePath =
@@ -147,6 +167,11 @@ let
     else if ((runtimePathConfig.plugins or { }).entries or { }) ? codex then
       throw "runtimePackages must not create or enable a Codex plugin entry."
     else if
+      lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_ARGS" runtimePathServiceText
+      || lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_BIN" runtimePathServiceText
+    then
+      throw "runtimePackages must not configure Codex app-server launch environment."
+    else if
       lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation
       || lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation
       || lib.hasInfix "openclaw-clean-legacy-codex-home-runtime-profile.sh" runtimePathActivation
@@ -165,6 +190,10 @@ let
           id = "worker";
           tools.exec.pathPrepend = [ "/custom/agent" ];
         }
+        {
+          id = "global-only";
+          tools.exec.security = "allowlist";
+        }
       ];
     };
   };
@@ -176,21 +205,29 @@ let
   runtimePathOverrideAgentPrepend = (
     ((runtimePathOverrideAgent.tools or { }).exec or { }).pathPrepend or [ ]
   );
+  runtimePathOverrideGlobalOnlyAgent = builtins.elemAt (
+    ((runtimePathOverrideConfig.agents or { }).list or [ ])
+  ) 1;
+  runtimePathOverrideGlobalOnlyExec = ((runtimePathOverrideGlobalOnlyAgent.tools or { }).exec or { });
   runtimePathOverrideCheck =
     builtins.deepSeq (requireNoAssertionFailures "runtime path overrides" runtimePathOverrideEval)
       (
         if
           !(pathPrependHasRuntimePath runtimePathOverrideGlobal)
           || !(pathPrependStartsWithStorePath runtimePathOverrideGlobal)
+          || !(pathEntryBefore runtimePathProbeBinDir "/custom/global" runtimePathOverrideGlobal)
           || !(lib.elem "/custom/global" runtimePathOverrideGlobal)
         then
           throw "runtimePackages did not prefix the global runtime path while preserving user entries."
         else if
           !(pathPrependHasRuntimePath runtimePathOverrideAgentPrepend)
           || !(pathPrependStartsWithStorePath runtimePathOverrideAgentPrepend)
+          || !(pathEntryBefore runtimePathProbeBinDir "/custom/agent" runtimePathOverrideAgentPrepend)
           || !(lib.elem "/custom/agent" runtimePathOverrideAgentPrepend)
         then
           throw "runtimePackages did not prefix the agent runtime path while preserving user entries."
+        else if runtimePathOverrideGlobalOnlyExec ? pathPrepend then
+          throw "runtimePackages should not synthesize agent-level pathPrepend for agents that inherit the global exec config."
         else
           "ok"
       );

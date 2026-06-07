@@ -60,11 +60,11 @@ if command -v launchctl >/dev/null 2>&1; then
 
   openclaw_bin=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist")
   grep -q OPENCLAW_TEST_SECRET "$openclaw_bin"
-  grep -Eq 'jq-[^/]+/bin' "$openclaw_bin"
+  grep -Eq 'hello-[^/]+/bin' "$openclaw_bin"
   ! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' "$openclaw_bin"
   ! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' "$openclaw_bin"
   grep -q '"pathPrepend"' "$HOME/.openclaw/openclaw.json"
-  grep -Eq 'jq-[^/]+/bin' "$HOME/.openclaw/openclaw.json"
+  grep -Eq 'hello-[^/]+/bin' "$HOME/.openclaw/openclaw.json"
   health_file="$home_dir/gateway-health.json"
   healthy=false
   for _ in {1..30}; do

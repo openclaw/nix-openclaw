@@ -15,7 +15,7 @@
   programs.openclaw = {
     enable = true;
     installApp = false;
-    runtimePackages = [ pkgs.jq ];
+    runtimePackages = [ pkgs.hello ];
     environment.OPENCLAW_TEST_SECRET = "/tmp/openclaw-secret";
     instances.default = {
       gatewayPort = 18999;

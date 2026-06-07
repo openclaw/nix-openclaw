@@ -17,11 +17,11 @@ machine.succeed(
     "unit=/home/alice/.config/systemd/user/openclaw-gateway.service; "
     "openclaw_bin=$(sed -n 's/^ExecStart=\\([^ ]*\\).*/\\1/p' \"$unit\"); "
     "test -x \"$openclaw_bin\"; "
-    "grep -Eq 'jq-[^/]+/bin' \"$openclaw_bin\"; "
+    "grep -Eq 'hello-[^/]+/bin' \"$openclaw_bin\"; "
     "! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' \"$openclaw_bin\"; "
     "! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' \"$openclaw_bin\"; "
     "grep -q '\"pathPrepend\"' /home/alice/.openclaw/openclaw.json; "
-    "grep -Eq 'jq-[^/]+/bin' /home/alice/.openclaw/openclaw.json"
+    "grep -Eq 'hello-[^/]+/bin' /home/alice/.openclaw/openclaw.json"
 )
 
 uid = machine.succeed("id -u alice").strip()
