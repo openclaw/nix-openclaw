@@ -17,8 +17,9 @@
 # the app-server command and set CODEX_HOME for one agent, so it is the narrow
 # place that may create/update $CODEX_HOME/home/.nix-profile/bin.
 #
-# Home Manager activation must not create Codex native HOME profiles. Activation
-# cannot see inherited process environment, and upstream lets
+# Home Manager activation must not create or update
+# $CODEX_HOME/home/.nix-profile/bin. Activation cannot see inherited process
+# environment, and upstream lets
 # OPENCLAW_CODEX_APP_SERVER_BIN override the managed command at runtime. If the
 # user selects WebSocket transport, appServer.command, or
 # OPENCLAW_CODEX_APP_SERVER_BIN, this module must step back.
@@ -60,6 +61,11 @@ in
       # Configured env is static, so omit the Nix fallback entirely. Inherited
       # env is only visible when the gateway starts; the shell guard below keeps
       # that local-testing override ahead of the Nix launcher.
+      #
+      # appServer.args and OPENCLAW_CODEX_APP_SERVER_ARGS are not checked here:
+      # upstream OpenClaw resolves args separately from the executable. When
+      # nix-openclaw selects the packaged launcher, those args still flow to the
+      # wrapper and then to upstream Codex.
       shouldOfferNixManagedCodexLauncher =
         enabled
         && appServerUsesLocalStdio
@@ -83,10 +89,10 @@ in
       # OpenClaw's Codex plugin owns app-server lifecycle and sets CODEX_HOME
       # per agent. This wrapper is only selected for the packaged Nix Codex
       # runtime plugin's local stdio transport when the user has not set
-      # appServer.command. It adapts OpenClaw CODEX_HOME to a Nix HOME profile
-      # at runtime so native Codex command/exec sees runtimePackages. The guard
-      # preserves inherited OPENCLAW_CODEX_APP_SERVER_BIN, matching upstream's
-      # env override.
+      # appServer.command. It sets HOME=$CODEX_HOME/home, links
+      # $HOME/.nix-profile/bin to the Nix runtime bin directory, and prepends it
+      # so Codex command/exec can resolve runtimePackages. The guard preserves
+      # inherited OPENCLAW_CODEX_APP_SERVER_BIN, matching upstream's env override.
       gatewayEnvironmentScript = lib.optionalString shouldOfferNixManagedCodexLauncher ''
         if [ -z "''${OPENCLAW_CODEX_APP_SERVER_BIN:-}" ]; then
           export OPENCLAW_CODEX_APP_SERVER_BIN="${appServerWrapper}/bin/openclaw-codex-app-server"

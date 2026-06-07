@@ -23,6 +23,8 @@ machine.succeed(
     "unit=/home/alice/.config/systemd/user/openclaw-gateway.service; "
     "openclaw_bin=$(sed -n 's/^ExecStart=\\([^ ]*\\).*/\\1/p' \"$unit\"); "
     "test -x \"$openclaw_bin\"; "
+    # This platform activation check only proves the wrapper/config shape. The
+    # runtime-path check resolves the exact command path and executes the tool.
     "grep -Eq 'hello-[^/]+/bin' \"$openclaw_bin\"; "
     "! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' \"$openclaw_bin\"; "
     "! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' \"$openclaw_bin\"; "

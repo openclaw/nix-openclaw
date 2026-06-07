@@ -1,7 +1,13 @@
 #!/bin/sh
 set -eu
 
+# OpenClaw sets CODEX_HOME only for the managed Codex app-server process. When
+# this wrapper is run outside that lifecycle, it should behave like plain Codex
+# and leave HOME/PATH untouched.
 if [ -n "${CODEX_HOME:-}" ]; then
+  # Upstream OpenClaw's isolated native home is $CODEX_HOME/home. Point HOME
+  # there so Codex-native command/exec reads the same profile that this Nix
+  # launcher manages below.
   HOME="${CODEX_HOME}/home"
   export HOME
   profile_dir="$HOME/.nix-profile"
@@ -18,7 +24,7 @@ if [ -n "${CODEX_HOME:-}" ]; then
           "@rmBin@" "$profile_bin"
           ;;
         *)
-          echo "Refusing to replace non-Nix Codex runtime profile: $profile_bin -> $current_target" >&2
+          echo "Refusing to replace existing Codex native-home bin symlink: $profile_bin -> $current_target" >&2
           exit 1
           ;;
       esac
@@ -26,7 +32,7 @@ if [ -n "${CODEX_HOME:-}" ]; then
   fi
 
   if [ -e "$profile_bin" ] && [ ! -L "$profile_bin" ]; then
-    echo "Refusing to replace non-symlink Codex runtime profile: $profile_bin" >&2
+    echo "Refusing to replace existing non-symlink at Codex native-home bin path: $profile_bin" >&2
     exit 1
   fi
 
@@ -34,7 +40,11 @@ if [ -n "${CODEX_HOME:-}" ]; then
     "@lnBin@" -s "@runtimeProfileBinDir@" "$profile_bin"
   fi
 
-  PATH="$profile_bin:${PATH:-}"
+  if [ -n "${PATH:-}" ]; then
+    PATH="$profile_bin:$PATH"
+  else
+    PATH="$profile_bin"
+  fi
   export PATH
 fi
 

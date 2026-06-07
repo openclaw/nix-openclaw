@@ -73,7 +73,7 @@
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      description = "Extra command-line packages available to this OpenClaw instance's gateway wrapper and generated tools.exec.pathPrepend. When this instance also uses the Nix-packaged Codex runtime plugin with the managed app-server launcher, that launcher links the same OpenClaw runtime tool profile into its native HOME. This does not enable Codex or add packages to the user's shell PATH.";
+      description = "Extra command-line packages available to this OpenClaw instance's gateway wrapper and generated tools.exec.pathPrepend. When this instance also uses the Nix-packaged Codex runtime plugin with the managed app-server launcher, that launcher links $CODEX_HOME/home/.nix-profile/bin to the same Nix-built bin directory used by the gateway PATH. This does not enable Codex or add packages to the user's shell PATH.";
     };
 
     environment = lib.mkOption {

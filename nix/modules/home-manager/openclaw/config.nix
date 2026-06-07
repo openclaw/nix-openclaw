@@ -285,7 +285,11 @@ let
         )}
 
         if [ -n "${runtimeToolConfig.path}" ]; then
-          export PATH="${runtimeToolConfig.path}:''${PATH:-}"
+          if [ -n "''${PATH:-}" ]; then
+            export PATH="${runtimeToolConfig.path}:$PATH"
+          else
+            export PATH="${runtimeToolConfig.path}"
+          fi
         fi
 
         ${codexAppServerConfig.gatewayEnvironmentScript}

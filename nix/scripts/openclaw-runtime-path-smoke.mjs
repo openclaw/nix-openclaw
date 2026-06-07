@@ -6,6 +6,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
 
+const appServerListenStdio = "stdio://";
+const codexJsonRpcTimeoutMs = 15_000;
+const nixStorePrefix = "/nix/store/";
+const openclawAgentCodexHome = path.join("agents", "main", "agent", "codex-home");
+// The smoke commands are fixture-controlled, but they are interpolated into
+// shell snippets below. Keep them as command names only: no paths, whitespace,
+// or shell metacharacters.
+const safeCommandNamePattern = /^[A-Za-z0-9._-]+$/;
+
 function requireEnv(name) {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -17,8 +26,11 @@ function requireEnv(name) {
 const gatewayWrapper = requireEnv("OPENCLAW_GATEWAY_WRAPPER");
 const codexGatewayWrapper = requireEnv("OPENCLAW_CODEX_GATEWAY_WRAPPER");
 const customCodexGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_GATEWAY_WRAPPER");
+const customCodexArgsGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_ARGS_GATEWAY_WRAPPER");
 const customCodexEnvGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_GATEWAY_WRAPPER");
 const customCodexEnvExpectedBin = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_EXPECTED_BIN");
+const customCodexEnvArgsGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_ARGS_GATEWAY_WRAPPER");
+const customCodexEnvArgsExpected = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_ARGS_EXPECTED");
 const websocketCodexGatewayWrapper = requireEnv("OPENCLAW_WEBSOCKET_CODEX_GATEWAY_WRAPPER");
 const expectedBinDir = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR");
 const expectedCommand = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND");
@@ -37,11 +49,11 @@ const codexPathPrepend = requireEnv("OPENCLAW_CODEX_RUNTIME_PATH_PREPEND")
   .split(":")
   .filter(Boolean);
 
-if (!/^[A-Za-z0-9._-]+$/.test(expectedCommand)) {
+if (!safeCommandNamePattern.test(expectedCommand)) {
   throw new Error(`unsafe smoke command name: ${expectedCommand}`);
 }
 
-if (!/^[A-Za-z0-9._-]+$/.test(codexExpectedCommand)) {
+if (!safeCommandNamePattern.test(codexExpectedCommand)) {
   throw new Error(`unsafe Codex smoke command name: ${codexExpectedCommand}`);
 }
 
@@ -84,22 +96,23 @@ if ((toolLines[1] ?? "") !== expectedOutput) {
   throw new Error(`${expectedCommand} output missing from smoke result: ${toolOutput}`);
 }
 
-const wrapperVersion = spawnSync(shell, ["-x", gatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
-});
-
-if (wrapperVersion.status !== 0 || !wrapperVersion.stdout.trim()) {
-  throw new Error(
-    `gateway wrapper --version failed: ${wrapperVersion.stdout}${wrapperVersion.stderr}`,
-  );
+function traceWrapperVersion(label, wrapper, envOverrides = {}) {
+  const result = spawnSync(shell, ["-x", wrapper, "--version"], {
+    env: {
+      ...process.env,
+      ...envOverrides,
+      PATH: basePath,
+      SHELL: shell,
+    },
+    encoding: "utf8",
+  });
+  if (result.status !== 0 || !result.stdout.trim()) {
+    throw new Error(`${label} wrapper --version failed: ${result.stdout}${result.stderr}`);
+  }
+  return result.stderr;
 }
 
-const wrapperTrace = wrapperVersion.stderr;
+const wrapperTrace = traceWrapperVersion("gateway", gatewayWrapper);
 if (!wrapperTrace.includes(expectedBinDir)) {
   throw new Error(`gateway wrapper did not prepend ${expectedBinDir}: ${wrapperTrace}`);
 }
@@ -108,29 +121,14 @@ if (
   wrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
   wrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")
 ) {
-  throw new Error(`base gateway wrapper must not configure Codex app-server launch env: ${wrapperTrace}`);
+  throw new Error(`base gateway wrapper must not export Codex app-server command or args: ${wrapperTrace}`);
 }
 
 if (!wrapperTrace.includes("exec ") || !wrapperTrace.includes("/bin/openclaw")) {
   throw new Error(`gateway wrapper did not exec packaged OpenClaw: ${wrapperTrace}`);
 }
 
-const codexWrapperVersion = spawnSync(shell, ["-x", codexGatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
-});
-
-if (codexWrapperVersion.status !== 0 || !codexWrapperVersion.stdout.trim()) {
-  throw new Error(
-    `Codex gateway wrapper --version failed: ${codexWrapperVersion.stdout}${codexWrapperVersion.stderr}`,
-  );
-}
-
-const codexWrapperTrace = codexWrapperVersion.stderr;
+const codexWrapperTrace = traceWrapperVersion("Codex gateway", codexGatewayWrapper);
 if (!codexWrapperTrace.includes(codexExpectedBinDir)) {
   throw new Error(`Codex gateway wrapper did not prepend ${codexExpectedBinDir}: ${codexWrapperTrace}`);
 }
@@ -139,6 +137,10 @@ if (codexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=")) {
   throw new Error(`Codex gateway wrapper must not configure app-server argv: ${codexWrapperTrace}`);
 }
 
+// The wrapper is executed with `sh -x`; shells print export assignments with
+// implementation-specific quoting. This regex extracts only the assigned value
+// so the smoke can launch the generated wrapper through the same path OpenClaw
+// would inherit.
 const codexAppServerLauncherMatch = codexWrapperTrace.match(
   /OPENCLAW_CODEX_APP_SERVER_BIN=("[^"]+"|'[^']+'|[^ \n]+)/,
 );
@@ -147,72 +149,42 @@ if (!codexAppServerLauncherMatch) {
 }
 const codexAppServerLauncher = codexAppServerLauncherMatch[1].replace(/^["']|["']$/g, "");
 
-const inheritedCodexOverrideVersion = spawnSync(shell, ["-x", codexGatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    OPENCLAW_CODEX_APP_SERVER_BIN: "/inherited/codex",
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
+const inheritedCodexOverrideTrace = traceWrapperVersion("inherited-env Codex gateway", codexGatewayWrapper, {
+  OPENCLAW_CODEX_APP_SERVER_BIN: "/inherited/codex",
 });
-
-if (inheritedCodexOverrideVersion.status !== 0 || !inheritedCodexOverrideVersion.stdout.trim()) {
-  throw new Error(
-    `inherited-env Codex gateway wrapper --version failed: ${inheritedCodexOverrideVersion.stdout}${inheritedCodexOverrideVersion.stderr}`,
-  );
-}
-
 if (
-  inheritedCodexOverrideVersion.stderr.includes("OPENCLAW_CODEX_APP_SERVER_BIN=") ||
-  inheritedCodexOverrideVersion.stderr.includes("openclaw-codex-app-server")
+  inheritedCodexOverrideTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=") ||
+  inheritedCodexOverrideTrace.includes("openclaw-codex-app-server")
 ) {
   throw new Error(
-    `inherited OPENCLAW_CODEX_APP_SERVER_BIN must keep the Nix Codex launcher out of the gateway wrapper: ${inheritedCodexOverrideVersion.stderr}`,
+    `inherited OPENCLAW_CODEX_APP_SERVER_BIN must keep the Nix Codex launcher out of the gateway wrapper: ${inheritedCodexOverrideTrace}`,
   );
 }
 
-const customCodexWrapperVersion = spawnSync(shell, ["-x", customCodexGatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
-});
-
-if (customCodexWrapperVersion.status !== 0 || !customCodexWrapperVersion.stdout.trim()) {
-  throw new Error(
-    `custom-command Codex gateway wrapper --version failed: ${customCodexWrapperVersion.stdout}${customCodexWrapperVersion.stderr}`,
-  );
-}
-
-const customCodexWrapperTrace = customCodexWrapperVersion.stderr;
+const customCodexWrapperTrace = traceWrapperVersion("custom-command Codex gateway", customCodexGatewayWrapper);
 if (
   customCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
   customCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")
 ) {
   throw new Error(
-    `custom Codex appServer.command must keep Codex app-server launch env out of the gateway wrapper: ${customCodexWrapperTrace}`,
+    `custom Codex appServer.command must keep OPENCLAW_CODEX_APP_SERVER_BIN and OPENCLAW_CODEX_APP_SERVER_ARGS out of the gateway wrapper: ${customCodexWrapperTrace}`,
   );
 }
 
-const customCodexEnvWrapperVersion = spawnSync(shell, ["-x", customCodexEnvGatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
-});
-
-if (customCodexEnvWrapperVersion.status !== 0 || !customCodexEnvWrapperVersion.stdout.trim()) {
+const customCodexArgsWrapperTrace = traceWrapperVersion("custom-args Codex gateway", customCodexArgsGatewayWrapper);
+if (customCodexArgsWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=")) {
   throw new Error(
-    `custom-env Codex gateway wrapper --version failed: ${customCodexEnvWrapperVersion.stdout}${customCodexEnvWrapperVersion.stderr}`,
+    `config appServer.args must stay in OpenClaw config, not the gateway wrapper environment: ${customCodexArgsWrapperTrace}`,
   );
 }
 
-const customCodexEnvWrapperTrace = customCodexEnvWrapperVersion.stderr;
+if (!customCodexArgsWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")) {
+  throw new Error(
+    `config appServer.args must still use the Nix Codex launcher because args do not choose the executable: ${customCodexArgsWrapperTrace}`,
+  );
+}
+
+const customCodexEnvWrapperTrace = traceWrapperVersion("custom-env Codex gateway", customCodexEnvGatewayWrapper);
 if (!customCodexEnvWrapperTrace.includes(`OPENCLAW_CODEX_APP_SERVER_BIN=${customCodexEnvExpectedBin}`)) {
   throw new Error(
     `custom OPENCLAW_CODEX_APP_SERVER_BIN was not preserved in the gateway wrapper: ${customCodexEnvWrapperTrace}`,
@@ -228,28 +200,29 @@ if (
   );
 }
 
-const websocketCodexWrapperVersion = spawnSync(shell, ["-x", websocketCodexGatewayWrapper, "--version"], {
-  env: {
-    ...process.env,
-    PATH: basePath,
-    SHELL: shell,
-  },
-  encoding: "utf8",
-});
-
-if (websocketCodexWrapperVersion.status !== 0 || !websocketCodexWrapperVersion.stdout.trim()) {
+const customCodexEnvArgsWrapperTrace = traceWrapperVersion(
+  "custom-env-args Codex gateway",
+  customCodexEnvArgsGatewayWrapper,
+);
+if (!customCodexEnvArgsWrapperTrace.includes(`OPENCLAW_CODEX_APP_SERVER_ARGS=${customCodexEnvArgsExpected}`)) {
   throw new Error(
-    `websocket Codex gateway wrapper --version failed: ${websocketCodexWrapperVersion.stdout}${websocketCodexWrapperVersion.stderr}`,
+    `custom OPENCLAW_CODEX_APP_SERVER_ARGS was not preserved in the gateway wrapper: ${customCodexEnvArgsWrapperTrace}`,
   );
 }
 
-const websocketCodexWrapperTrace = websocketCodexWrapperVersion.stderr;
+if (!customCodexEnvArgsWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")) {
+  throw new Error(
+    `custom OPENCLAW_CODEX_APP_SERVER_ARGS must still use the Nix Codex launcher because args do not choose the executable: ${customCodexEnvArgsWrapperTrace}`,
+  );
+}
+
+const websocketCodexWrapperTrace = traceWrapperVersion("websocket Codex gateway", websocketCodexGatewayWrapper);
 if (
   websocketCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
   websocketCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")
 ) {
   throw new Error(
-    `Codex websocket transport must keep local stdio app-server launch env out of the gateway wrapper: ${websocketCodexWrapperTrace}`,
+    `Codex websocket transport must keep local stdio app-server command and args out of the gateway wrapper: ${websocketCodexWrapperTrace}`,
   );
 }
 
@@ -308,7 +281,7 @@ function createJsonRpcClient(child) {
     get stderr() {
       return stderr;
     },
-    request(method, params, timeoutMs = 15_000) {
+    request(method, params, timeoutMs = codexJsonRpcTimeoutMs) {
       const id = nextId;
       nextId += 1;
       const payload = JSON.stringify({ id, method, params });
@@ -326,7 +299,7 @@ function createJsonRpcClient(child) {
 
 async function withCodexAppServer(label, options, fn) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), `openclaw-codex-${label}-`));
-  const codexHome = path.join(tempRoot, "agents", "main", "agent", "codex-home");
+  const codexHome = path.join(tempRoot, openclawAgentCodexHome);
   const nativeHome = path.join(codexHome, "home");
   mkdirSync(codexHome, { recursive: true });
   if (options.prepareHome) {
@@ -337,12 +310,15 @@ async function withCodexAppServer(label, options, fn) {
     codexAppServerCommand,
     "app-server",
     "--listen",
-    "stdio://",
+    appServerListenStdio,
   ];
   const child = spawn(appServerCommand, appServerArgs, {
     env: {
       ...process.env,
       CODEX_HOME: codexHome,
+      // Keep the smoke focused on command execution and HOME/PATH. Managed
+      // config generation is upstream Codex behavior, not what this Nix check
+      // is proving.
       CODEX_APP_SERVER_DISABLE_MANAGED_CONFIG: "1",
       PATH: options.pathValue,
       RUST_LOG: "warn",
@@ -386,6 +362,9 @@ const missingResult = await withCodexAppServer(
   {
     pathValue: baseOnlyPath,
     prepareHome: ({ nativeHome }) => {
+      // Preseed $CODEX_HOME/home/.nix-profile/bin to prove CODEX_HOME is not
+      // enough by itself. Without the Nix launcher, Codex command/exec still
+      // uses inherited HOME/PATH and cannot see this bin directory.
       const profileDir = path.join(nativeHome, ".nix-profile");
       mkdirSync(profileDir, { recursive: true });
       symlinkSync(codexRuntimeProfileBinDir, path.join(profileDir, "bin"));
@@ -410,7 +389,7 @@ const missingResult = await withCodexAppServer(
 if (missingResult.exitCode === 0 || !missingResult.stdout.includes(missingMarker)) {
   throw new Error(
     [
-      `Codex app-server unexpectedly resolved ${codexExpectedCommand} without the native-home profile.`,
+      `Codex app-server unexpectedly resolved ${codexExpectedCommand} without HOME=$CODEX_HOME/home and $CODEX_HOME/home/.nix-profile/bin on PATH.`,
       `stdout: ${missingResult.stdout}`,
       `stderr: ${missingResult.stderr}`,
     ].join("\n"),
@@ -420,7 +399,7 @@ if (missingResult.exitCode === 0 || !missingResult.stdout.includes(missingMarker
 if (!missingResult.stdout.includes(`CODEX_HOME_PROFILE=${codexRuntimeProfileBinDir}`)) {
   throw new Error(
     [
-      `Codex app-server before-state did not include the preseeded native-home profile.`,
+      `Codex app-server before-state did not include the preseeded $CODEX_HOME/home/.nix-profile/bin symlink.`,
       `expected: ${codexRuntimeProfileBinDir}`,
       `stdout: ${missingResult.stdout}`,
       `stderr: ${missingResult.stderr}`,
@@ -434,7 +413,7 @@ const codexResult = await withCodexAppServer(
   "with-nix-managed-launcher",
   {
     command: codexAppServerLauncher,
-    args: ["app-server", "--listen", "stdio://"],
+    args: ["app-server", "--listen", appServerListenStdio],
     pathValue: baseOnlyPath,
   },
   async (client, homes) => {
@@ -485,7 +464,7 @@ if (!codexLines[1]?.startsWith("PATH=")) {
 }
 
 if (!codexLines[1].includes("/codex-home/home/.nix-profile/bin")) {
-  throw new Error(`Codex app-server PATH did not include the native-home profile bin: ${codexLines[1]}`);
+  throw new Error(`Codex app-server PATH did not include $CODEX_HOME/home/.nix-profile/bin: ${codexLines[1]}`);
 }
 
 if (codexLines[2] !== expectedNativeCommandPath) {
@@ -500,7 +479,7 @@ if (!(codexLines[3] ?? "").startsWith(codexExpectedVersionPrefix)) {
   );
 }
 
-if (!profileBinTarget.startsWith("/nix/store/") || !profileBinTarget.endsWith("/bin")) {
+if (!profileBinTarget.startsWith(nixStorePrefix) || !profileBinTarget.endsWith("/bin")) {
   throw new Error(
     `Nix Codex launcher linked ${path.dirname(expectedNativeCommandPath)} to ${profileBinTarget}, expected a Nix store-backed bin directory`,
   );
@@ -512,9 +491,11 @@ console.log(
     `- generated tools.exec.pathPrepend resolves ${expectedBinDir}/${expectedCommand}`,
     "- gateway wrapper prepends the same runtime tool path",
     "- runtimePackages alone do not configure the Codex app-server launcher",
-    "- selecting the Nix-packaged Codex runtime plugin installs the native-home app-server launcher",
+    "- selecting the Nix-packaged Codex runtime plugin makes the gateway wrapper export the Nix app-server launcher",
     "- a user appServer.command keeps the Nix Codex launcher out of the gateway wrapper",
+    "- a user appServer.args still uses the Nix Codex launcher because args do not choose the executable",
     "- a user OPENCLAW_CODEX_APP_SERVER_BIN keeps the Nix Codex launcher out of the gateway wrapper",
+    "- a user OPENCLAW_CODEX_APP_SERVER_ARGS is preserved and still uses the Nix Codex launcher because args do not choose the executable",
     "- inherited OPENCLAW_CODEX_APP_SERVER_BIN keeps the Nix Codex launcher out of the gateway wrapper",
     "- Codex websocket transport keeps the local stdio launcher out of the gateway wrapper",
     `- before Nix-managed Codex launcher: exitCode=${missingResult.exitCode}`,
@@ -522,6 +503,6 @@ console.log(
     `- after Nix-managed Codex launcher: exitCode=${codexResult.exitCode}`,
     codexResult.stdout.trim(),
     `- Nix Codex launcher links ${path.dirname(expectedNativeCommandPath)} -> ${profileBinTarget}`,
-    `- native Codex app-server resolves ${expectedNativeCommandPath} from HOME=$CODEX_HOME/home`,
+    `- Codex command/exec through the app-server resolves ${expectedNativeCommandPath} from HOME=$CODEX_HOME/home`,
   ].join("\n"),
 );

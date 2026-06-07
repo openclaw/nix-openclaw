@@ -13,9 +13,10 @@
 # - per-agent `agents.list[].tools.exec.pathPrepend` entries that would
 #   otherwise replace the global exec path.
 #
-# It deliberately does not know about Codex, ACP, Claude, or any other native
-# harness. Harness adapters must consume this profile explicitly from their own
-# module so `runtimePackages` does not create harness-specific state by accident.
+# It deliberately does not know about Codex app-server `command/exec`, ACP,
+# Claude, or other plugin-specific command execution. Plugin-specific adapters
+# must opt into the generated runtime bin directory explicitly so
+# `runtimePackages` does not create plugin-specific state by accident.
 #
 # Before changing this file, re-check these upstream OpenClaw contracts:
 # - docs/tools/exec.md, "tools.exec.pathPrepend" and "PATH handling";
@@ -34,8 +35,8 @@
     let
       # runtimePackages are command tools for OpenClaw-owned processes. They
       # feed the gateway process PATH and upstream OpenClaw's tools.exec PATH
-      # config. They are not user shell packages and they do not select a
-      # native model harness by themselves.
+      # config. They are not user shell packages and they do not enable runtime
+      # plugins or choose app-server commands by themselves.
       packages = lib.unique (
         openclawLib.toolSets.tools
         ++ (lib.optional (qmdEnabled && qmdPackage != null) qmdPackage)

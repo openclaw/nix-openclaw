@@ -62,6 +62,8 @@ if command -v launchctl >/dev/null 2>&1; then
 
   openclaw_bin=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist")
   grep -q OPENCLAW_TEST_SECRET "$openclaw_bin"
+  # This platform activation check only proves the wrapper/config shape. The
+  # runtime-path check resolves the exact command path and executes the tool.
   grep -Eq 'hello-[^/]+/bin' "$openclaw_bin"
   ! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' "$openclaw_bin"
   ! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' "$openclaw_bin"
