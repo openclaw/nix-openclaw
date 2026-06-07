@@ -3,6 +3,7 @@
   pkgs,
   stdenv,
   nodejs_22,
+  openclawToolPkgs ? { },
 }:
 
 let
@@ -116,6 +117,21 @@ let
   runtimePathProbeBinDir = builtins.unsafeDiscardStringContext "${runtimePathProbeBin}/bin";
   runtimePathProbeName = "hello";
   runtimePathProbeOutput = "Hello, world!";
+  codexRuntimeProbePackages =
+    (import ../tools/extended.nix {
+      inherit pkgs openclawToolPkgs;
+      toolNamesOverride = [ "gogcli" ];
+    }).tools;
+  codexRuntimeProbePackage =
+    if codexRuntimeProbePackages == [ ] then
+      throw "openclaw-runtime-path check requires gogcli from nix-openclaw-tools"
+    else
+      builtins.head codexRuntimeProbePackages;
+  codexRuntimeProbeBinDir = builtins.unsafeDiscardStringContext "${lib.getBin codexRuntimeProbePackage}/bin";
+  codexRuntimeProbeName = "gog";
+  codexRuntimeProbeVersionPrefix = "v${lib.getVersion codexRuntimeProbePackage}";
+  codexRuntimePluginPackage = pkgs.openclawRuntimePlugins.codex;
+  codexAppServerCommand = "${codexRuntimePluginPackage}/node_modules/@openai/codex/bin/codex.js";
   normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
   pathEntryIndex =
     needle: entries:
@@ -137,8 +153,8 @@ let
       laterIndex = pathEntryIndex later entries;
     in
     earlierIndex != null && laterIndex != null && earlierIndex < laterIndex;
-  pathPrependHasRuntimePath =
-    entries: lib.any (entry: normalizePathEntry entry == runtimePathProbeBinDir) entries;
+  pathPrependHasBinDir = binDir: entries: lib.any (entry: normalizePathEntry entry == binDir) entries;
+  pathPrependHasRuntimePath = pathPrependHasBinDir runtimePathProbeBinDir;
   pathPrependStartsWithStorePath =
     entries:
     entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
@@ -171,12 +187,10 @@ let
       || lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_BIN" runtimePathServiceText
     then
       throw "runtimePackages must not configure Codex app-server launch environment."
-    else if
-      lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation
-      || lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation
-      || lib.hasInfix "openclaw-clean-legacy-codex-home-runtime-profile.sh" runtimePathActivation
-    then
-      throw "runtimePackages must flow through runtime paths, not Codex-home profile activation."
+    else if !(lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation) then
+      throw "runtimePackages did not create the Codex native-home profile activation."
+    else if !(lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation) then
+      throw "runtimePackages did not use the Codex native-home profile linker."
     else
       "ok"
   );
@@ -232,9 +246,54 @@ let
           "ok"
       );
 
+  # Opt into Codex only for this proof so runtimePackages alone still do not
+  # create a Codex plugin entry.
+  codexRuntimePathEval = moduleEval {
+    excludeTools = [ "gogcli" ];
+    runtimePackages = [ codexRuntimeProbePackage ];
+    runtimePlugins = [ "codex" ];
+  };
+  codexRuntimePathConfig = generatedConfig codexRuntimePathEval ".openclaw/openclaw.json";
+  codexRuntimePathPrepend = ((codexRuntimePathConfig.tools or { }).exec or { }).pathPrepend or [ ];
+  codexRuntimePathPrependText = lib.concatStringsSep ":" (
+    map normalizePathEntry codexRuntimePathPrepend
+  );
+  codexRuntimePluginLoadPaths = (((codexRuntimePathConfig.plugins or { }).load or { }).paths or [ ]);
+  codexRuntimePathActivation = builtins.toJSON codexRuntimePathEval.config.home.activation;
+  codexRuntimePathService =
+    (codexRuntimePathEval.config.systemd.user.services.openclaw-gateway or { })
+    // (codexRuntimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { });
+  codexRuntimePathServiceText = builtins.toJSON codexRuntimePathService;
+  codexRuntimePathWrapper =
+    if pkgs.stdenv.hostPlatform.isLinux then
+      builtins.head (lib.splitString " " codexRuntimePathService.Service.ExecStart)
+    else
+      builtins.head codexRuntimePathService.config.ProgramArguments;
+  codexRuntimePathCheck =
+    builtins.deepSeq (requireNoAssertionFailures "codex runtime path" codexRuntimePathEval)
+      (
+        if !(pathPrependHasBinDir codexRuntimeProbeBinDir codexRuntimePathPrepend) then
+          throw "gogcli did not render into tools.exec.pathPrepend for the Codex runtime check."
+        else if
+          !(lib.any (
+            path: lib.hasInfix "openclaw-runtime-plugin-codex" (normalizePathEntry path)
+          ) codexRuntimePluginLoadPaths)
+        then
+          throw "Codex runtime plugin was not rendered into plugins.load.paths for the Codex runtime check."
+        else if !(((codexRuntimePathConfig.plugins or { }).entries or { }).codex.enabled or false) then
+          throw "Codex runtime plugin entry was not enabled for the opt-in Codex runtime check."
+        else if lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_ARGS" codexRuntimePathServiceText then
+          throw "Codex runtime plugin must not configure Codex app-server launch arguments."
+        else if !(lib.hasInfix "openclawCodexRuntimeProfiles" codexRuntimePathActivation) then
+          throw "Codex runtime path did not create the Codex native-home profile activation."
+        else
+          "ok"
+      );
+
   checkKey = builtins.deepSeq [
     runtimePathCheck
     runtimePathOverrideCheck
+    codexRuntimePathCheck
   ] "ok";
 
 in
@@ -252,12 +311,18 @@ stdenv.mkDerivation {
   env = {
     OPENCLAW_RUNTIME_PATH_CHECK = checkKey;
     OPENCLAW_GATEWAY_WRAPPER = runtimePathWrapper;
+    OPENCLAW_CODEX_GATEWAY_WRAPPER = codexRuntimePathWrapper;
     OPENCLAW_RUNTIME_PATH_BASE_PATH = "${nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin";
     OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR = runtimePathProbeBinDir;
     OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND = runtimePathProbeName;
     OPENCLAW_RUNTIME_PATH_EXPECTED_OUTPUT = runtimePathProbeOutput;
     OPENCLAW_RUNTIME_PATH_PREPEND = runtimePathPrependText;
     OPENCLAW_RUNTIME_PATH_SHELL = "${pkgs.bash}/bin/bash";
+    OPENCLAW_CODEX_APP_SERVER_COMMAND = codexAppServerCommand;
+    OPENCLAW_CODEX_RUNTIME_EXPECTED_BIN_DIR = codexRuntimeProbeBinDir;
+    OPENCLAW_CODEX_RUNTIME_EXPECTED_COMMAND = codexRuntimeProbeName;
+    OPENCLAW_CODEX_RUNTIME_EXPECTED_VERSION_PREFIX = codexRuntimeProbeVersionPrefix;
+    OPENCLAW_CODEX_RUNTIME_PATH_PREPEND = codexRuntimePathPrependText;
   };
   doCheck = true;
   checkPhase = "${nodejs_22}/bin/node ${../scripts/openclaw-runtime-path-smoke.mjs}";

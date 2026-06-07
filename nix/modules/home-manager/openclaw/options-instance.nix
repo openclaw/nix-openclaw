@@ -73,7 +73,7 @@
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      description = "Extra command-line packages available to this OpenClaw instance's gateway wrapper and generated tools.exec.pathPrepend. This does not enable Codex, configure Codex app-server launch arguments, or add packages to the user's shell PATH.";
+      description = "Extra command-line packages available to this OpenClaw instance's gateway wrapper, generated tools.exec.pathPrepend, and Codex native HOME profiles under OpenClaw agent homes. This does not enable Codex, configure Codex app-server launch arguments, or add packages to the user's shell PATH.";
     };
 
     environment = lib.mkOption {

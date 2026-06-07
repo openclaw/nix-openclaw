@@ -32,6 +32,17 @@
             token = "hm-activation-test-token";
           };
         };
+        agents = {
+          list = [
+            {
+              id = "main";
+              default = true;
+            }
+            {
+              id = "Worker 1";
+            }
+          ];
+        };
       };
     };
   };

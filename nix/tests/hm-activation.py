@@ -14,6 +14,18 @@ machine.succeed("test -f /home/alice/.openclaw/workspace/LORE.md")
 machine.succeed("grep -q '\"skipBootstrap\":true' /home/alice/.openclaw/openclaw.json")
 machine.succeed("grep -q 'BEGIN NIX-REPORT' /home/alice/.openclaw/workspace/TOOLS.md")
 machine.succeed(
+    "test -L /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+)
+machine.succeed(
+    "test -x /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/hello"
+)
+machine.succeed(
+    "test -L /home/alice/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin"
+)
+machine.succeed(
+    "test -x /home/alice/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin/hello"
+)
+machine.succeed(
     "unit=/home/alice/.config/systemd/user/openclaw-gateway.service; "
     "openclaw_bin=$(sed -n 's/^ExecStart=\\([^ ]*\\).*/\\1/p' \"$unit\"); "
     "test -x \"$openclaw_bin\"; "

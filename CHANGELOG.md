@@ -10,14 +10,15 @@ Older repository history is available in git.
 
 ## 2026-06-07
 
-### Changed
+### Fixed
 
-- Changed `programs.openclaw.runtimePackages` from a Codex-home profile-linking
-  mechanism into the supported OpenClaw command-tool environment. The same
-  packages now feed the generated gateway wrapper PATH, global
-  `tools.exec.pathPrepend`, and agent-level `tools.exec.pathPrepend`. This
-  does not configure Codex app-server launch arguments and does not enable the
-  Codex plugin.
+- Fixed `programs.openclaw.runtimePackages` for OpenClaw-managed Codex agents.
+  The same packages now feed the generated gateway wrapper PATH,
+  `tools.exec.pathPrepend`, and the Codex native `HOME` profile at
+  `agents/<id>/agent/codex-home/home/.nix-profile/bin`. When the packaged
+  `codex` runtime plugin is selected, nix-openclaw starts the packaged Codex
+  app-server through a Nix launcher that uses OpenClaw's per-agent `CODEX_HOME`
+  as the native `HOME` and prepends that home profile.
 
   User config stays the same:
 
@@ -25,12 +26,12 @@ Older repository history is available in git.
   programs.openclaw.runtimePackages = [ pkgs.jq ];
   ```
 
-  Before this change, pre-1.0 deployments could also observe those packages
-  through an internal `agents/<id>/agent/codex-home/home/.nix-profile/bin`
-  symlink. That internal Codex-home profile path is no longer managed. Put
-  command-line tools in `runtimePackages` and let OpenClaw receive them through
-  `tools.exec.pathPrepend` instead of depending on the Codex-home filesystem
-  layout or Nix-managed Codex app-server argv.
+  Before this change, Codex native `command/exec` could start with OpenClaw's
+  agent `CODEX_HOME` but an inherited process `HOME`, so tools such as `gog`
+  were present in the Nix runtime but missing inside Codex turns. After this
+  change, the Codex app-server sees the same native `HOME` profile that
+  activation populates. This does not enable the Codex plugin or expose runtime
+  packages in the user's login shell.
 
 ## 2026-06-06
 
