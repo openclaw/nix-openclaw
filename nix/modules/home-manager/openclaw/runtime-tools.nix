@@ -50,12 +50,12 @@
       };
       pathEntries = map (package: "${lib.getBin package}/bin") packages;
       path = lib.concatStringsSep ":" pathEntries;
-      prefixPathEntries = entries: lib.unique (pathEntries ++ (if entries == null then [ ] else entries));
+      mergePathEntries = entries: lib.unique ((if entries == null then [ ] else entries) ++ pathEntries);
       addPathToExec =
         execConfig:
         execConfig
         // {
-          pathPrepend = prefixPathEntries (execConfig.pathPrepend or [ ]);
+          pathPrepend = mergePathEntries (execConfig.pathPrepend or [ ]);
         };
       addPathToAgent =
         agent:
@@ -64,8 +64,9 @@
           exec = tools.exec or { };
         in
         # Upstream OpenClaw gives agents.list[].tools.exec.pathPrepend priority
-        # over tools.exec.pathPrepend. Prefix only agents that already override
-        # it, so an agent-specific PATH does not hide Nix runtimePackages.
+        # over tools.exec.pathPrepend. Merge only agents that already override
+        # it, and keep the user's explicit entries first so generated
+        # runtimePackages do not shadow operator-selected command paths.
         if exec ? pathPrepend then
           agent
           // {

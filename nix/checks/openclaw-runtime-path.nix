@@ -160,9 +160,6 @@ let
     earlierIndex != null && laterIndex != null && earlierIndex < laterIndex;
   pathPrependHasBinDir = binDir: entries: lib.any (entry: normalizePathEntry entry == binDir) entries;
   pathPrependHasRuntimePath = pathPrependHasBinDir runtimePathProbeBinDir;
-  pathPrependStartsWithStorePath =
-    entries:
-    entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
   gatewayServiceFor =
     eval:
     (eval.config.systemd.user.services.openclaw-gateway or { })
@@ -235,18 +232,16 @@ let
       (
         if
           !(pathPrependHasRuntimePath runtimePathOverrideGlobal)
-          || !(pathPrependStartsWithStorePath runtimePathOverrideGlobal)
-          || !(pathEntryBefore runtimePathProbeBinDir "/custom/global" runtimePathOverrideGlobal)
+          || !(pathEntryBefore "/custom/global" runtimePathProbeBinDir runtimePathOverrideGlobal)
           || !(lib.elem "/custom/global" runtimePathOverrideGlobal)
         then
-          throw "runtimePackages did not prefix the global runtime path while preserving user entries."
+          throw "runtimePackages did not keep generated global runtime path available after user entries."
         else if
           !(pathPrependHasRuntimePath runtimePathOverrideAgentPrepend)
-          || !(pathPrependStartsWithStorePath runtimePathOverrideAgentPrepend)
-          || !(pathEntryBefore runtimePathProbeBinDir "/custom/agent" runtimePathOverrideAgentPrepend)
+          || !(pathEntryBefore "/custom/agent" runtimePathProbeBinDir runtimePathOverrideAgentPrepend)
           || !(lib.elem "/custom/agent" runtimePathOverrideAgentPrepend)
         then
-          throw "runtimePackages did not prefix the agent runtime path while preserving user entries."
+          throw "runtimePackages did not keep generated agent runtime path available after user entries."
         else if runtimePathOverrideGlobalOnlyExec ? pathPrepend then
           throw "runtimePackages should not synthesize agent-level pathPrepend for agents that inherit the global exec config."
         else

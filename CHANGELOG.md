@@ -17,8 +17,8 @@ Older repository history is available in git.
   `tools.exec.pathPrepend`. When the packaged `codex` runtime plugin uses the
   Nix-managed launcher, that launcher sets `HOME=$CODEX_HOME/home`, links
   `$CODEX_HOME/home/.nix-profile/bin` to the same Nix-built `bin` directory, and
-  prepends it before starting upstream Codex. Non-Codex instances no longer
-  create Codex filesystem state during activation.
+  prepends that path before starting upstream Codex. Non-Codex instances no
+  longer create Codex filesystem state during activation.
 
   User config stays the same:
 
@@ -31,8 +31,10 @@ Older repository history is available in git.
   were present in the Nix runtime but missing inside Codex turns. After this
   change, the Nix-managed Codex launcher sets `HOME=$CODEX_HOME/home`, links
   `$CODEX_HOME/home/.nix-profile/bin` to the Nix-built runtime `bin` directory,
-  and then starts upstream Codex. This does not enable the Codex plugin or
-  expose runtime packages in the user's login shell.
+  prepends that path, and then starts upstream Codex. This intentionally differs
+  from upstream's normal inherited-HOME launch because Codex `command/exec`
+  rebuilds command PATH around `$HOME/.nix-profile/bin`. This does not enable
+  the Codex plugin or expose runtime packages in the user's login shell.
 
 ## 2026-06-06
 

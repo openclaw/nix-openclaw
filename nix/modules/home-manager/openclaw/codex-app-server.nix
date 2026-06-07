@@ -11,11 +11,13 @@
 # - appServer.command or OPENCLAW_CODEX_APP_SERVER_BIN means the operator chose
 #   the executable OpenClaw should spawn.
 #
-# nix-openclaw needs one extra behavior for the packaged Codex plugin: native
-# Codex command/exec should see Nix runtimePackages. The adapter does that by
+# nix-openclaw needs one extra behavior for the packaged Codex plugin: Codex
+# command/exec should see Nix runtimePackages. The adapter does that by
 # selecting a Nix launcher. That launcher runs only after OpenClaw has chosen
 # the app-server command and set CODEX_HOME for one agent, so it is the narrow
-# place that may create/update $CODEX_HOME/home/.nix-profile/bin.
+# place that may create/update $CODEX_HOME/home/.nix-profile/bin and set
+# HOME=$CODEX_HOME/home. Setting HOME is intentional here because Codex
+# command/exec rebuilds command PATH around $HOME/.nix-profile/bin.
 #
 # Home Manager activation must not create or update
 # $CODEX_HOME/home/.nix-profile/bin. Activation cannot see inherited process

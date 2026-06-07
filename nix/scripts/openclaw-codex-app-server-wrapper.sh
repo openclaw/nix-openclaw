@@ -5,9 +5,11 @@ set -eu
 # this wrapper is run outside that lifecycle, it should behave like plain Codex
 # and leave HOME/PATH untouched.
 if [ -n "${CODEX_HOME:-}" ]; then
-  # Upstream OpenClaw's isolated native home is $CODEX_HOME/home. Point HOME
-  # there so Codex-native command/exec reads the same profile that this Nix
-  # launcher manages below.
+  # Upstream OpenClaw normally keeps HOME inherited for local app-server
+  # launches. This Nix launcher intentionally narrows HOME to CODEX_HOME/home:
+  # Codex command/exec rebuilds command PATH around $HOME/.nix-profile/bin, so
+  # only prepending CODEX_HOME/home/.nix-profile/bin here does not make
+  # runtimePackages visible inside Codex shell commands.
   HOME="${CODEX_HOME}/home"
   export HOME
   profile_dir="$HOME/.nix-profile"

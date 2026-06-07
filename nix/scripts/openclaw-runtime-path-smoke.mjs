@@ -301,7 +301,9 @@ async function withCodexAppServer(label, options, fn) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), `openclaw-codex-${label}-`));
   const codexHome = path.join(tempRoot, openclawAgentCodexHome);
   const nativeHome = path.join(codexHome, "home");
+  const inheritedHome = path.join(tempRoot, "inherited-home");
   mkdirSync(codexHome, { recursive: true });
+  mkdirSync(inheritedHome, { recursive: true });
   if (options.prepareHome) {
     options.prepareHome({ codexHome, nativeHome });
   }
@@ -316,6 +318,7 @@ async function withCodexAppServer(label, options, fn) {
     env: {
       ...process.env,
       CODEX_HOME: codexHome,
+      HOME: inheritedHome,
       // Keep the smoke focused on command execution and HOME/PATH. Managed
       // config generation is upstream Codex behavior, not what this Nix check
       // is proving.
@@ -337,7 +340,7 @@ async function withCodexAppServer(label, options, fn) {
         requestAttestation: false,
       },
     });
-    return await fn(client, { codexHome, nativeHome });
+    return await fn(client, { codexHome, inheritedHome, nativeHome });
   } finally {
     child.kill("SIGTERM");
     rmSync(tempRoot, { recursive: true, force: true });
@@ -389,7 +392,7 @@ const missingResult = await withCodexAppServer(
 if (missingResult.exitCode === 0 || !missingResult.stdout.includes(missingMarker)) {
   throw new Error(
     [
-      `Codex app-server unexpectedly resolved ${codexExpectedCommand} without HOME=$CODEX_HOME/home and $CODEX_HOME/home/.nix-profile/bin on PATH.`,
+      `Codex app-server unexpectedly resolved ${codexExpectedCommand} without $CODEX_HOME/home/.nix-profile/bin on PATH.`,
       `stdout: ${missingResult.stdout}`,
       `stderr: ${missingResult.stderr}`,
     ].join("\n"),
