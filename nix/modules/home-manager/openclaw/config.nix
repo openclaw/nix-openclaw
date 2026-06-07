@@ -203,6 +203,9 @@ let
       ];
       mergedConfigBeforeRuntimeTools = lib.recursiveUpdate mergedConfigWithoutLoadPaths generatedLoadConfig;
       qmdEnabled = (((mergedConfigBeforeRuntimeTools.memory or { }).backend or null) == "qmd");
+      # Generic OpenClaw command tools: gateway PATH and generated
+      # tools.exec.pathPrepend. Harness-specific native command paths are owned
+      # by their adapters, not by this main orchestration module.
       runtimeToolConfig = runtimeTools.forInstance {
         inherit
           name
@@ -248,6 +251,9 @@ let
       configJson =
         if hasExecSecretFlow then lib.warn execSecretFlowWarning rawConfigJson else rawConfigJson;
       configFile = pkgs.writeText "openclaw-${name}.json" configJson;
+      # Packaged Codex runtime plugin adapter. This may select the Nix
+      # app-server launcher, but only when OpenClaw will start local Codex stdio
+      # itself and the user has not chosen another app-server command.
       codexAppServerConfig = codexAppServer.forInstance {
         inherit
           inst
