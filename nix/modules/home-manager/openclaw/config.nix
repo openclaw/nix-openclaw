@@ -187,53 +187,46 @@ let
           message = "programs.openclaw.workspace.bootstrapFiles requires agents.defaults.skipBootstrap to stay true. Remove programs.openclaw.config.agents.defaults.skipBootstrap = false; OpenClaw must not seed bootstrap files in Nix-managed workspaces.";
         }
       ];
-      mergedConfigWithoutRuntimePath = lib.recursiveUpdate mergedConfigWithoutLoadPaths generatedLoadConfig;
-      qmdEnabled = (((mergedConfigWithoutRuntimePath.memory or { }).backend or null) == "qmd");
-      # runtimePackages stay inside OpenClaw-managed process/config paths, not the user's shell PATH.
-      runtimePackages = lib.unique (
+      mergedConfigBeforeRuntimeTools = lib.recursiveUpdate mergedConfigWithoutLoadPaths generatedLoadConfig;
+      qmdEnabled = (((mergedConfigBeforeRuntimeTools.memory or { }).backend or null) == "qmd");
+      # runtimePackages are command tools for OpenClaw-owned processes. They are
+      # not added to the user's shell and do not enable the Codex plugin.
+      runtimeToolPackages = lib.unique (
         openclawLib.toolSets.tools
         ++ (lib.optional (qmdEnabled && qmdPackage != null) qmdPackage)
         ++ pluginPackages
         ++ cfg.runtimePackages
         ++ inst.runtimePackages
       );
-      runtimePath = lib.makeBinPath runtimePackages;
-      runtimePathEntries = map (package: "${lib.getBin package}/bin") runtimePackages;
-      codexAppServerArgs =
-        if runtimePath == "" then
-          ""
-        else
-          lib.concatStringsSep " " [
-            "-c"
-            "shell_environment_policy.set.PATH=${runtimePath}"
-            "app-server"
-            "--listen"
-            "stdio://"
-          ];
-      prefixRuntimePathEntries =
-        entries: lib.unique (runtimePathEntries ++ (if entries == null then [ ] else entries));
-      addRuntimePathToExec =
+      runtimeToolPathEntries = map (package: "${lib.getBin package}/bin") runtimeToolPackages;
+      runtimeToolPath = lib.makeBinPath runtimeToolPackages;
+      prefixRuntimeToolPathEntries =
+        entries: lib.unique (runtimeToolPathEntries ++ (if entries == null then [ ] else entries));
+      addRuntimeToolPathToExec =
         execConfig:
         execConfig
         // {
-          pathPrepend = prefixRuntimePathEntries (execConfig.pathPrepend or [ ]);
+          pathPrepend = prefixRuntimeToolPathEntries (execConfig.pathPrepend or [ ]);
         };
-      addRuntimePathToAgent =
+      addRuntimeToolPathToAgent =
         agent:
         let
           tools = agent.tools or { };
           exec = tools.exec or { };
         in
+        # Upstream OpenClaw gives agents.list[].tools.exec.pathPrepend priority
+        # over tools.exec.pathPrepend. Prefix only agents that already override
+        # it, so an agent-specific PATH does not hide Nix runtimePackages.
         if exec ? pathPrepend then
           agent
           // {
             tools = tools // {
-              exec = addRuntimePathToExec exec;
+              exec = addRuntimeToolPathToExec exec;
             };
           }
         else
           agent;
-      addRuntimePathToConfig =
+      addRuntimeToolPathToConfig =
         value:
         let
           tools = value.tools or { };
@@ -241,21 +234,21 @@ let
           agents = value.agents or { };
           agentList = agents.list or [ ];
         in
-        if runtimePathEntries == [ ] then
+        if runtimeToolPathEntries == [ ] then
           value
         else
           value
           // {
             tools = tools // {
-              exec = addRuntimePathToExec exec;
+              exec = addRuntimeToolPathToExec exec;
             };
           }
           // lib.optionalAttrs (agentList != [ ]) {
             agents = agents // {
-              list = map addRuntimePathToAgent agentList;
+              list = map addRuntimeToolPathToAgent agentList;
             };
           };
-      mergedConfig0 = addRuntimePathToConfig mergedConfigWithoutRuntimePath;
+      mergedConfig0 = addRuntimeToolPathToConfig mergedConfigBeforeRuntimeTools;
       existingWorkspace = (((mergedConfig0.agents or { }).defaults or { }).workspace or null);
       mergedConfig =
         if (cfg.workspace.pinAgentDefaults or true) && existingWorkspace == null then
@@ -319,17 +312,9 @@ let
           ) runtimeEnvAll
         )}
 
-        if [ -n "${runtimePath}" ]; then
-          export PATH="${runtimePath}:''${PATH:-}"
+        if [ -n "${runtimeToolPath}" ]; then
+          export PATH="${runtimeToolPath}:''${PATH:-}"
         fi
-
-        ${lib.optionalString (codexAppServerArgs != "") ''
-          # Nix owns the command-tool PATH, not the Codex binary lifecycle. OpenClaw
-          # still resolves its managed Codex app-server from the packaged plugin.
-          if [ -z "''${OPENCLAW_CODEX_APP_SERVER_ARGS:-}" ]; then
-            export OPENCLAW_CODEX_APP_SERVER_ARGS=${lib.escapeShellArg codexAppServerArgs}
-          fi
-        ''}
 
         exec "${gatewayRuntimePackage}/bin/openclaw" "$@"
       '';

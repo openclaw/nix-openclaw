@@ -15,8 +15,9 @@ Older repository history is available in git.
 - Changed `programs.openclaw.runtimePackages` from a Codex-home profile-linking
   mechanism into the supported OpenClaw command-tool environment. The same
   packages now feed the generated gateway wrapper PATH, global
-  `tools.exec.pathPrepend`, agent-level `tools.exec.pathPrepend`, and the
-  Nix-managed Codex app-server PATH policy.
+  `tools.exec.pathPrepend`, and agent-level `tools.exec.pathPrepend`. This
+  does not configure Codex app-server launch arguments and does not enable the
+  Codex plugin.
 
   User config stays the same:
 
@@ -29,7 +30,7 @@ Older repository history is available in git.
   symlink. That internal Codex-home profile path is no longer managed. Put
   command-line tools in `runtimePackages` and let OpenClaw receive them through
   `tools.exec.pathPrepend` instead of depending on the Codex-home filesystem
-  layout.
+  layout or Nix-managed Codex app-server argv.
 
 ## 2026-06-06
 

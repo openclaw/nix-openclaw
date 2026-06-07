@@ -3,17 +3,9 @@
   pkgs,
   stdenv,
   nodejs_22,
-  openclawGateway,
-  openclawCodexRuntimePlugin,
 }:
 
 let
-  modulePkgs = pkgs // {
-    openclawRuntimePlugins = {
-      codex = openclawCodexRuntimePlugin;
-    };
-  };
-
   testLib = lib.extend (
     _final: _prev: {
       hm.dag = {
@@ -91,8 +83,8 @@ let
               lib.file.mkOutOfStoreSymlink = path: path;
               programs.openclaw = {
                 enable = true;
-                launchd.enable = modulePkgs.stdenv.hostPlatform.isDarwin;
-                systemd.enable = modulePkgs.stdenv.hostPlatform.isLinux;
+                launchd.enable = pkgs.stdenv.hostPlatform.isDarwin;
+                systemd.enable = pkgs.stdenv.hostPlatform.isLinux;
               }
               // openclawConfig;
             };
@@ -100,7 +92,7 @@ let
         )
       ];
       specialArgs = {
-        pkgs = modulePkgs;
+        inherit pkgs;
       };
     };
 
@@ -119,14 +111,11 @@ let
     eval: path:
     builtins.fromJSON (builtins.unsafeDiscardStringContext eval.config.home.file."${path}".text);
 
-  runtimePathProbe = pkgs.writeShellApplication {
-    name = "openclaw-runtime-path-probe";
-    text = builtins.readFile ../tests/openclaw-runtime-path-probe.sh;
-  };
-  runtimePathProbeBin = lib.getBin runtimePathProbe;
+  runtimePathProbePackage = pkgs.hello;
+  runtimePathProbeBin = lib.getBin runtimePathProbePackage;
   runtimePathProbeBinDir = builtins.unsafeDiscardStringContext "${runtimePathProbeBin}/bin";
-  runtimePathProbeName = "openclaw-runtime-path-probe";
-  runtimePathProbeOutput = "openclaw-runtime-path-probe-ok";
+  runtimePathProbeName = "hello";
+  runtimePathProbeOutput = "Hello, world!";
   normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
   pathPrependHasRuntimePath =
     entries: lib.any (entry: normalizePathEntry entry == runtimePathProbeBinDir) entries;
@@ -135,7 +124,7 @@ let
     entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
 
   runtimePathEval = moduleEval {
-    runtimePackages = [ runtimePathProbe ];
+    runtimePackages = [ runtimePathProbePackage ];
   };
   runtimePathConfig = generatedConfig runtimePathEval ".openclaw/openclaw.json";
   runtimePathPrepend = ((runtimePathConfig.tools or { }).exec or { }).pathPrepend or [ ];
@@ -168,7 +157,7 @@ let
   );
 
   runtimePathOverrideEval = moduleEval {
-    runtimePackages = [ runtimePathProbe ];
+    runtimePackages = [ runtimePathProbePackage ];
     config = {
       tools.exec.pathPrepend = [ "/custom/global" ];
       agents.list = [
@@ -225,9 +214,7 @@ stdenv.mkDerivation {
   ];
   env = {
     OPENCLAW_RUNTIME_PATH_CHECK = checkKey;
-    OPENCLAW_GATEWAY = openclawGateway;
     OPENCLAW_GATEWAY_WRAPPER = runtimePathWrapper;
-    OPENCLAW_RUNTIME_PATH_CODEX_PLUGIN_ROOT = openclawCodexRuntimePlugin;
     OPENCLAW_RUNTIME_PATH_BASE_PATH = "${nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin";
     OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR = runtimePathProbeBinDir;
     OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND = runtimePathProbeName;

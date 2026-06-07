@@ -61,8 +61,7 @@ if command -v launchctl >/dev/null 2>&1; then
   openclaw_bin=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist")
   grep -q OPENCLAW_TEST_SECRET "$openclaw_bin"
   grep -Eq 'jq-[^/]+/bin' "$openclaw_bin"
-  grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' "$openclaw_bin"
-  grep -q 'shell_environment_policy.set.PATH=' "$openclaw_bin"
+  ! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' "$openclaw_bin"
   ! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' "$openclaw_bin"
   grep -q '"pathPrepend"' "$HOME/.openclaw/openclaw.json"
   grep -Eq 'jq-[^/]+/bin' "$HOME/.openclaw/openclaw.json"
