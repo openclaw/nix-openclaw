@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readlinkSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
@@ -32,6 +32,7 @@ const codexAppServerCommand = requireEnv("OPENCLAW_CODEX_APP_SERVER_COMMAND");
 const codexExpectedBinDir = requireEnv("OPENCLAW_CODEX_RUNTIME_EXPECTED_BIN_DIR");
 const codexExpectedCommand = requireEnv("OPENCLAW_CODEX_RUNTIME_EXPECTED_COMMAND");
 const codexExpectedVersionPrefix = requireEnv("OPENCLAW_CODEX_RUNTIME_EXPECTED_VERSION_PREFIX");
+const codexRuntimeProfileBinDir = requireEnv("OPENCLAW_CODEX_RUNTIME_PROFILE_BIN_DIR");
 const codexPathPrepend = requireEnv("OPENCLAW_CODEX_RUNTIME_PATH_PREPEND")
   .split(":")
   .filter(Boolean);
@@ -328,6 +329,9 @@ async function withCodexAppServer(label, options, fn) {
   const codexHome = path.join(tempRoot, "agents", "main", "agent", "codex-home");
   const nativeHome = path.join(codexHome, "home");
   mkdirSync(codexHome, { recursive: true });
+  if (options.prepareHome) {
+    options.prepareHome({ codexHome, nativeHome });
+  }
   const appServerCommand = options.command ?? process.execPath;
   const appServerArgs = options.args ?? [
     codexAppServerCommand,
@@ -378,8 +382,15 @@ async function commandExec(client, command) {
 const baseOnlyPath = basePath;
 const missingMarker = `OPENCLAW_${codexExpectedCommand.toUpperCase()}_MISSING`;
 const missingResult = await withCodexAppServer(
-  "without-native-home-profile",
-  { pathValue: baseOnlyPath },
+  "without-nix-managed-launcher",
+  {
+    pathValue: baseOnlyPath,
+    prepareHome: ({ nativeHome }) => {
+      const profileDir = path.join(nativeHome, ".nix-profile");
+      mkdirSync(profileDir, { recursive: true });
+      symlinkSync(codexRuntimeProfileBinDir, path.join(profileDir, "bin"));
+    },
+  },
   async (client) =>
     commandExec(client, [
       shell,
@@ -387,6 +398,9 @@ const missingResult = await withCodexAppServer(
       [
         "set -u",
         "printf 'HOME=%s\\n' \"$HOME\"",
+        "printf 'CODEX_HOME=%s\\n' \"$CODEX_HOME\"",
+        "profile_bin=\"$CODEX_HOME/home/.nix-profile/bin\"",
+        "if [ -L \"$profile_bin\" ]; then printf 'CODEX_HOME_PROFILE=%s\\n' \"$(readlink \"$profile_bin\")\"; else printf 'CODEX_HOME_PROFILE_MISSING\\n'; fi",
         "printf 'PATH=%s\\n' \"$PATH\"",
         `if command -v ${codexExpectedCommand}; then command -v ${codexExpectedCommand}; ${codexExpectedCommand} --version; else printf '${missingMarker}\\n'; exit 127; fi`,
       ].join("; "),
@@ -397,6 +411,17 @@ if (missingResult.exitCode === 0 || !missingResult.stdout.includes(missingMarker
   throw new Error(
     [
       `Codex app-server unexpectedly resolved ${codexExpectedCommand} without the native-home profile.`,
+      `stdout: ${missingResult.stdout}`,
+      `stderr: ${missingResult.stderr}`,
+    ].join("\n"),
+  );
+}
+
+if (!missingResult.stdout.includes(`CODEX_HOME_PROFILE=${codexRuntimeProfileBinDir}`)) {
+  throw new Error(
+    [
+      `Codex app-server before-state did not include the preseeded native-home profile.`,
+      `expected: ${codexRuntimeProfileBinDir}`,
       `stdout: ${missingResult.stdout}`,
       `stderr: ${missingResult.stderr}`,
     ].join("\n"),

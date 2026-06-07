@@ -130,6 +130,11 @@ let
   codexRuntimeProbeBinDir = builtins.unsafeDiscardStringContext "${lib.getBin codexRuntimeProbePackage}/bin";
   codexRuntimeProbeName = "gog";
   codexRuntimeProbeVersionPrefix = "v${lib.getVersion codexRuntimeProbePackage}";
+  codexRuntimeProofProfile = pkgs.symlinkJoin {
+    name = "openclaw-runtime-codex-proof";
+    paths = [ codexRuntimeProbePackage ];
+  };
+  codexRuntimeProofProfileBinDir = builtins.unsafeDiscardStringContext "${codexRuntimeProofProfile}/bin";
   codexRuntimePluginPackage = pkgs.openclawRuntimePlugins.codex;
   codexAppServerCommand = "${codexRuntimePluginPackage}/node_modules/@openai/codex/bin/codex.js";
   normalizePathEntry = entry: builtins.unsafeDiscardStringContext entry;
@@ -398,6 +403,7 @@ stdenv.mkDerivation {
     OPENCLAW_CODEX_RUNTIME_EXPECTED_COMMAND = codexRuntimeProbeName;
     OPENCLAW_CODEX_RUNTIME_EXPECTED_VERSION_PREFIX = codexRuntimeProbeVersionPrefix;
     OPENCLAW_CODEX_RUNTIME_PATH_PREPEND = codexRuntimePathPrependText;
+    OPENCLAW_CODEX_RUNTIME_PROFILE_BIN_DIR = codexRuntimeProofProfileBinDir;
   };
   doCheck = true;
   checkPhase = "${nodejs_22}/bin/node ${../scripts/openclaw-runtime-path-smoke.mjs}";
