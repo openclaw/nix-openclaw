@@ -158,6 +158,16 @@ let
   pathPrependStartsWithStorePath =
     entries:
     entries != [ ] && lib.hasPrefix builtins.storeDir (normalizePathEntry (builtins.head entries));
+  gatewayServiceFor =
+    eval:
+    (eval.config.systemd.user.services.openclaw-gateway or { })
+    // (eval.config.launchd.agents."com.steipete.openclaw.gateway" or { });
+  gatewayWrapperFor =
+    service:
+    if pkgs.stdenv.hostPlatform.isLinux then
+      builtins.head (lib.splitString " " service.Service.ExecStart)
+    else
+      builtins.head service.config.ProgramArguments;
 
   runtimePathEval = moduleEval {
     runtimePackages = [ runtimePathProbePackage ];
@@ -166,15 +176,9 @@ let
   runtimePathPrepend = ((runtimePathConfig.tools or { }).exec or { }).pathPrepend or [ ];
   runtimePathPrependText = lib.concatStringsSep ":" (map normalizePathEntry runtimePathPrepend);
   runtimePathActivation = builtins.toJSON runtimePathEval.config.home.activation;
-  runtimePathService =
-    (runtimePathEval.config.systemd.user.services.openclaw-gateway or { })
-    // (runtimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { });
+  runtimePathService = gatewayServiceFor runtimePathEval;
   runtimePathServiceText = builtins.toJSON runtimePathService;
-  runtimePathWrapper =
-    if pkgs.stdenv.hostPlatform.isLinux then
-      builtins.head (lib.splitString " " runtimePathService.Service.ExecStart)
-    else
-      builtins.head runtimePathService.config.ProgramArguments;
+  runtimePathWrapper = gatewayWrapperFor runtimePathService;
   runtimePathCheck = builtins.deepSeq (requireNoAssertionFailures "runtime path" runtimePathEval) (
     if !(pathPrependHasRuntimePath runtimePathPrepend) then
       throw "runtimePackages did not render into tools.exec.pathPrepend."
@@ -187,10 +191,8 @@ let
       || lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_BIN" runtimePathServiceText
     then
       throw "runtimePackages must not configure Codex app-server launch environment."
-    else if !(lib.hasInfix "openclawCodexRuntimeProfiles" runtimePathActivation) then
-      throw "runtimePackages did not create the Codex native-home profile activation."
-    else if !(lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation) then
-      throw "runtimePackages did not use the Codex native-home profile linker."
+    else if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimePathActivation then
+      throw "runtimePackages without the packaged Codex app-server wrapper must not create Codex native-home profiles."
     else
       "ok"
   );
@@ -260,15 +262,9 @@ let
   );
   codexRuntimePluginLoadPaths = (((codexRuntimePathConfig.plugins or { }).load or { }).paths or [ ]);
   codexRuntimePathActivation = builtins.toJSON codexRuntimePathEval.config.home.activation;
-  codexRuntimePathService =
-    (codexRuntimePathEval.config.systemd.user.services.openclaw-gateway or { })
-    // (codexRuntimePathEval.config.launchd.agents."com.steipete.openclaw.gateway" or { });
+  codexRuntimePathService = gatewayServiceFor codexRuntimePathEval;
   codexRuntimePathServiceText = builtins.toJSON codexRuntimePathService;
-  codexRuntimePathWrapper =
-    if pkgs.stdenv.hostPlatform.isLinux then
-      builtins.head (lib.splitString " " codexRuntimePathService.Service.ExecStart)
-    else
-      builtins.head codexRuntimePathService.config.ProgramArguments;
+  codexRuntimePathWrapper = gatewayWrapperFor codexRuntimePathService;
   codexRuntimePathCheck =
     builtins.deepSeq (requireNoAssertionFailures "codex runtime path" codexRuntimePathEval)
       (
@@ -284,8 +280,80 @@ let
           throw "Codex runtime plugin entry was not enabled for the opt-in Codex runtime check."
         else if lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_ARGS" codexRuntimePathServiceText then
           throw "Codex runtime plugin must not configure Codex app-server launch arguments."
-        else if !(lib.hasInfix "openclawCodexRuntimeProfiles" codexRuntimePathActivation) then
-          throw "Codex runtime path did not create the Codex native-home profile activation."
+        else if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" codexRuntimePathActivation then
+          throw "Codex runtime path must not create Codex native-home profiles during activation."
+        else
+          "ok"
+      );
+
+  customCodexCommandEval = moduleEval {
+    excludeTools = [ "gogcli" ];
+    runtimePackages = [ codexRuntimeProbePackage ];
+    runtimePlugins = [ "codex" ];
+    config.plugins.entries.codex.config.appServer.command = "/custom/codex";
+  };
+  customCodexCommandActivation = builtins.toJSON customCodexCommandEval.config.home.activation;
+  customCodexCommandService = gatewayServiceFor customCodexCommandEval;
+  customCodexCommandServiceText = builtins.toJSON customCodexCommandService;
+  customCodexCommandWrapper = gatewayWrapperFor customCodexCommandService;
+  customCodexCommandCheck =
+    builtins.deepSeq (requireNoAssertionFailures "custom Codex command" customCodexCommandEval)
+      (
+        if
+          lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_BIN" customCodexCommandServiceText
+          || lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_ARGS" customCodexCommandServiceText
+        then
+          throw "custom Codex appServer.command must keep Codex app-server launcher ownership out of nix-openclaw."
+        else if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" customCodexCommandActivation then
+          throw "custom Codex appServer.command must not create Nix Codex native-home profiles."
+        else
+          "ok"
+      );
+
+  customCodexEnvEval = moduleEval {
+    excludeTools = [ "gogcli" ];
+    runtimePackages = [ codexRuntimeProbePackage ];
+    runtimePlugins = [ "codex" ];
+    environment.OPENCLAW_CODEX_APP_SERVER_BIN = "/custom/env-codex";
+  };
+  customCodexEnvActivation = builtins.toJSON customCodexEnvEval.config.home.activation;
+  customCodexEnvService = gatewayServiceFor customCodexEnvEval;
+  customCodexEnvServiceText = builtins.toJSON customCodexEnvService;
+  customCodexEnvWrapper = gatewayWrapperFor customCodexEnvService;
+  customCodexEnvCheck =
+    builtins.deepSeq (requireNoAssertionFailures "custom Codex env" customCodexEnvEval)
+      (
+        if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" customCodexEnvActivation then
+          throw "custom OPENCLAW_CODEX_APP_SERVER_BIN must not create Nix Codex native-home profiles."
+        else if lib.hasInfix "openclaw-codex-app-server" customCodexEnvServiceText then
+          throw "custom OPENCLAW_CODEX_APP_SERVER_BIN must keep the Nix Codex launcher out of the gateway wrapper."
+        else
+          "ok"
+      );
+
+  websocketCodexEval = moduleEval {
+    excludeTools = [ "gogcli" ];
+    runtimePackages = [ codexRuntimeProbePackage ];
+    runtimePlugins = [ "codex" ];
+    config.plugins.entries.codex.config.appServer = {
+      transport = "websocket";
+      url = "ws://127.0.0.1:12345";
+    };
+  };
+  websocketCodexActivation = builtins.toJSON websocketCodexEval.config.home.activation;
+  websocketCodexService = gatewayServiceFor websocketCodexEval;
+  websocketCodexServiceText = builtins.toJSON websocketCodexService;
+  websocketCodexWrapper = gatewayWrapperFor websocketCodexService;
+  websocketCodexCheck =
+    builtins.deepSeq (requireNoAssertionFailures "websocket Codex transport" websocketCodexEval)
+      (
+        if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" websocketCodexActivation then
+          throw "Codex websocket transport must not create Nix Codex native-home profiles."
+        else if
+          lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_BIN" websocketCodexServiceText
+          || lib.hasInfix "OPENCLAW_CODEX_APP_SERVER_ARGS" websocketCodexServiceText
+        then
+          throw "Codex websocket transport must keep local stdio app-server launch env out of the gateway wrapper."
         else
           "ok"
       );
@@ -294,6 +362,9 @@ let
     runtimePathCheck
     runtimePathOverrideCheck
     codexRuntimePathCheck
+    customCodexCommandCheck
+    customCodexEnvCheck
+    websocketCodexCheck
   ] "ok";
 
 in
@@ -312,6 +383,10 @@ stdenv.mkDerivation {
     OPENCLAW_RUNTIME_PATH_CHECK = checkKey;
     OPENCLAW_GATEWAY_WRAPPER = runtimePathWrapper;
     OPENCLAW_CODEX_GATEWAY_WRAPPER = codexRuntimePathWrapper;
+    OPENCLAW_CUSTOM_CODEX_GATEWAY_WRAPPER = customCodexCommandWrapper;
+    OPENCLAW_CUSTOM_CODEX_ENV_GATEWAY_WRAPPER = customCodexEnvWrapper;
+    OPENCLAW_CUSTOM_CODEX_ENV_EXPECTED_BIN = "/custom/env-codex";
+    OPENCLAW_WEBSOCKET_CODEX_GATEWAY_WRAPPER = websocketCodexWrapper;
     OPENCLAW_RUNTIME_PATH_BASE_PATH = "${nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin";
     OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR = runtimePathProbeBinDir;
     OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND = runtimePathProbeName;

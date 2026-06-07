@@ -1,3 +1,7 @@
+---
+written_by: ai
+---
+
 # AGENTS.md - nix-openclaw
 
 ## PRs
@@ -65,6 +69,20 @@ Source: https://github.com/orgs/openclaw/people
 - The gateway package must include Control UI assets.
 - User-facing docs should lead with one package: `openclaw`. Treat `openclaw-gateway` and `openclaw-app` as component outputs for modules, checks, and debugging.
 - QMD is the Nix-supported local memory backend. Keep `qmd` internal to the OpenClaw runtime PATH, and pull it into the closure only when users opt in with upstream config.
+
+## OpenClaw Runtime Install Boundaries
+
+- `programs.openclaw.runtimePackages` means command-line tools for OpenClaw-owned command execution. They belong in the gateway wrapper `PATH` and generated upstream `tools.exec.pathPrepend`.
+- `runtimePackages` must not select a model harness, enable the Codex plugin, or create Codex filesystem state by itself.
+- `nix/modules/home-manager/openclaw/runtime-tools.nix` owns the generic runtime tool path. Keep it free of Codex, Claude, ACP, or other harness-specific behavior.
+- `nix/modules/home-manager/openclaw/codex-app-server.nix` owns the Nix adapter for the packaged Codex runtime plugin. The adapter may create or update `codex-home/home/.nix-profile/bin` only inside the Nix Codex app-server launcher, after OpenClaw has selected that launcher and provided `CODEX_HOME`.
+- If a user provides `plugins.entries.codex.config.appServer.command` or `OPENCLAW_CODEX_APP_SERVER_BIN`, OpenClaw is no longer using the Nix Codex launcher. Do not create Codex native HOME profiles for that case unless there is a reviewed upstream contract change.
+- If a user sets `plugins.entries.codex.config.appServer.transport = "websocket"`, OpenClaw connects to an already-running app-server. Do not export local stdio app-server launch env for that case.
+- Do not create Codex native HOME profiles during Home Manager activation. Activation does not know which inherited environment OpenClaw will see when the gateway starts, and upstream treats `OPENCLAW_CODEX_APP_SERVER_BIN` as a runtime command override.
+- Upstream OpenClaw sets per-agent `CODEX_HOME` for the Codex app-server and normally inherits process `HOME`. The Nix launcher deliberately sets `HOME=$CODEX_HOME/home` so Codex-native `command/exec` can see the Nix profile. Keep that behavior named and commented as a Nix adapter, not as upstream default behavior.
+- Before touching `runtime-tools.nix`, re-check upstream `docs/tools/exec.md`, `src/agents/agent-tools.ts`, and `src/agents/bash-tools.exec-runtime.ts`.
+- Before touching `codex-app-server.nix`, re-check upstream `extensions/codex/src/app-server/auth-bridge.ts`, `extensions/codex/src/app-server/config.ts`, and `docs/plugins/codex-harness-reference.md`.
+- Real proof for runtime tool changes must show the user-visible command path: the rendered config or wrapper is supporting evidence, not the proof. For Codex tool bugs, include the Codex `command/exec` input, `HOME`, `PATH`, `command -v <tool>`, version/output, and exit code for the failing and fixed states.
 
 ## Safety
 

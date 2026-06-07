@@ -42,10 +42,8 @@ fi
 
 test -f "$HOME/.openclaw/openclaw.json"
 test -f "$plist"
-test -L "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
-test -x "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/hello"
-test -L "$HOME/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin"
-test -x "$HOME/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin/hello"
+test ! -e "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+test ! -e "$HOME/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin"
 
 if command -v launchctl >/dev/null 2>&1; then
   state_file="$home_dir/launchd-state.txt"

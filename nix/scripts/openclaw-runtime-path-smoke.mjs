@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readlinkSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
@@ -16,6 +16,10 @@ function requireEnv(name) {
 
 const gatewayWrapper = requireEnv("OPENCLAW_GATEWAY_WRAPPER");
 const codexGatewayWrapper = requireEnv("OPENCLAW_CODEX_GATEWAY_WRAPPER");
+const customCodexGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_GATEWAY_WRAPPER");
+const customCodexEnvGatewayWrapper = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_GATEWAY_WRAPPER");
+const customCodexEnvExpectedBin = requireEnv("OPENCLAW_CUSTOM_CODEX_ENV_EXPECTED_BIN");
+const websocketCodexGatewayWrapper = requireEnv("OPENCLAW_WEBSOCKET_CODEX_GATEWAY_WRAPPER");
 const expectedBinDir = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_BIN_DIR");
 const expectedCommand = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_COMMAND");
 const expectedOutput = requireEnv("OPENCLAW_RUNTIME_PATH_EXPECTED_OUTPUT");
@@ -142,6 +146,112 @@ if (!codexAppServerLauncherMatch) {
 }
 const codexAppServerLauncher = codexAppServerLauncherMatch[1].replace(/^["']|["']$/g, "");
 
+const inheritedCodexOverrideVersion = spawnSync(shell, ["-x", codexGatewayWrapper, "--version"], {
+  env: {
+    ...process.env,
+    OPENCLAW_CODEX_APP_SERVER_BIN: "/inherited/codex",
+    PATH: basePath,
+    SHELL: shell,
+  },
+  encoding: "utf8",
+});
+
+if (inheritedCodexOverrideVersion.status !== 0 || !inheritedCodexOverrideVersion.stdout.trim()) {
+  throw new Error(
+    `inherited-env Codex gateway wrapper --version failed: ${inheritedCodexOverrideVersion.stdout}${inheritedCodexOverrideVersion.stderr}`,
+  );
+}
+
+if (
+  inheritedCodexOverrideVersion.stderr.includes("OPENCLAW_CODEX_APP_SERVER_BIN=") ||
+  inheritedCodexOverrideVersion.stderr.includes("openclaw-codex-app-server")
+) {
+  throw new Error(
+    `inherited OPENCLAW_CODEX_APP_SERVER_BIN must keep the Nix Codex launcher out of the gateway wrapper: ${inheritedCodexOverrideVersion.stderr}`,
+  );
+}
+
+const customCodexWrapperVersion = spawnSync(shell, ["-x", customCodexGatewayWrapper, "--version"], {
+  env: {
+    ...process.env,
+    PATH: basePath,
+    SHELL: shell,
+  },
+  encoding: "utf8",
+});
+
+if (customCodexWrapperVersion.status !== 0 || !customCodexWrapperVersion.stdout.trim()) {
+  throw new Error(
+    `custom-command Codex gateway wrapper --version failed: ${customCodexWrapperVersion.stdout}${customCodexWrapperVersion.stderr}`,
+  );
+}
+
+const customCodexWrapperTrace = customCodexWrapperVersion.stderr;
+if (
+  customCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
+  customCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")
+) {
+  throw new Error(
+    `custom Codex appServer.command must keep Codex app-server launch env out of the gateway wrapper: ${customCodexWrapperTrace}`,
+  );
+}
+
+const customCodexEnvWrapperVersion = spawnSync(shell, ["-x", customCodexEnvGatewayWrapper, "--version"], {
+  env: {
+    ...process.env,
+    PATH: basePath,
+    SHELL: shell,
+  },
+  encoding: "utf8",
+});
+
+if (customCodexEnvWrapperVersion.status !== 0 || !customCodexEnvWrapperVersion.stdout.trim()) {
+  throw new Error(
+    `custom-env Codex gateway wrapper --version failed: ${customCodexEnvWrapperVersion.stdout}${customCodexEnvWrapperVersion.stderr}`,
+  );
+}
+
+const customCodexEnvWrapperTrace = customCodexEnvWrapperVersion.stderr;
+if (!customCodexEnvWrapperTrace.includes(`OPENCLAW_CODEX_APP_SERVER_BIN=${customCodexEnvExpectedBin}`)) {
+  throw new Error(
+    `custom OPENCLAW_CODEX_APP_SERVER_BIN was not preserved in the gateway wrapper: ${customCodexEnvWrapperTrace}`,
+  );
+}
+
+if (
+  customCodexEnvWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
+  customCodexEnvWrapperTrace.includes("openclaw-codex-app-server")
+) {
+  throw new Error(
+    `custom OPENCLAW_CODEX_APP_SERVER_BIN must keep the Nix Codex launcher out of the gateway wrapper: ${customCodexEnvWrapperTrace}`,
+  );
+}
+
+const websocketCodexWrapperVersion = spawnSync(shell, ["-x", websocketCodexGatewayWrapper, "--version"], {
+  env: {
+    ...process.env,
+    PATH: basePath,
+    SHELL: shell,
+  },
+  encoding: "utf8",
+});
+
+if (websocketCodexWrapperVersion.status !== 0 || !websocketCodexWrapperVersion.stdout.trim()) {
+  throw new Error(
+    `websocket Codex gateway wrapper --version failed: ${websocketCodexWrapperVersion.stdout}${websocketCodexWrapperVersion.stderr}`,
+  );
+}
+
+const websocketCodexWrapperTrace = websocketCodexWrapperVersion.stderr;
+if (
+  websocketCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_ARGS=") ||
+  websocketCodexWrapperTrace.includes("OPENCLAW_CODEX_APP_SERVER_BIN=")
+) {
+  throw new Error(
+    `Codex websocket transport must keep local stdio app-server launch env out of the gateway wrapper: ${websocketCodexWrapperTrace}`,
+  );
+}
+
 function createJsonRpcClient(child) {
   const pending = new Map();
   let nextId = 1;
@@ -225,11 +335,6 @@ async function withCodexAppServer(label, options, fn) {
     "--listen",
     "stdio://",
   ];
-  if (options.linkNativeProfile === true) {
-    const profileDir = path.join(nativeHome, ".nix-profile");
-    mkdirSync(profileDir, { recursive: true });
-    symlinkSync(codexExpectedBinDir, path.join(profileDir, "bin"), "dir");
-  }
   const child = spawn(appServerCommand, appServerArgs, {
     env: {
       ...process.env,
@@ -299,13 +404,13 @@ if (missingResult.exitCode === 0 || !missingResult.stdout.includes(missingMarker
 }
 
 let expectedNativeCommandPath = "";
+let profileBinTarget = "";
 const codexResult = await withCodexAppServer(
-  "with-native-home-profile",
+  "with-nix-managed-launcher",
   {
     command: codexAppServerLauncher,
     args: ["app-server", "--listen", "stdio://"],
     pathValue: baseOnlyPath,
-    linkNativeProfile: true,
   },
   async (client, homes) => {
     expectedNativeCommandPath = path.join(
@@ -314,7 +419,7 @@ const codexResult = await withCodexAppServer(
       "bin",
       codexExpectedCommand,
     );
-    return commandExec(client, [
+    const result = await commandExec(client, [
       shell,
       "-lc",
       [
@@ -325,6 +430,8 @@ const codexResult = await withCodexAppServer(
         `${codexExpectedCommand} --version`,
       ].join("; "),
     ]);
+    profileBinTarget = readlinkSync(path.dirname(expectedNativeCommandPath));
+    return result;
   },
 );
 
@@ -368,6 +475,12 @@ if (!(codexLines[3] ?? "").startsWith(codexExpectedVersionPrefix)) {
   );
 }
 
+if (!profileBinTarget.startsWith("/nix/store/") || !profileBinTarget.endsWith("/bin")) {
+  throw new Error(
+    `Nix Codex launcher linked ${path.dirname(expectedNativeCommandPath)} to ${profileBinTarget}, expected a Nix store-backed bin directory`,
+  );
+}
+
 console.log(
   [
     "openclaw-runtime-path proof:",
@@ -375,7 +488,15 @@ console.log(
     "- gateway wrapper prepends the same runtime tool path",
     "- runtimePackages alone do not configure the Codex app-server launcher",
     "- selecting the Nix-packaged Codex runtime plugin installs the native-home app-server launcher",
-    `- native Codex app-server does not resolve ${codexExpectedCommand} with CODEX_HOME alone`,
+    "- a user appServer.command keeps the Nix Codex launcher out of the gateway wrapper",
+    "- a user OPENCLAW_CODEX_APP_SERVER_BIN keeps the Nix Codex launcher out of the gateway wrapper",
+    "- inherited OPENCLAW_CODEX_APP_SERVER_BIN keeps the Nix Codex launcher out of the gateway wrapper",
+    "- Codex websocket transport keeps the local stdio launcher out of the gateway wrapper",
+    `- before Nix-managed Codex launcher: exitCode=${missingResult.exitCode}`,
+    missingResult.stdout.trim(),
+    `- after Nix-managed Codex launcher: exitCode=${codexResult.exitCode}`,
+    codexResult.stdout.trim(),
+    `- Nix Codex launcher links ${path.dirname(expectedNativeCommandPath)} -> ${profileBinTarget}`,
     `- native Codex app-server resolves ${expectedNativeCommandPath} from HOME=$CODEX_HOME/home`,
   ].join("\n"),
 );

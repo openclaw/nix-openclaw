@@ -14,11 +14,10 @@ Older repository history is available in git.
 
 - Fixed `programs.openclaw.runtimePackages` for OpenClaw-managed Codex agents.
   The same packages now feed the generated gateway wrapper PATH,
-  `tools.exec.pathPrepend`, and the Codex native `HOME` profile at
-  `agents/<id>/agent/codex-home/home/.nix-profile/bin`. When the packaged
-  `codex` runtime plugin is selected, nix-openclaw starts the packaged Codex
-  app-server through a Nix launcher that uses OpenClaw's per-agent `CODEX_HOME`
-  as the native `HOME` and prepends that home profile.
+  `tools.exec.pathPrepend`, and, only when the packaged `codex` runtime plugin
+  uses the Nix-managed launcher, that launcher's Codex native `HOME` profile at
+  `$CODEX_HOME/home/.nix-profile/bin`. Non-Codex instances no longer create
+  Codex profile state during activation.
 
   User config stays the same:
 
@@ -29,9 +28,9 @@ Older repository history is available in git.
   Before this change, Codex native `command/exec` could start with OpenClaw's
   agent `CODEX_HOME` but an inherited process `HOME`, so tools such as `gog`
   were present in the Nix runtime but missing inside Codex turns. After this
-  change, the Codex app-server sees the same native `HOME` profile that
-  activation populates. This does not enable the Codex plugin or expose runtime
-  packages in the user's login shell.
+  change, the Nix-managed Codex launcher sets `HOME=$CODEX_HOME/home`, links
+  its runtime profile there, and then starts upstream Codex. This does not
+  enable the Codex plugin or expose runtime packages in the user's login shell.
 
 ## 2026-06-06
 
