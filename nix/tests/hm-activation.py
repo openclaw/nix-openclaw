@@ -1,6 +1,7 @@
 start_all()
 
 machine.wait_until_succeeds(
+    "systemctl show -p ActiveState home-manager-alice.service | grep -q 'ActiveState=inactive' && "
     "systemctl show -p Result home-manager-alice.service | grep -q 'Result=success'"
 )
 
