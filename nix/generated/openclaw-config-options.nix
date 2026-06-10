@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 2e08f0f4221f522b60423ed6ffd83427942b28de. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 5181e4f7c82bd373cb215a5619b0fa03c13862b7. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -5492,6 +5492,10 @@ in
       }; }));
         default = null;
       };
+      rerank = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
       scope = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
         default = lib.mkOption {
@@ -6187,6 +6191,10 @@ in
             type = t.nullOr (t.bool);
             default = null;
           };
+          requiresReasoningContentOnAssistantMessages = lib.mkOption {
+            type = t.nullOr (t.bool);
+            default = null;
+          };
           requiresStringContent = lib.mkOption {
             type = t.nullOr (t.bool);
             default = null;
@@ -6365,6 +6373,39 @@ in
         };
         reasoning = lib.mkOption {
           type = t.nullOr (t.bool);
+          default = null;
+        };
+        thinkingLevelMap = lib.mkOption {
+          type = t.nullOr (t.submodule { options = {
+          high = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          low = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          max = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          medium = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          minimal = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          off = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+          xhigh = lib.mkOption {
+            type = t.nullOr (t.str);
+            default = null;
+          };
+        }; });
           default = null;
         };
       }; }));
@@ -6978,6 +7019,66 @@ in
           default = null;
         };
       }; }));
+        default = null;
+      };
+    }; });
+      default = null;
+    };
+    installPolicy = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      enabled = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
+      exec = lib.mkOption {
+        type = t.nullOr (t.submodule { options = {
+        allowInsecurePath = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        allowSymlinkCommand = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        args = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+        command = lib.mkOption {
+          type = t.str;
+        };
+        env = lib.mkOption {
+          type = t.nullOr (t.attrsOf (t.str));
+          default = null;
+        };
+        maxOutputBytes = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        noOutputTimeoutMs = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        passEnv = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+        source = lib.mkOption {
+          type = t.enum [ "exec" ];
+        };
+        timeoutMs = lib.mkOption {
+          type = t.nullOr (t.int);
+          default = null;
+        };
+        trustedDirs = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
+      }; });
+        default = null;
+      };
+      targets = lib.mkOption {
+        type = t.nullOr (t.listOf (t.oneOf [ (t.enum [ "skill" ]) (t.enum [ "plugin" ]) ]));
         default = null;
       };
     }; });

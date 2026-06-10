@@ -13,16 +13,16 @@
   minHostVersion = ">=2026.4.10";
   expectedIntegrity = "";
   packageName = "@openclaw/tlon";
-  version = "2026.6.1";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/tlon/-/tlon-2026.6.1.tgz";
-  npmIntegrity = "sha512-JIBR13BeANdjTkX3iFibz3m6pt/4InSOHA7YDEFlEGwT5TCyoWam/jWuRyew+SSqVGN+s5X+FyKQqfME56xQHw==";
-  npmShasum = "489322e6cd0af491f12404d1b1abe6cdb4ffbce1";
-  nixHash = "sha256-elQwJeJtjDk+NTjngD1yL7A3FgL6qZcnYb9PxxjVC/o=";
+  version = "2026.6.5";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/tlon/-/tlon-2026.6.5.tgz";
+  npmIntegrity = "sha512-I+jMl5UtcDCzGM9+QIYTPNFz1Wo1zT4n5qU+LjuuC3MSfM4sF/VEMyVc8uAJecXkB2+VJk+d7VBKqgI1Qmtu9Q==";
+  npmShasum = "548f18ca0903afaaf697d911f87369259cf12c36";
+  nixHash = "sha256-joc19Ie+GOHTEZPBB/1C7+7MjeGhNH41OwasGDqgNxE=";
   dependencyMode = "shrinkwrap";
-  npmDepsHash = "sha256-4PmARNPV2kaG829nKcArikWSYfWd4LQK2RzScvfedGU=";
+  npmDepsHash = "sha256-0Vt1vyiJrGfRwptm1jVglQqlXa4ITy1bhAFMuk2BJrQ=";
   manifestId = "tlon";
-  openclawCompat = ">=2026.6.1";
-  peerOpenClaw = ">=2026.6.1";
+  openclawCompat = ">=2026.6.5";
+  peerOpenClaw = ">=2026.6.5";
   runtimeExtensions = [
     "./dist/index.js"
   ];

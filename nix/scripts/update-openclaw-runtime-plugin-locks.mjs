@@ -179,15 +179,16 @@ function resolveOpenClawSourcePath() {
       sourceInfo = import ${sourceInfoPath};
       sourceFetch = builtins.removeAttrs sourceInfo ${toNix(strippedAttrs)};
     in
-      toString (pkgs.fetchFromGitHub sourceFetch)
+      pkgs.fetchFromGitHub sourceFetch
   `;
   return run("nix", [
-    "eval",
-    "--raw",
+    "build",
+    "--no-link",
+    "--print-out-paths",
     "--impure",
     "--expr",
     expr,
-  ]).trim();
+  ]).trim().split(/\r?\n/).pop();
 }
 
 function npmRegistryUrl(packageName) {

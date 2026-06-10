@@ -13,16 +13,16 @@
   minHostVersion = ">=2026.4.10";
   expectedIntegrity = "";
   packageName = "@openclaw/matrix";
-  version = "2026.6.1";
-  tarballUrl = "https://clawhub.ai/api/npm/@openclaw/matrix/-/openclaw-matrix-2026.6.1.tgz";
-  npmIntegrity = "sha512-5MPm96mctpKLW4FKRIUF/RhYN6su/be+3omRou4YXjqN2uuGWnnPg8dC7/w8exeN4ImVqubo6YHNcfkUKDHFfQ==";
-  npmShasum = "4f0f91eb23c8c719c7bfd7dec2bf3a7fc18fd70d";
-  nixHash = "sha256-ybu4+03uYWG16+dlLJfRT5xeOSkqX14b1UcGBM00wPk=";
+  version = "2026.6.5";
+  tarballUrl = "https://clawhub.ai/api/npm/@openclaw/matrix/-/openclaw-matrix-2026.6.5.tgz";
+  npmIntegrity = "sha512-5WcXjewz0evVafQTmTrRhVvhjaG09rtP/gam3RkN81qizvJ/cA5wYtp9vpkQ5DRQh0gQcGZnsuyoOM4qKLCk8w==";
+  npmShasum = "d8df26c1776c2762590fa8ae1d8bd569b3a6c7a0";
+  nixHash = "sha256-yqCJj+PFy7PPtAPqFxJFpyJWZSpOYKfWsH2FBLEV2rQ=";
   dependencyMode = "shrinkwrap";
-  npmDepsHash = "sha256-9l4NLNHnz9vRIJAM0hVvED0XlqrFlwdieCNIq4U16+U=";
+  npmDepsHash = "sha256-J64lNCfHbun++jU5hog0dWTxmouRSwYjMZzi5YcUhec=";
   manifestId = "matrix";
-  openclawCompat = ">=2026.6.1";
-  peerOpenClaw = ">=2026.6.1";
+  openclawCompat = ">=2026.6.5";
+  peerOpenClaw = ">=2026.6.5";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -45,7 +45,7 @@
   bundleDependencies = [ ];
   bundledPackageRoots = [ ];
   clawhubPackageName = "@openclaw/matrix";
-  clawhubVersion = "2026.6.1";
+  clawhubVersion = "2026.6.5";
   clawhubArtifactKind = "npm-pack";
-  clawhubArtifactSha256 = "c9bbb8fb4dee6161b5ebe7652c97d14f9c5e39292a5f5e1bd5470604cd34c0f9";
+  clawhubArtifactSha256 = "caa0898fe3c5cbb3cfb403ea171245a72256652a4e60a7d6b07d8504b115dab4";
 }
