@@ -142,7 +142,9 @@ let
       attempted = builtins.tryEval (builtins.deepSeq value "ok");
     in
     if attempted.success then throw "${name}: expected evaluation failure." else "ok";
-  generatedConfig = eval: path: builtins.fromJSON eval.config.home.file."${path}".text;
+  generatedConfig =
+    eval: path:
+    builtins.fromJSON (builtins.unsafeDiscardStringContext eval.config.home.file."${path}".text);
 
   packageHasQmd =
     pkg:
@@ -178,35 +180,36 @@ let
     };
   };
   sourceOverrideConfig = generatedConfig sourceOverrideEval ".openclaw-dev/openclaw.json";
-  sourceOverrideCheck = builtins.deepSeq (requireNoAssertionFailures "source override" sourceOverrideEval) (
-    if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
-      throw "Source override instance lost gateway.mode."
-    else if pkgs.stdenv.hostPlatform.isLinux then
-      let
-        services = sourceOverrideEval.config.systemd.user.services;
-        execStart = services.openclaw-gateway-dev.Service.ExecStart or "";
-      in
-      if !(builtins.hasAttr "openclaw-gateway-dev" services) then
-        throw "Source override instance missing systemd unit."
-      else if !(lib.hasInfix "/bin/openclaw-gateway-dev gateway --port " execStart) then
-        throw "Source override instance did not wire the dev gateway wrapper."
-      else
-        "ok"
-    else if pkgs.stdenv.hostPlatform.isDarwin then
-      let
-        agents = sourceOverrideEval.config.launchd.agents;
-        programArgs =
-          agents."com.steipete.openclaw.gateway.dev".config.ProgramArguments or [ ];
-      in
-      if !(builtins.hasAttr "com.steipete.openclaw.gateway.dev" agents) then
-        throw "Source override instance missing launchd agent."
-      else if !(lib.any (arg: lib.hasSuffix "/bin/openclaw-gateway-dev" arg) programArgs) then
-        throw "Source override instance did not wire the dev gateway wrapper."
-      else
-        "ok"
-    else
-      "ok"
-  );
+  sourceOverrideCheck =
+    builtins.deepSeq (requireNoAssertionFailures "source override" sourceOverrideEval)
+      (
+        if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
+          throw "Source override instance lost gateway.mode."
+        else if pkgs.stdenv.hostPlatform.isLinux then
+          let
+            services = sourceOverrideEval.config.systemd.user.services;
+            execStart = services.openclaw-gateway-dev.Service.ExecStart or "";
+          in
+          if !(builtins.hasAttr "openclaw-gateway-dev" services) then
+            throw "Source override instance missing systemd unit."
+          else if !(lib.hasInfix "/bin/openclaw-gateway-dev gateway --port " execStart) then
+            throw "Source override instance did not wire the dev gateway wrapper."
+          else
+            "ok"
+        else if pkgs.stdenv.hostPlatform.isDarwin then
+          let
+            agents = sourceOverrideEval.config.launchd.agents;
+            programArgs = agents."com.steipete.openclaw.gateway.dev".config.ProgramArguments or [ ];
+          in
+          if !(builtins.hasAttr "com.steipete.openclaw.gateway.dev" agents) then
+            throw "Source override instance missing launchd agent."
+          else if !(lib.any (arg: lib.hasSuffix "/bin/openclaw-gateway-dev" arg) programArgs) then
+            throw "Source override instance did not wire the dev gateway wrapper."
+          else
+            "ok"
+        else
+          "ok"
+      );
 
   customPluginEval = moduleEval {
     customPlugins = [
@@ -529,20 +532,6 @@ let
   );
   qmdMemoryPackages = lib.filter packageHasQmd qmdMemoryEval.config.home.packages;
   qmdMemoryPackage = if qmdMemoryPackages == [ ] then null else builtins.head qmdMemoryPackages;
-
-  runtimeProfileEval = moduleEval {
-    runtimePackages = [ pkgs.jq ];
-    environment.OPENCLAW_TEST_SECRET = "/tmp/openclaw-secret";
-  };
-  runtimeProfileActivation = builtins.toJSON runtimeProfileEval.config.home.activation.openclawCodexRuntimeProfiles;
-  runtimeProfileCheck =
-    builtins.deepSeq (requireNoAssertionFailures "runtime profile" runtimeProfileEval)
-      (
-        if lib.hasInfix "openclaw-link-codex-runtime-profiles.sh" runtimeProfileActivation then
-          "ok"
-        else
-          throw "runtimePackages did not wire the Codex runtime profile activation."
-      );
 
   customRuntimePluginRootEval = moduleEval {
     customPlugins = [
@@ -869,9 +858,6 @@ let
     ]
     ++ lib.optionals includeSourceOverrideChecks [
       sourceOverrideCheck
-    ]
-    ++ [
-      runtimeProfileCheck
     ]
     ++ lib.optionals includePluginChecks [
       customRuntimePluginRootCheck

@@ -8,6 +8,34 @@ This changelog starts with the current pre-1.0 nix-openclaw Home Manager module
 API transition.
 Older repository history is available in git.
 
+## 2026-06-07
+
+### Fixed
+
+- Fixed `programs.openclaw.runtimePackages` for OpenClaw-managed Codex agents.
+  The same packages now feed the generated gateway wrapper PATH and
+  `tools.exec.pathPrepend`. When the packaged `codex` runtime plugin uses the
+  Nix-managed launcher, that launcher sets `HOME=$CODEX_HOME/home`, links
+  `$CODEX_HOME/home/.nix-profile/bin` to the same Nix-built `bin` directory, and
+  prepends that path before starting upstream Codex. Non-Codex instances no
+  longer create Codex filesystem state during activation.
+
+  User config stays the same:
+
+  ```nix
+  programs.openclaw.runtimePackages = [ pkgs.jq ];
+  ```
+
+  Before this change, Codex native `command/exec` could start with OpenClaw's
+  agent `CODEX_HOME` but an inherited process `HOME`, so tools such as `gog`
+  were present in the Nix runtime but missing inside Codex turns. After this
+  change, the Nix-managed Codex launcher sets `HOME=$CODEX_HOME/home`, links
+  `$CODEX_HOME/home/.nix-profile/bin` to the Nix-built runtime `bin` directory,
+  prepends that path, and then starts upstream Codex. This intentionally differs
+  from upstream's normal inherited-HOME launch because Codex `command/exec`
+  rebuilds command PATH around `$HOME/.nix-profile/bin`. This does not enable
+  the Codex plugin or expose runtime packages in the user's login shell.
+
 ## 2026-06-06
 
 ### Changed

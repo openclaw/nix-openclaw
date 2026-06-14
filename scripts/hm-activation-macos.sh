@@ -42,8 +42,8 @@ fi
 
 test -f "$HOME/.openclaw/openclaw.json"
 test -f "$plist"
-test -L "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
-test -x "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"
+test ! -e "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+test ! -e "$HOME/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin"
 
 if command -v launchctl >/dev/null 2>&1; then
   state_file="$home_dir/launchd-state.txt"
@@ -62,6 +62,13 @@ if command -v launchctl >/dev/null 2>&1; then
 
   openclaw_bin=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist")
   grep -q OPENCLAW_TEST_SECRET "$openclaw_bin"
+  # This platform activation check only proves the wrapper/config shape. The
+  # runtime-path check resolves the exact command path and executes the tool.
+  grep -Eq 'hello-[^/]+/bin' "$openclaw_bin"
+  ! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' "$openclaw_bin"
+  ! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' "$openclaw_bin"
+  grep -q '"pathPrepend"' "$HOME/.openclaw/openclaw.json"
+  grep -Eq 'hello-[^/]+/bin' "$HOME/.openclaw/openclaw.json"
   health_file="$home_dir/gateway-health.json"
   healthy=false
   for _ in {1..30}; do
