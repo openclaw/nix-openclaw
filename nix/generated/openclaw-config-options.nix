@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 844f405ac1be805d5c598922a37254f12ab6d765. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev c645ec4555c017931de0e35ad9847dffae2741ef. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -217,7 +217,7 @@ in
           default = null;
         };
         jsonlDialect = lib.mkOption {
-          type = t.nullOr (t.enum [ "claude-stream-json" ]);
+          type = t.nullOr (t.oneOf [ (t.enum [ "claude-stream-json" ]) (t.enum [ "gemini-stream-json" ]) ]);
           default = null;
         };
         liveSession = lib.mkOption {
@@ -1045,10 +1045,6 @@ in
               default = null;
             };
           }; });
-            default = null;
-          };
-          path = lib.mkOption {
-            type = t.nullOr (t.str);
             default = null;
           };
           vector = lib.mkOption {
@@ -2205,10 +2201,6 @@ in
               default = null;
             };
           }; });
-            default = null;
-          };
-          path = lib.mkOption {
-            type = t.nullOr (t.str);
             default = null;
           };
           vector = lib.mkOption {
@@ -4198,6 +4190,10 @@ in
       };
       logsEndpoint = lib.mkOption {
         type = t.nullOr (t.str);
+        default = null;
+      };
+      logsExporter = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.enum [ "otlp" ]) (t.enum [ "stdout" ]) (t.enum [ "both" ]) ]);
         default = null;
       };
       metrics = lib.mkOption {

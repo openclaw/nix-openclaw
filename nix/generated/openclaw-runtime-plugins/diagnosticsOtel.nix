@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.4.25";
   expectedIntegrity = "";
   packageName = "@openclaw/diagnostics-otel";
-  version = "2026.6.8";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/diagnostics-otel/-/diagnostics-otel-2026.6.8.tgz";
-  npmIntegrity = "sha512-ykW1J6CuCImxBYDUY0/RR8r8y+UjW8qmT2V1wsb4Fjq6S71hP++x/VFrBbuEzR3e7pGj2cRpOx7dOiubsNPvgw==";
-  npmShasum = "12ea53a370a41d067bb337ea626abdf5e757569e";
-  nixHash = "sha256-18e0foJ7XrDnD/qDoJ0a4eaoWkkOg8tQbfiEd30Isd8=";
+  version = "2026.6.9";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/diagnostics-otel/-/diagnostics-otel-2026.6.9.tgz";
+  npmIntegrity = "sha512-jU2q4L6L3qdZZDEIDXrWgwCWOGUaTSF+YzUlfgHED42TB4N3maF6seYchFpwKLB8neOzIDpnzMagEMjxZ/7Wqw==";
+  npmShasum = "9c488e8743f9ac3a9bb62b5d223f40d8551693e5";
+  nixHash = "sha256-csSPu+U9M0HSSnIwlIcvcAkmK+fgRtwEEwFce0GfVYI=";
   dependencyMode = "bundled";
   manifestId = "diagnostics-otel";
-  openclawCompat = ">=2026.6.8";
-  peerOpenClaw = ">=2026.6.8";
+  openclawCompat = ">=2026.6.9";
+  peerOpenClaw = ">=2026.6.9";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -30,15 +30,15 @@
   contracts = { };
   dependencies = {
     "@opentelemetry/api" = "1.9.1";
-    "@opentelemetry/api-logs" = "0.218.0";
-    "@opentelemetry/exporter-logs-otlp-proto" = "0.218.0";
-    "@opentelemetry/exporter-metrics-otlp-proto" = "0.218.0";
-    "@opentelemetry/exporter-trace-otlp-proto" = "0.218.0";
-    "@opentelemetry/resources" = "2.7.1";
-    "@opentelemetry/sdk-logs" = "0.218.0";
-    "@opentelemetry/sdk-metrics" = "2.7.1";
-    "@opentelemetry/sdk-node" = "0.218.0";
-    "@opentelemetry/sdk-trace-base" = "2.7.1";
+    "@opentelemetry/api-logs" = "0.219.0";
+    "@opentelemetry/exporter-logs-otlp-proto" = "0.219.0";
+    "@opentelemetry/exporter-metrics-otlp-proto" = "0.219.0";
+    "@opentelemetry/exporter-trace-otlp-proto" = "0.219.0";
+    "@opentelemetry/resources" = "2.8.0";
+    "@opentelemetry/sdk-logs" = "0.219.0";
+    "@opentelemetry/sdk-metrics" = "2.8.0";
+    "@opentelemetry/sdk-node" = "0.219.0";
+    "@opentelemetry/sdk-trace-base" = "2.8.0";
     "@opentelemetry/semantic-conventions" = "1.41.1";
   };
   optionalDependencies = { };
@@ -88,6 +88,17 @@
     "node_modules/@opentelemetry/sdk-trace-base"
     "node_modules/@opentelemetry/sdk-trace-node"
     "node_modules/@opentelemetry/semantic-conventions"
+    "node_modules/@protobufjs/aspromise"
+    "node_modules/@protobufjs/base64"
+    "node_modules/@protobufjs/codegen"
+    "node_modules/@protobufjs/eventemitter"
+    "node_modules/@protobufjs/fetch"
+    "node_modules/@protobufjs/float"
+    "node_modules/@protobufjs/inquire"
+    "node_modules/@protobufjs/path"
+    "node_modules/@protobufjs/pool"
+    "node_modules/@protobufjs/utf8"
+    "node_modules/@types/node"
     "node_modules/acorn"
     "node_modules/acorn-import-attributes"
     "node_modules/ansi-regex"
@@ -111,6 +122,7 @@
     "node_modules/require-in-the-middle"
     "node_modules/string-width"
     "node_modules/strip-ansi"
+    "node_modules/undici-types"
     "node_modules/wrap-ansi"
     "node_modules/y18n"
     "node_modules/yaml"

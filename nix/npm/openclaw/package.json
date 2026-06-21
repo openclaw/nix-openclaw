@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "openclaw": "2026.6.8"
+    "openclaw": "2026.6.9"
   }
 }
