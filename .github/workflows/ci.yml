@@ -142,4 +142,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: scripts/publish-release-tag.sh publish
+        run: |
+          git config user.name "openclaw-ci"
+          git config user.email "ci@openclaw.local"
+          scripts/publish-release-tag.sh publish
