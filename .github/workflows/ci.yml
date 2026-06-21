@@ -115,3 +115,31 @@ jobs:
             --out-link result-platform-activation \
             .#checks.aarch64-darwin.platform-activation
           OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result-platform-activation" scripts/hm-activation-macos.sh
+
+  publish-mirrored-release-tag:
+    name: Publish mirrored release tag
+    needs:
+      - flake-input-provenance
+      - linux-supported-surface
+      - macos-supported-surface
+    if: >-
+      ${{
+        github.repository == 'openclaw/nix-openclaw' &&
+        github.ref == 'refs/heads/main' &&
+        contains(fromJSON('["push","workflow_dispatch"]'), github.event_name)
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Publish mirrored release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/publish-release-tag.sh publish
