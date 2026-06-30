@@ -62,16 +62,51 @@ if (!loaderPath) {
 
 const loader = await import(pathToFileURL(loaderPath).href);
 const loadBundledPluginPublicArtifactModuleSync =
-  loader.loadBundledPluginPublicArtifactModuleSync ?? loader.t;
+  loader.loadBundledPluginPublicArtifactModuleSync;
+const loadBundledPluginPublicArtifactModuleFromCandidatesSync =
+  loader.loadBundledPluginPublicArtifactModuleFromCandidatesSync;
+const minifiedLoader = loader.t;
 
-if (typeof loadBundledPluginPublicArtifactModuleSync !== "function") {
+if (
+  typeof loadBundledPluginPublicArtifactModuleSync !== "function" &&
+  typeof loadBundledPluginPublicArtifactModuleFromCandidatesSync !== "function" &&
+  typeof minifiedLoader !== "function"
+) {
   throw new Error("Bundled plugin public surface loader export not found");
 }
 
-loadBundledPluginPublicArtifactModuleSync({
+const loadSingleParams = {
   dirName: "openai",
   artifactBasename: "provider-policy-api.js",
-});
+};
+const loadCandidateParams = {
+  dirName: "openai",
+  artifactCandidates: ["provider-policy-api.js"],
+};
+
+function loadPublicArtifact() {
+  if (typeof loadBundledPluginPublicArtifactModuleSync === "function") {
+    return loadBundledPluginPublicArtifactModuleSync(loadSingleParams);
+  }
+  if (typeof loadBundledPluginPublicArtifactModuleFromCandidatesSync === "function") {
+    return loadBundledPluginPublicArtifactModuleFromCandidatesSync(loadCandidateParams);
+  }
+  try {
+    return minifiedLoader(loadSingleParams);
+  } catch (error) {
+    if (
+      error instanceof TypeError &&
+      String(error.message).includes("artifactCandidates is not iterable")
+    ) {
+      return minifiedLoader(loadCandidateParams);
+    }
+    throw error;
+  }
+}
+
+if (!loadPublicArtifact()) {
+  throw new Error("Bundled OpenAI provider policy artifact did not load");
+}
 NODE
 
 require_js_alias_target() {
