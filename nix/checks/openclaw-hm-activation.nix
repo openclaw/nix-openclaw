@@ -55,6 +55,7 @@ pkgs.testers.nixosTest {
               };
               installApp = false;
               launchd.enable = false;
+              runtimePackages = [ pkgs.hello ];
               instances.default = {
                 gatewayPort = 18999;
                 config = {
@@ -67,6 +68,17 @@ pkgs.testers.nixosTest {
                     auth = {
                       token = "hm-activation-test-token";
                     };
+                  };
+                  agents = {
+                    list = [
+                      {
+                        id = "main";
+                        default = true;
+                      }
+                      {
+                        id = "Worker 1";
+                      }
+                    ];
                   };
                   plugins = {
                     enabled = false;

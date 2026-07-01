@@ -105,6 +105,9 @@
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = false;
               };
+              runtime-path = pkgs.callPackage ./nix/checks/openclaw-runtime-path.nix {
+                inherit openclawToolPkgs;
+              };
               source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeSourceOverrideChecks = true;
               };
@@ -162,16 +165,15 @@
                   ];
                 }).activationPackage;
             };
-            packageArtifactPaths =
-              [
-                packageSetStable.openclaw
-                packageSetStable.openclaw-gateway
-                stableChecks.bin-surface
-                stableChecks.package-contents
-              ]
-              ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
-                packageSetStable.openclaw-app
-              ];
+            packageArtifactPaths = [
+              packageSetStable.openclaw
+              packageSetStable.openclaw-gateway
+              stableChecks.bin-surface
+              stableChecks.package-contents
+            ]
+            ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
+              packageSetStable.openclaw-app
+            ];
             proofChecks = {
               # Product artifacts: user-facing package plus component packages
               # and content/surface checks that prove those artifacts are sane.
@@ -192,6 +194,7 @@
               runtime-smoke = pkgs.symlinkJoin {
                 name = "openclaw-runtime-smoke";
                 paths = [
+                  stableChecks.runtime-path
                   stableChecks.config-validity
                   stableChecks.gateway-smoke
                 ];

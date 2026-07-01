@@ -215,7 +215,7 @@ in
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      description = "Extra packages visible to the OpenClaw gateway and isolated Codex harness only. These are not added to the user's PATH.";
+      description = "Extra command-line packages available to OpenClaw gateway wrappers and generated tools.exec.pathPrepend. When an instance also uses the Nix-packaged Codex runtime plugin with the managed app-server launcher, that launcher links $CODEX_HOME/home/.nix-profile/bin to the same Nix-built bin directory used by the gateway PATH. This does not enable Codex or add packages to the user's shell PATH.";
     };
 
     environment = lib.mkOption {

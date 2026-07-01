@@ -14,8 +14,23 @@ machine.succeed("test -f /home/alice/.openclaw/workspace/HEARTBEAT.md")
 machine.succeed("test -f /home/alice/.openclaw/workspace/LORE.md")
 machine.succeed("grep -q '\"skipBootstrap\":true' /home/alice/.openclaw/openclaw.json")
 machine.succeed("grep -q 'BEGIN NIX-REPORT' /home/alice/.openclaw/workspace/TOOLS.md")
-machine.wait_until_succeeds(
-    "test -x /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"
+machine.succeed(
+    "test ! -e /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
+)
+machine.succeed(
+    "test ! -e /home/alice/.openclaw/agents/worker-1/agent/codex-home/home/.nix-profile/bin"
+)
+machine.succeed(
+    "unit=/home/alice/.config/systemd/user/openclaw-gateway.service; "
+    "openclaw_bin=$(sed -n 's/^ExecStart=\\([^ ]*\\).*/\\1/p' \"$unit\"); "
+    "test -x \"$openclaw_bin\"; "
+    # This platform activation check only proves the wrapper/config shape. The
+    # runtime-path check resolves the exact command path and executes the tool.
+    "grep -Eq 'hello-[^/]+/bin' \"$openclaw_bin\"; "
+    "! grep -q 'OPENCLAW_CODEX_APP_SERVER_ARGS' \"$openclaw_bin\"; "
+    "! grep -q 'OPENCLAW_CODEX_APP_SERVER_BIN' \"$openclaw_bin\"; "
+    "grep -q '\"pathPrepend\"' /home/alice/.openclaw/openclaw.json; "
+    "grep -Eq 'hello-[^/]+/bin' /home/alice/.openclaw/openclaw.json"
 )
 
 uid = machine.succeed("id -u alice").strip()
