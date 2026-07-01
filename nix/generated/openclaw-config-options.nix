@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev aa69b12d0086b631b139c1435c9621a5783e3a40. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev e085fa1a3ffd32d0ea6917e1e6fb4ecbffbb77d2. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -5378,7 +5378,7 @@ in
         default = null;
       };
       transport = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.enum [ "sse" ]) (t.enum [ "streamable-http" ]) ]);
+        type = t.nullOr (t.oneOf [ (t.enum [ "stdio" ]) (t.enum [ "sse" ]) (t.enum [ "streamable-http" ]) ]);
         default = null;
       };
       url = lib.mkOption {

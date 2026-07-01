@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.5.12-beta.1";
   expectedIntegrity = "";
   packageName = "@openclaw/amazon-bedrock-provider";
-  version = "2026.6.10";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/amazon-bedrock-provider/-/amazon-bedrock-provider-2026.6.10.tgz";
-  npmIntegrity = "sha512-GRdwuqpPNpi9wvEHGvIKMqw42VKfG/Oz9pkbI7Pn9aBhjiLulJwk5rYtydq6dM0JAB0wnNbughcgbnI+jJO4vg==";
-  npmShasum = "cf1281535c4d17005c9dd918b44e596753765e8d";
-  nixHash = "sha256-FJzOiih4GT1s+RnQiOtIoGEQzAy6yq4xNyuKKMgxwYQ=";
+  version = "2026.6.11";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/amazon-bedrock-provider/-/amazon-bedrock-provider-2026.6.11.tgz";
+  npmIntegrity = "sha512-Y+Lsc5v5duwcZPlOQwcQHzcH+maichtFGhUpDqeu3DETat2vreJUZEGrQgxBRPD0CVR7iQmTgYgOIROvv1qq0Q==";
+  npmShasum = "1137200b4b44c2a6e6e3d93e8c14f4613b962139";
+  nixHash = "sha256-OfinVvcIT2jAQCDmnmGSJ5Ay2hEWN++8zFlNCoR50pg=";
   dependencyMode = "bundled";
   manifestId = "amazon-bedrock";
-  openclawCompat = ">=2026.6.10";
-  peerOpenClaw = ">=2026.6.10";
+  openclawCompat = ">=2026.6.11";
+  peerOpenClaw = ">=2026.6.11";
   runtimeExtensions = [
     "./dist/index.js"
   ];
