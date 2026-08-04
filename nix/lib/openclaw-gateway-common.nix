@@ -41,6 +41,7 @@ let
     "pnpmMajor"
     "releaseTag"
     "releaseVersion"
+    "runtimePluginVersion"
     "applyPublicSurfaceHardlinksPatch"
     "applySkipPluginAutoEnableNixModePatch"
     "applyNixStorePluginOwnershipPatch"

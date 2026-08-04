@@ -132,6 +132,7 @@ const lockFiles = fs
 
 assert(report.openclawVersion && !/[~^*]|latest|beta$/.test(report.openclawVersion), "report has invalid OpenClaw version");
 assert(report.openclawVersion === sourceInfo.releaseVersion, "report OpenClaw version is stale relative to openclaw-source.nix");
+assert(report.runtimePluginVersion === sourceInfo.runtimePluginVersion, "report runtime plugin version is stale relative to openclaw-source.nix");
 assert(report.openclawReleaseTag === sourceInfo.releaseTag, "report OpenClaw release tag is stale relative to openclaw-source.nix");
 assert(report.openclawRev === sourceInfo.rev, "report OpenClaw rev is stale relative to openclaw-source.nix");
 assert(report.openclawHash === sourceInfo.hash, "report OpenClaw hash is stale relative to openclaw-source.nix");
@@ -195,3 +196,10 @@ for (const row of skipped) {
 for (const expected of ["slack", "discord", "brave", "diagnostics-prometheus"]) {
   assert(findById(supported, expected), `previously supported id ${expected} disappeared`);
 }
+
+const acpx = findById(supported, "acpx");
+assert(acpx, "previously supported id acpx disappeared");
+assert(
+  acpx.version === report.runtimePluginVersion,
+  `ACPX version ${acpx.version} does not match runtime plugin version ${report.runtimePluginVersion}`,
+);

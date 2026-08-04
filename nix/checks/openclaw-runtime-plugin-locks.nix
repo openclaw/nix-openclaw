@@ -5,6 +5,7 @@
 }:
 
 let
+  scriptsDir = ../scripts;
   generatedLocks = import ../generated/openclaw-runtime-plugins/default.nix;
   generatedLocksJson = builtins.toFile "openclaw-runtime-plugin-locks.json" (builtins.toJSON generatedLocks);
 in
@@ -25,7 +26,10 @@ stdenvNoCC.mkDerivation {
   };
 
   doCheck = true;
-  checkPhase = "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-locks.mjs}";
+  checkPhase = ''
+    ${nodejs_22}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-version.test.mjs
+    ${nodejs_22}/bin/node ${scriptsDir}/check-openclaw-runtime-plugin-locks.mjs
+  '';
   installPhase = "${../scripts/empty-install.sh}";
 
   meta.description = "Validate generated OpenClaw runtime plugin locks and support report";

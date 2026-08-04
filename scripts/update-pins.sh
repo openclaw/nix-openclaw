@@ -13,6 +13,7 @@ config_options_file="$repo_root/nix/generated/openclaw-config-options.nix"
 gateway_npm_wrapper_dir="$repo_root/nix/npm/openclaw"
 runtime_plugin_lock_rel_dir="nix/generated/openclaw-runtime-plugins"
 runtime_plugin_lock_dir="$repo_root/$runtime_plugin_lock_rel_dir"
+runtime_plugin_version_resolver="$repo_root/nix/scripts/openclaw-runtime-plugin-version.mjs"
 npm_fake_hash="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 apply_backup_dir=""
 apply_success=0
@@ -216,6 +217,12 @@ source_pnpm_major() {
   esac
 }
 
+source_runtime_plugin_version() {
+  local source_path="$1"
+  local release_version="$2"
+  node "$runtime_plugin_version_resolver" "$release_version" "$source_path/package.json"
+}
+
 pnpm_shell_package() {
   local major="$1"
   case "$major" in
@@ -373,7 +380,7 @@ apply_release() {
   local selected_sha="$2"
   local app_tag="$3"
   local app_url="$4"
-  local source_version source_url source_prefetch source_hash source_store_path selected_pnpm_major public_surface_hardlinks_patch apply_skip_plugin_auto_enable_patch app_version app_hash
+  local source_version source_url source_prefetch source_hash source_store_path selected_pnpm_major runtime_plugin_version public_surface_hardlinks_patch apply_skip_plugin_auto_enable_patch app_version app_hash
 
   source_version="${source_tag#v}"
   source_url="https://github.com/openclaw/openclaw/archive/${selected_sha}.tar.gz"
@@ -386,6 +393,7 @@ apply_release() {
     exit 1
   fi
   selected_pnpm_major=$(source_pnpm_major "$source_store_path")
+  runtime_plugin_version=$(source_runtime_plugin_version "$source_store_path" "$source_version")
   public_surface_hardlinks_patch=$(source_public_surface_hardlinks_patch "$source_store_path")
   apply_skip_plugin_auto_enable_patch=$(source_needs_skip_plugin_auto_enable_nix_mode_patch "$source_store_path")
 
@@ -430,8 +438,8 @@ apply_release() {
   }
   trap cleanup_apply EXIT
 
-  perl -0pi -e 's|  releaseTag = "[^"]+";\n||g; s|  releaseVersion = "[^"]+";\n||g;' "$source_file"
-  perl -0pi -e "s|rev = \"[^\"]+\";|releaseTag = \"${source_tag}\";\n  releaseVersion = \"${source_version}\";\n  rev = \"${selected_sha}\";|" "$source_file"
+  perl -0pi -e 's|  releaseTag = "[^"]+";\n||g; s|  releaseVersion = "[^"]+";\n||g; s|  runtimePluginVersion = "[^"]+";\n||g;' "$source_file"
+  perl -0pi -e "s|rev = \"[^\"]+\";|releaseTag = \"${source_tag}\";\n  releaseVersion = \"${source_version}\";\n  runtimePluginVersion = \"${runtime_plugin_version}\";\n  rev = \"${selected_sha}\";|" "$source_file"
   if grep -q 'pnpmMajor = ' "$source_file"; then
     perl -0pi -e "s|pnpmMajor = \"[^\"]+\";|pnpmMajor = \"${selected_pnpm_major}\";|" "$source_file"
   else
@@ -469,7 +477,7 @@ case "$mode" in
     ;;
   apply)
     [[ $# -eq 5 ]] || { usage; exit 1; }
-    require_cmds jq nix perl unzip find
+    require_cmds jq nix node perl unzip find
     apply_release "$2" "$3" "$4" "$5"
     ;;
   *) usage; exit 1 ;;

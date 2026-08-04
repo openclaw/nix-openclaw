@@ -7,6 +7,11 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  defaultCatalogVersion,
+  resolveRuntimePluginVersion,
+} from "./openclaw-runtime-plugin-version.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
 const sourceInfoPath = path.join(repoRoot, "nix/sources/openclaw-source.nix");
@@ -166,6 +171,7 @@ function resolveOpenClawSourcePath() {
     "pnpmMajor",
     "releaseTag",
     "releaseVersion",
+    "runtimePluginVersion",
     "applyPublicSurfaceHardlinksPatch",
     "applySkipPluginAutoEnableNixModePatch",
     "applyNixStorePluginOwnershipPatch",
@@ -1237,7 +1243,7 @@ async function buildArtifactLock(row, artifact) {
   }
 }
 
-async function processRow(row, releaseVersion) {
+async function processRow(row, releaseVersion, runtimePluginVersion) {
   if (!row.id) {
     return { skipped: skip(row, "missing-plugin-id", "catalog row has no plugin, channel, or provider id") };
   }
@@ -1253,7 +1259,11 @@ async function processRow(row, releaseVersion) {
       return { skipped: skip(row, "invalid-clawhub-spec", row.install.clawhubSpec ?? "") };
     }
     if (!clawhubPackage.version) {
-      clawhubPackage.version = releaseVersion;
+      clawhubPackage.version = defaultCatalogVersion(
+        row.source,
+        releaseVersion,
+        runtimePluginVersion,
+      );
     }
     if (!isExactVersion(clawhubPackage.version)) {
       return {
@@ -1273,7 +1283,11 @@ async function processRow(row, releaseVersion) {
   }
 
   if (!npmPackage.version) {
-    npmPackage.version = releaseVersion;
+    npmPackage.version = defaultCatalogVersion(
+      row.source,
+      releaseVersion,
+      runtimePluginVersion,
+    );
   }
 
   if (!isExactVersion(npmPackage.version)) {
@@ -1287,10 +1301,24 @@ async function processRow(row, releaseVersion) {
 }
 
 const releaseVersion = readSourceField("releaseVersion");
+const runtimePluginVersion = readSourceField("runtimePluginVersion");
 const releaseTag = readSourceField("releaseTag");
 const pinnedRev = readSourceField("rev");
 const pinnedHash = readSourceField("hash");
 const openclawSourcePath = resolveOpenClawSourcePath();
+const taggedPackageVersion = JSON.parse(
+  fs.readFileSync(path.join(openclawSourcePath, "package.json"), "utf8"),
+).version;
+const expectedRuntimePluginVersion = resolveRuntimePluginVersion(
+  releaseVersion,
+  taggedPackageVersion,
+);
+if (runtimePluginVersion !== expectedRuntimePluginVersion) {
+  throw new Error(
+    `runtimePluginVersion ${runtimePluginVersion} does not match tagged package metadata`
+    + ` ${expectedRuntimePluginVersion}`,
+  );
+}
 const rows = readCatalogRows(openclawSourcePath);
 const locks = [];
 const supported = [];
@@ -1305,7 +1333,7 @@ for (const row of rows) {
   }
   seenCatalogKeys.add(dedupeKey);
 
-  const result = await processRow(row, releaseVersion);
+  const result = await processRow(row, releaseVersion, runtimePluginVersion);
   if (result.lock) {
     locks.push(result.lock);
     supported.push(result.supported);
@@ -1328,6 +1356,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 const report = {
   openclawVersion: releaseVersion,
+  runtimePluginVersion,
   openclawReleaseTag: releaseTag,
   openclawRev: pinnedRev,
   openclawHash: pinnedHash,
