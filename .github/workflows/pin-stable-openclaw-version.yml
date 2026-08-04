@@ -251,17 +251,50 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
 
-  promote:
+  verify-materialization:
     needs:
       - select
       - validate-linux
       - validate-macos
     if: >-
       ${{
-        github.ref == 'refs/heads/main' &&
         needs.select.outputs.has_update == 'true' &&
         needs.validate-linux.outputs.validation_ok == 'true' &&
         needs.validate-macos.outputs.validation_ok == 'true'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      materialization_digest: ${{ steps.verify.outputs.materialization_digest }}
+    steps:
+      - name: Verify cross-platform materialization
+        id: verify
+        env:
+          LINUX_MATERIALIZATION_DIGEST: ${{ needs.validate-linux.outputs.materialization_digest }}
+          MACOS_MATERIALIZATION_DIGEST: ${{ needs.validate-macos.outputs.materialization_digest }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$LINUX_MATERIALIZATION_DIGEST" || -z "$MACOS_MATERIALIZATION_DIGEST" ]]; then
+            echo "Missing validation materialization digest." >&2
+            exit 1
+          fi
+          if [[ "$LINUX_MATERIALIZATION_DIGEST" != "$MACOS_MATERIALIZATION_DIGEST" ]]; then
+            echo "Linux and macOS materialized different release diffs." >&2
+            echo "Linux: $LINUX_MATERIALIZATION_DIGEST" >&2
+            echo "macOS: $MACOS_MATERIALIZATION_DIGEST" >&2
+            exit 1
+          fi
+          echo "materialization_digest=$LINUX_MATERIALIZATION_DIGEST" >> "$GITHUB_OUTPUT"
+
+  promote:
+    needs:
+      - select
+      - verify-materialization
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        needs.select.outputs.has_update == 'true'
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -280,23 +313,11 @@ jobs:
       - name: Promote selected release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LINUX_MATERIALIZATION_DIGEST: ${{ needs.validate-linux.outputs.materialization_digest }}
-          MACOS_MATERIALIZATION_DIGEST: ${{ needs.validate-macos.outputs.materialization_digest }}
+          VALIDATED_MATERIALIZATION_DIGEST: ${{ needs.verify-materialization.outputs.materialization_digest }}
         run: |
           set -euo pipefail
           git config user.name "openclaw-ci"
           git config user.email "ci@openclaw.local"
-
-          if [[ -z "$LINUX_MATERIALIZATION_DIGEST" || -z "$MACOS_MATERIALIZATION_DIGEST" ]]; then
-            echo "Missing validation materialization digest." >&2
-            exit 1
-          fi
-          if [[ "$LINUX_MATERIALIZATION_DIGEST" != "$MACOS_MATERIALIZATION_DIGEST" ]]; then
-            echo "Linux and macOS materialized different release diffs." >&2
-            echo "Linux: $LINUX_MATERIALIZATION_DIGEST" >&2
-            echo "macOS: $MACOS_MATERIALIZATION_DIGEST" >&2
-            exit 1
-          fi
 
           scripts/update-pins.sh apply \
             "${{ needs.select.outputs.source_tag }}" \
@@ -320,9 +341,9 @@ jobs:
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
-          if [[ "$promote_digest" != "$LINUX_MATERIALIZATION_DIGEST" ]]; then
+          if [[ "$promote_digest" != "$VALIDATED_MATERIALIZATION_DIGEST" ]]; then
             echo "Promote materialized a different release diff than validation." >&2
-            echo "Validated: $LINUX_MATERIALIZATION_DIGEST" >&2
+            echo "Validated: $VALIDATED_MATERIALIZATION_DIGEST" >&2
             echo "Promote:   $promote_digest" >&2
             exit 1
           fi
