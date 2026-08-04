@@ -258,6 +258,7 @@ jobs:
       - validate-macos
     if: >-
       ${{
+        github.ref == 'refs/heads/main' &&
         needs.select.outputs.has_update == 'true' &&
         needs.validate-linux.outputs.validation_ok == 'true' &&
         needs.validate-macos.outputs.validation_ok == 'true'
