@@ -495,7 +495,7 @@ programs.openclaw.bundledPlugins = {
   poltergeist.enable = false; # File watching and automation
   sag.enable = false;        # Text-to-speech
   camsnap.enable = false;    # Camera snapshots
-  gogcli.enable = false;     # Google Calendar
+  gogcli.enable = false;     # Google Workspace CLI
   goplaces.enable = true;    # Google Places API
   sonoscli.enable = false;   # Sonos control
   imsg.enable = false;       # iMessage
@@ -517,10 +517,38 @@ programs.openclaw.bundledPlugins.goplaces = {
 | `poltergeist` | File watching and automation |
 | `sag` | Text-to-speech |
 | `camsnap` | Take photos from connected cameras |
-| `gogcli` | Google Calendar integration |
+| `gogcli` | Google Workspace CLI |
 | `goplaces` | Google Places API (New) CLI |
 | `sonoscli` | Control Sonos speakers |
 | `imsg` | Send/read iMessages |
+
+#### Gmail hooks with gogcli
+
+Enabling `bundledPlugins.gogcli` installs `gog` and its OpenClaw skill. It does
+not run `openclaw hooks gmail setup` or mutate the Nix-owned `openclaw.json`.
+Declare the upstream Gmail hook configuration under
+`programs.openclaw.config.hooks` instead.
+
+The Gmail preset uses a templated `hook:gmail:` session key. OpenClaw rejects
+that callback with HTTP 400 unless request session keys are enabled and bounded
+to the expected prefix:
+
+```nix
+programs.openclaw.config.hooks = {
+  enabled = true;
+  presets = [ "gmail" ];
+  defaultSessionKey = "hook:gmail:default";
+  allowRequestSessionKey = true;
+  allowedSessionKeyPrefixes = [ "hook:gmail:" ];
+
+  # Add the upstream gmail block here.
+};
+```
+
+Keep the prefix narrow: this option lets the authenticated hook caller select
+the target session. Follow the upstream
+[Gmail Pub/Sub setup](https://docs.openclaw.ai/automation/cron-jobs#gmail-pubsub-integration)
+for Google credentials, hook tokens, and public-ingress security.
 
 ### Adding custom nix-openclaw plugins
 
