@@ -49,7 +49,7 @@ function parseNpmSpec(spec) {
 }
 
 function npmRegistryUrl(packageName) {
-  return `https://registry.npmjs.org/${encodeURIComponent(packageName).replace("%2F", "%2f")}`;
+  return `https://registry.npmjs.org/${encodeURIComponent(packageName)}`;
 }
 
 function clawHubArtifactUrl(packageName, version) {

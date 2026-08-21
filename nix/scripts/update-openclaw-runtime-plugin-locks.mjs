@@ -198,7 +198,7 @@ function resolveOpenClawSourcePath() {
 }
 
 function npmRegistryUrl(packageName) {
-  return `https://registry.npmjs.org/${encodeURIComponent(packageName).replace("%2F", "%2f")}`;
+  return `https://registry.npmjs.org/${encodeURIComponent(packageName)}`;
 }
 
 function pickDefined(object) {
