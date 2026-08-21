@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
+import { markdownTableCell as markdownCell } from "./markdown-table.mjs";
+
 function usage() {
   process.stderr.write(`Usage:
   maintainers/scripts/summarize-nixos-test-log.mjs [--label <label>] [--limit <count>] [--summary-file <path>] <log>
@@ -174,10 +176,6 @@ function render({ label, limit, finished, gatewayEvents, startupTrace }) {
   }
 
   return `${lines.join("\n")}\n`;
-}
-
-function markdownCell(value) {
-  return String(value).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 }
 
 function formatSeconds(value) {

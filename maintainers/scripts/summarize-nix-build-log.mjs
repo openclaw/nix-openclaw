@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
+import { markdownTableCell as markdownCell } from "./markdown-table.mjs";
+
 function usage() {
   process.stderr.write(`Usage:
   maintainers/scripts/summarize-nix-build-log.mjs [--label <label>] [--seconds <seconds>] [--summary-file <path>] <log>
@@ -293,10 +295,6 @@ function render(groups, title) {
   }
 
   return `${lines.join("\n")}\n`;
-}
-
-function markdownCell(value) {
-  return value.replace(/\|/g, "\\|");
 }
 
 function formatSeconds(seconds) {

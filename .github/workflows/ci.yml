@@ -55,6 +55,9 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
+      - name: Test JavaScript contracts
+        run: nix shell nixpkgs#nodejs_22 --command node --test maintainers/scripts/markdown-table.test.mjs
+
       - name: Build Linux supported surface
         run: |
           timeout --foreground 50m maintainers/scripts/ci-nix-build.sh linux-supported-surface \

@@ -2,6 +2,8 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 
+import { markdownTableCell as markdownCell } from "./markdown-table.mjs";
+
 function usage() {
   process.stderr.write(`Usage:
   maintainers/scripts/summarize-nix-build-closure.mjs [--label <label>] [--limit <count>] [--summary-file <path>] <outputs-file>
@@ -197,10 +199,6 @@ function top(entries, field, limit) {
   return [...entries]
     .sort((left, right) => right[field] - left[field] || left.name.localeCompare(right.name))
     .slice(0, limit);
-}
-
-function markdownCell(value) {
-  return value.replace(/\|/g, "\\|");
 }
 
 function formatBytes(bytes) {
