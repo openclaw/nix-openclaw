@@ -12,6 +12,7 @@ Older repository history is available in git.
 
 ### Fixed
 
+- Keep OpenClaw's private pnpm pins under `openclawPackages` so the default overlay no longer replaces Nixpkgs' pnpm for unrelated packages. Thanks @jerome-benoit (#116).
 - `openclaw-reload` now restarts the configured Home Manager launchd labels or
   systemd user units instead of the old hardcoded `.nix` and `.nix-test`
   labels.

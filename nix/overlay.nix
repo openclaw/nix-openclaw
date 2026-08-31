@@ -31,7 +31,10 @@ let
       inherit toolNamesOverride excludeToolNames;
     };
 in
-packages
+(builtins.removeAttrs packages [
+  "pnpm_11"
+  "pnpm_12"
+])
 // {
   openclawPackages = packages // {
     inherit toolNames withTools;

@@ -1050,6 +1050,10 @@ home-manager switch --rollback  # revert
 | `openclaw-gateway` | Component output: gateway CLI/service only |
 | `openclaw-app` | Component output: macOS app only |
 
+The default overlay preserves Nixpkgs' `pnpm` and versioned pnpm attributes.
+OpenClaw's private pnpm pins are available as `pkgs.openclawPackages.pnpm_11`
+and `pkgs.openclawPackages.pnpm_12` when needed for packaging or debugging.
+
 ### Local memory
 
 QMD is the supported local memory backend when OpenClaw config opts into it. The default `openclaw` package does not build or install QMD unless `memory.backend = "qmd"` is set. Linux uses upstream `tobi/qmd`; Darwin uses the repaired `nix-openclaw-tools` package until upstream QMD is fixed there.

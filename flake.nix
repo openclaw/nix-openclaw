@@ -96,6 +96,9 @@
           let
             stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
+              overlay = pkgs.callPackage ./nix/checks/openclaw-overlay.nix {
+                inherit nixpkgs system overlay;
+              };
               bin-surface = pkgs.callPackage ./nix/checks/openclaw-bin-surface.nix {
                 openclawPackage = packageSetStable.openclaw;
               };
@@ -183,6 +186,7 @@
               module-render = pkgs.symlinkJoin {
                 name = "openclaw-module-render";
                 paths = [
+                  stableChecks.overlay
                   stableChecks.default-instance
                   stableChecks.source-override-render
                   stableChecks.workspace-materializer
