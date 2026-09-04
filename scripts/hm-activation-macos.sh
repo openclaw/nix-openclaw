@@ -38,9 +38,12 @@ else
   activation_package="$test_dir/result"
 fi
 
+test ! -e "$HOME/custom workspace"
 "$activation_package/activate"
 
 test -f "$HOME/.openclaw/openclaw.json"
+test -f "$HOME/custom workspace/LORE.md"
+test ! -L "$HOME/custom workspace/LORE.md"
 test -f "$plist"
 test -L "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin"
 test -x "$HOME/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"

@@ -30,9 +30,10 @@ within_workspace() (
   target="$(printf '%s\n' "$1" | tr -s /)"
   valid_absolute_path "$target" || return 1
 
-  # Resolve the nearest existing parent, never the final symlink being removed.
+  # A stale managed file may still occupy a parent that cleanup will remove.
+  # Resolve the nearest directory, never the final symlink being removed.
   parent="$(dirname "$target")"
-  while [ ! -e "$parent" ] && [ ! -L "$parent" ]; do
+  while [ ! -d "$parent" ] && [ ! -L "$parent" ]; do
     parent="$(dirname "$parent")"
   done
   physical_parent="$(cd -P "$parent" 2>/dev/null && pwd -P)" || return 1

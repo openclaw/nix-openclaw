@@ -6,14 +6,15 @@ machine.wait_until_succeeds(
 )
 
 machine.wait_until_succeeds("test -f /home/alice/.openclaw/openclaw.json")
-machine.wait_until_succeeds("test -f /home/alice/.openclaw/workspace/AGENTS.md")
-machine.succeed("test ! -L /home/alice/.openclaw/workspace/AGENTS.md")
-machine.succeed("test -f /home/alice/.openclaw/workspace/IDENTITY.md")
-machine.succeed("test -f /home/alice/.openclaw/workspace/USER.md")
-machine.succeed("test -f /home/alice/.openclaw/workspace/HEARTBEAT.md")
-machine.succeed("test -f /home/alice/.openclaw/workspace/LORE.md")
+workspace = "'/home/alice/custom workspace'"
+machine.wait_until_succeeds(f"test -f {workspace}/AGENTS.md")
+machine.succeed(f"test ! -L {workspace}/AGENTS.md")
+machine.succeed(f"test -f {workspace}/IDENTITY.md")
+machine.succeed(f"test -f {workspace}/USER.md")
+machine.succeed(f"test -f {workspace}/HEARTBEAT.md")
+machine.succeed(f"test -f {workspace}/LORE.md")
 machine.succeed("grep -q '\"skipBootstrap\":true' /home/alice/.openclaw/openclaw.json")
-machine.succeed("grep -q 'BEGIN NIX-REPORT' /home/alice/.openclaw/workspace/TOOLS.md")
+machine.succeed(f"grep -q 'BEGIN NIX-REPORT' {workspace}/TOOLS.md")
 machine.wait_until_succeeds(
     "test -x /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"
 )

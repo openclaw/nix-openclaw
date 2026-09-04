@@ -502,11 +502,13 @@ in
     ];
 
     home.activation.openclawDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p ${
-        lib.concatStringsSep " " (lib.concatMap (item: item.dirs) instanceConfigs)
+      run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${
+        lib.escapeShellArgs (
+          map openclawLib.resolvePath (lib.concatMap (item: item.dirs) instanceConfigs)
+        )
       }
       ${lib.optionalString (plugins.pluginStateDirsAll != [ ])
-        "run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p ${lib.concatStringsSep " " plugins.pluginStateDirsAll}"
+        "run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${lib.escapeShellArgs plugins.pluginStateDirsAll}"
       }
     '';
 

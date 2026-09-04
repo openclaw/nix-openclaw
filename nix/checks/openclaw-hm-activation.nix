@@ -56,6 +56,7 @@ pkgs.testers.nixosTest {
               installApp = false;
               launchd.enable = false;
               instances.default = {
+                workspaceDir = "~/custom workspace";
                 gatewayPort = 18999;
                 config = {
                   logging = {

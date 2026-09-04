@@ -15,9 +15,11 @@
   programs.openclaw = {
     enable = true;
     installApp = false;
+    workspace.files."LORE.md" = ../workspace/LORE.md;
     runtimePackages = [ pkgs.jq ];
     environment.OPENCLAW_TEST_SECRET = "/tmp/openclaw-secret";
     instances.default = {
+      workspaceDir = "~/custom workspace";
       gatewayPort = 18999;
       logPath = "/tmp/hm-activation-home/.openclaw/openclaw-gateway.log";
       launchd.label = "com.steipete.openclaw.gateway.hm-test";
