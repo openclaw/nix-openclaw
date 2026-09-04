@@ -71,6 +71,8 @@ function isolatedEnv() {
     OPENCLAW_STATE_DIR: path.join(tmpDir, "state"),
     OPENCLAW_LOG_DIR: path.join(tmpDir, "logs"),
     OPENCLAW_NIX_MODE: "1",
+    // Loopback health probes must not advertise shared CI runner hostnames on the LAN.
+    OPENCLAW_DISABLE_BONJOUR: "1",
     NO_COLOR: "1",
   };
 
