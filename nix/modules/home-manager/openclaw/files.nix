@@ -359,6 +359,9 @@ let
     lib.flatten (map entriesForDir instanceWorkspaceDirs);
 
   materializedEntries = bootstrapEntries ++ workspaceFileEntries;
+  workspaceRootsManifest = pkgs.writeText "openclaw-workspace-roots" (
+    (lib.concatStringsSep "\n" (lib.unique instanceWorkspaceDirs)) + "\n"
+  );
   materializedManifest =
     let
       renderEntry = entry: "${entry.source}\t${entry.target}";
@@ -373,6 +376,7 @@ in
     bootstrapFilesEnabled
     workspaceAssertions
     materializedManifest
+    workspaceRootsManifest
     materializedEntries
     duplicateSkillAssertion
     skillLoadDirsForInstance

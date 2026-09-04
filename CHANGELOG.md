@@ -8,6 +8,12 @@ This changelog starts with the current pre-1.0 nix-openclaw Home Manager module
 API transition.
 Older repository history is available in git.
 
+## 2026-09-04
+
+### Fixed
+
+- Constrain workspace activation cleanup and replacement to configured workspace roots, preserve stale paths from removed or moved instances with a warning, and avoid changing symlink targets or hardlinked file permissions during cleanup. Thanks @SebTardif (#119).
+
 ## 2026-08-30
 
 ### Fixed

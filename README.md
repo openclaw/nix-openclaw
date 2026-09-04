@@ -722,6 +722,14 @@ Deliverables: flake output, env overrides, AGENTS.md, skill update.
 > When bootstrap files are configured, nix-openclaw forces `agents.defaults.skipBootstrap = true` so OpenClaw never seeds workspace bootstrap files from bundled templates.
 > `BOOTSTRAP.md` and `MEMORY.md` are runtime-owned, not managed by `workspace.files`.
 
+Workspace activation replaces declared files and removes stale managed paths only
+below currently enabled instances' configured `workspaceDir` roots. Paths that
+escape through a parent symlink are rejected. If you move a workspace or remove
+an instance, old paths outside the remaining roots are preserved with a warning
+and retained in `~/.local/state/nix-openclaw/managed-workspace-files` for manual
+inspection and cleanup. An empty set of declared files still cleans up stale
+files within configured workspaces.
+
 ### What OpenClaw needs (minimum)
 
 1. **Telegram bot token file** - create via [@BotFather](https://t.me/BotFather), set `channels.telegram.tokenFile`
