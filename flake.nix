@@ -112,6 +112,9 @@
                 includeSourceOverrideChecks = true;
               };
               workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
+              pnpm-runtime = pkgs.callPackage ./nix/checks/openclaw-pnpm-runtime.nix {
+                inherit (packageSetStable) pnpm_11 pnpm_12;
+              };
               config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = false;
@@ -171,6 +174,7 @@
                 packageSetStable.openclaw-gateway
                 stableChecks.bin-surface
                 stableChecks.package-contents
+                stableChecks.pnpm-runtime
               ]
               ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
                 packageSetStable.openclaw-app

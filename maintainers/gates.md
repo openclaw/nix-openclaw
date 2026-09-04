@@ -6,6 +6,7 @@ Use targeted checks while debugging, then run the full relevant gate before hand
 
 - `scripts/check-flake-lock-owners.sh`
 - selector tests
+- Private pnpm runtime check (`checks.<system>.pnpm-runtime`, included in `package-artifacts`): offline local-tarball install, package execution, and frozen-lockfile rejection for both supported private pnpm majors
 - updater shell syntax
 - workflow YAML parse
 - `nix flake show --accept-flake-config`
