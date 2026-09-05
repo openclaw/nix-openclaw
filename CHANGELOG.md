@@ -11,6 +11,8 @@ Older repository history is available in git.
 ## Unreleased
 
 - Fix Home Manager config symlink activation and systemd environment quoting for paths containing spaces, while preserving home-relative `~/` symlink destinations; thanks @SebTardif (#122).
+- Update the private pnpm 12 runtime to 12.3.4 on Linux and macOS.
+- Refresh CI checkout to 7.0.1 and the Nix installer to 31.11.1, which fixes a Nix build crash.
 
 ## 2026-09-04
 
