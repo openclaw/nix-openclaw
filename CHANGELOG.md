@@ -10,8 +10,15 @@ Older repository history is available in git.
 
 ## Unreleased
 
+**Highlights:** More reliable Home Manager activation and isolated, updated package-manager tooling. Changes below cover the package state since `v2026.7.1`.
+
 - Fix Home Manager config symlink activation and systemd environment quoting for paths containing spaces, while preserving home-relative `~/` symlink destinations; thanks @SebTardif (#122).
-- Update the private pnpm 12 runtime to 12.3.4 on Linux and macOS.
+- Constrain workspace cleanup and replacement to configured roots, preserve stale paths from removed or moved instances with a warning, avoid changing symlink targets or hardlinked file permissions, and create home-relative workspace paths containing spaces correctly; thanks @SebTardif (#119, #120).
+- Keep OpenClaw's private pnpm tools out of the consumer Nixpkgs overlay, support pnpm 12 releases, update the private runtimes to pnpm 11.25.0 and 12.3.4, and fix the pnpm 12 Linux executable's loader and runtime libraries; thanks @jerome-benoit (#116, #117, #121).
+- Restart the configured launchd labels and systemd user units with `openclaw-reload` instead of the old hardcoded labels.
+- Package upstream OpenClaw `2026.7.1-2`, retain runtime plugin version `2026.7.1` for correction releases, and repair the macOS `2026.7.1` app artifact hash; thanks @vincentkoc.
+- Preserve canonical scoped npm package encoding and fully escape generated CI table cells; thanks @vincentkoc (#114).
+- Document declarative Gmail hook session keys and their allowed prefix to prevent rejected callbacks (#113).
 - Refresh CI checkout to 7.0.1 and the Nix installer to 31.11.1, which fixes a Nix build crash.
 
 ## 2026-09-04
