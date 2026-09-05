@@ -56,7 +56,16 @@ jobs:
         uses: cachix/install-nix-action@v31.11.1
 
       - name: Test JavaScript contracts
-        run: nix shell nixpkgs#nodejs_22 --command node --test maintainers/scripts/markdown-table.test.mjs
+        run: |
+          nix shell nixpkgs#nodejs_22 --command node --test \
+            scripts/select-openclaw-release.test.mjs \
+            maintainers/scripts/markdown-table.test.mjs \
+            nix/scripts/openclaw-runtime-plugin-version.test.mjs \
+            nix/scripts/patch-openclaw-npm-dist.test.mjs \
+            nix/scripts/normalize-pnpm-store-index.test.js
+
+      - name: Inspect flake outputs
+        run: nix flake show --accept-flake-config
 
       - name: Build Linux supported surface
         run: |
