@@ -10,7 +10,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
-- Fix Home Manager config symlink activation for paths containing spaces, while preserving home-relative `~/` destinations; thanks @SebTardif (#122).
+- Fix Home Manager config symlink activation and systemd environment quoting for paths containing spaces, while preserving home-relative `~/` symlink destinations; thanks @SebTardif (#122).
 
 ## 2026-09-04
 

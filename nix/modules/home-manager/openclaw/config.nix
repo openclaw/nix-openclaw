@@ -360,7 +360,7 @@ let
             WorkingDirectory = inst.stateDir;
             Restart = "always";
             RestartSec = "1s";
-            Environment = [
+            Environment = map lib.escapeShellArg [
               "HOME=${homeDir}"
               "OPENCLAW_CONFIG_PATH=${inst.configPath}"
               "OPENCLAW_STATE_DIR=${inst.stateDir}"
