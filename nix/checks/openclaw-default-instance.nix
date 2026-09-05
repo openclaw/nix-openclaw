@@ -183,16 +183,16 @@ let
       "ok";
 
   spacedConfigEval = moduleEval {
-    instances.default.configPath = "/tmp/openclaw state/config file.json";
+    instances.default.configPath = "/tmp/openclaw state/config 'file'.json";
   };
   spacedConfigEnvironmentCheck =
     if
       pkgs.stdenv.hostPlatform.isLinux
-      && !(lib.elem "'OPENCLAW_CONFIG_PATH=/tmp/openclaw state/config file.json'"
+      && !(lib.elem "\"OPENCLAW_CONFIG_PATH=/tmp/openclaw state/config 'file'.json\""
         spacedConfigEval.config.systemd.user.services.openclaw-gateway.Service.Environment
       )
     then
-      throw "Systemd config environment must preserve paths containing spaces."
+      throw "Systemd config environment must preserve paths containing spaces and quotes."
     else
       "ok";
 

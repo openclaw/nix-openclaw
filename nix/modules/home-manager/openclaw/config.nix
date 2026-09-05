@@ -360,7 +360,8 @@ let
             WorkingDirectory = inst.stateDir;
             Restart = "always";
             RestartSec = "1s";
-            Environment = map lib.escapeShellArg [
+            # Systemd needs whole quoted items, not shell quote concatenation.
+            Environment = map builtins.toJSON [
               "HOME=${homeDir}"
               "OPENCLAW_CONFIG_PATH=${inst.configPath}"
               "OPENCLAW_STATE_DIR=${inst.stateDir}"

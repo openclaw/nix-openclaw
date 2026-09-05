@@ -1,3 +1,5 @@
+import shlex
+
 start_all()
 
 machine.wait_until_succeeds(
@@ -5,7 +7,7 @@ machine.wait_until_succeeds(
     "systemctl show -p SubState home-manager-alice.service | grep -Eq '^SubState=(dead|exited)$'"
 )
 
-config_path = "'/home/alice/.openclaw/config with spaces.json'"
+config_path = shlex.quote("/home/alice/.openclaw/config with spaces and 'quotes'.json")
 machine.wait_until_succeeds(f"test -f {config_path}")
 machine.succeed(f"test -L {config_path}")
 workspace = "'/home/alice/custom workspace'"
