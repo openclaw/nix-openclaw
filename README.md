@@ -908,6 +908,10 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
 
 Use named instances when you need two local gateways. Keep the default package unless you are actively debugging a local gateway checkout.
 
+Config activation supports paths containing spaces, including a custom
+`instances.<name>.configPath`. A leading `~/` is resolved against the configured
+Home Manager home directory before the config symlink is created.
+
 ```nix
 programs.openclaw = {
   workspace = {

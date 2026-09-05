@@ -5,7 +5,9 @@ machine.wait_until_succeeds(
     "systemctl show -p SubState home-manager-alice.service | grep -Eq '^SubState=(dead|exited)$'"
 )
 
-machine.wait_until_succeeds("test -f /home/alice/.openclaw/openclaw.json")
+config_path = "'/home/alice/.openclaw/config with spaces.json'"
+machine.wait_until_succeeds(f"test -f {config_path}")
+machine.succeed(f"test -L {config_path}")
 workspace = "'/home/alice/custom workspace'"
 machine.wait_until_succeeds(f"test -f {workspace}/AGENTS.md")
 machine.succeed(f"test ! -L {workspace}/AGENTS.md")
@@ -13,7 +15,7 @@ machine.succeed(f"test -f {workspace}/IDENTITY.md")
 machine.succeed(f"test -f {workspace}/USER.md")
 machine.succeed(f"test -f {workspace}/HEARTBEAT.md")
 machine.succeed(f"test -f {workspace}/LORE.md")
-machine.succeed("grep -q '\"skipBootstrap\":true' /home/alice/.openclaw/openclaw.json")
+machine.succeed(f"grep -q '\"skipBootstrap\":true' {config_path}")
 machine.succeed(f"grep -q 'BEGIN NIX-REPORT' {workspace}/TOOLS.md")
 machine.wait_until_succeeds(
     "test -x /home/alice/.openclaw/agents/main/agent/codex-home/home/.nix-profile/bin/jq"

@@ -41,7 +41,8 @@ fi
 test ! -e "$HOME/custom workspace"
 "$activation_package/activate"
 
-test -f "$HOME/.openclaw/openclaw.json"
+test -f "$HOME/.openclaw/config with spaces.json"
+test -L "$HOME/.openclaw/config with spaces.json"
 test -f "$HOME/custom workspace/LORE.md"
 test ! -L "$HOME/custom workspace/LORE.md"
 test -f "$plist"

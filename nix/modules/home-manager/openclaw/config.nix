@@ -519,7 +519,8 @@ in
     home.activation.openclawConfigFiles = lib.hm.dag.entryAfter [ "openclawDirs" ] ''
       ${lib.concatStringsSep "\n" (
         map (
-          item: "run --quiet ${lib.getExe' pkgs.coreutils "ln"} -sfn ${item.configFile} ${item.configPath}"
+          item:
+          "run --quiet ${lib.getExe' pkgs.coreutils "ln"} -sfn ${lib.escapeShellArg item.configFile} ${lib.escapeShellArg (openclawLib.resolvePath item.configPath)}"
         ) instanceConfigs
       )}
     '';

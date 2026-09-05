@@ -170,6 +170,18 @@ let
       "ok"
   );
 
+  homeRelativeConfigEval = moduleEval {
+    instances.default.stateDir = "~/openclaw state";
+  };
+  homeRelativeConfigCheck =
+    let
+      activation = homeRelativeConfigEval.config.home.activation.openclawConfigFiles.data;
+    in
+    if !(lib.hasInfix " '/tmp/openclaw state/openclaw.json'" activation) then
+      throw "Config activation must resolve home-relative paths before shell escaping."
+    else
+      "ok";
+
   reloadHelperText =
     eval:
     let
@@ -980,6 +992,7 @@ let
   checkKey = builtins.deepSeq (
     [
       defaultCheck
+      homeRelativeConfigCheck
       reloadDefaultCheck
       reloadNamedCheck
       reloadCustomDefaultCheck

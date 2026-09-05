@@ -19,6 +19,7 @@
     runtimePackages = [ pkgs.jq ];
     environment.OPENCLAW_TEST_SECRET = "/tmp/openclaw-secret";
     instances.default = {
+      configPath = "/tmp/hm-activation-home/.openclaw/config with spaces.json";
       workspaceDir = "~/custom workspace";
       gatewayPort = 18999;
       logPath = "/tmp/hm-activation-home/.openclaw/openclaw-gateway.log";
