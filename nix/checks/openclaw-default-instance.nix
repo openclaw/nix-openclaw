@@ -170,6 +170,32 @@ let
       "ok"
   );
 
+  homeRelativeConfigEval = moduleEval {
+    instances.default.stateDir = "~/openclaw state";
+  };
+  homeRelativeConfigCheck =
+    let
+      activation = homeRelativeConfigEval.config.home.activation.openclawConfigFiles.data;
+    in
+    if !(lib.hasInfix " '/tmp/openclaw state/openclaw.json'" activation) then
+      throw "Config activation must resolve home-relative paths before shell escaping."
+    else
+      "ok";
+
+  spacedConfigEval = moduleEval {
+    instances.default.configPath = "/tmp/openclaw state/config 'file'.json";
+  };
+  spacedConfigEnvironmentCheck =
+    if
+      pkgs.stdenv.hostPlatform.isLinux
+      && !(lib.elem "\"OPENCLAW_CONFIG_PATH=/tmp/openclaw state/config 'file'.json\""
+        spacedConfigEval.config.systemd.user.services.openclaw-gateway.Service.Environment
+      )
+    then
+      throw "Systemd config environment must preserve paths containing spaces and quotes."
+    else
+      "ok";
+
   reloadHelperText =
     eval:
     let
@@ -980,6 +1006,8 @@ let
   checkKey = builtins.deepSeq (
     [
       defaultCheck
+      homeRelativeConfigCheck
+      spacedConfigEnvironmentCheck
       reloadDefaultCheck
       reloadNamedCheck
       reloadCustomDefaultCheck

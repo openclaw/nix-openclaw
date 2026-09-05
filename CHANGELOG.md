@@ -8,6 +8,10 @@ This changelog starts with the current pre-1.0 nix-openclaw Home Manager module
 API transition.
 Older repository history is available in git.
 
+## Unreleased
+
+- Fix Home Manager config symlink activation and systemd environment quoting for paths containing spaces, while preserving home-relative `~/` symlink destinations; thanks @SebTardif (#122).
+
 ## 2026-09-04
 
 ### Changed

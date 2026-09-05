@@ -360,7 +360,8 @@ let
             WorkingDirectory = inst.stateDir;
             Restart = "always";
             RestartSec = "1s";
-            Environment = [
+            # Systemd needs whole quoted items, not shell quote concatenation.
+            Environment = map builtins.toJSON [
               "HOME=${homeDir}"
               "OPENCLAW_CONFIG_PATH=${inst.configPath}"
               "OPENCLAW_STATE_DIR=${inst.stateDir}"
@@ -519,7 +520,8 @@ in
     home.activation.openclawConfigFiles = lib.hm.dag.entryAfter [ "openclawDirs" ] ''
       ${lib.concatStringsSep "\n" (
         map (
-          item: "run --quiet ${lib.getExe' pkgs.coreutils "ln"} -sfn ${item.configFile} ${item.configPath}"
+          item:
+          "run --quiet ${lib.getExe' pkgs.coreutils "ln"} -sfn ${lib.escapeShellArg item.configFile} ${lib.escapeShellArg (openclawLib.resolvePath item.configPath)}"
         ) instanceConfigs
       )}
     '';
