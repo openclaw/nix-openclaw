@@ -28,7 +28,7 @@ jobs:
       app_lag_releases: ${{ steps.select.outputs.app_lag_releases }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
@@ -72,10 +72,10 @@ jobs:
       validation_ok: ${{ steps.validation.outputs.validation_ok }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v31.11.1
 
       - name: Materialize selected release
         id: materialize
@@ -164,10 +164,10 @@ jobs:
       validation_ok: ${{ steps.validation.outputs.validation_ok }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v31.11.1
 
       - name: Materialize selected release
         id: materialize
@@ -303,12 +303,12 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v31.11.1
 
       - name: Promote selected release
         env:
