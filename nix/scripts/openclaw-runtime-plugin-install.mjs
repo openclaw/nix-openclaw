@@ -361,7 +361,7 @@ if (hasRuntimeDependencies) {
       );
     } else {
       fail(
-        `runtime plugin ${expectedId} has runtime dependencies but no bundled node_modules, npm-shrinkwrap.json, or upstream npm package-lock evidence; publish shrinkwrap and set npmDepsHash = lib.fakeHash, or regenerate the catalog locks once upstream ships evidence`,
+        `runtime plugin ${expectedId} has runtime dependencies but no bundled node_modules, npm-shrinkwrap.json, or upstream npm package-lock evidence; publish npm-shrinkwrap.json and set npmDepsHash = lib.fakeHash, or regenerate the catalog locks once upstream ships evidence`,
       );
     }
   }
