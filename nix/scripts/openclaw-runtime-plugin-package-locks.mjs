@@ -156,10 +156,12 @@ export function verifyNpmPackageLockEvidenceAssets({
   }
 }
 
+// mkDerivation `env` only accepts strings, so interpolate the path: Nix copies
+// the file into the store and yields its store path as a string.
 export function renderPackageLockProbeEnv(packageLockFile) {
   if (!packageLockFile) return "";
   const escapedPath = JSON.stringify(packageLockFile).replaceAll("${", "\\${");
-  return `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = /. + ${escapedPath};`;
+  return `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = "\${/. + ${escapedPath}}";`;
 }
 
 // Keep original evidence bytes separate from the normalized build-time lock.
