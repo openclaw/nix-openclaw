@@ -105,6 +105,20 @@ refresh_runtime_plugin_locks() {
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
     nixpkgs#nodejs_22 nixpkgs#unzip -c \
     node "$repo_root/nix/scripts/update-openclaw-runtime-plugin-locks.mjs"
+  track_new_runtime_plugin_locks
+}
+
+# Flake builds later in apply (gateway, plugin probes) copy only Git-tracked
+# files, so freshly generated lock sidecars must be registered with the index
+# before the first build reads them. The workflow repeats this for all pin files.
+track_new_runtime_plugin_locks() {
+  local -a new_files=()
+  while IFS= read -r file; do
+    new_files+=("$file")
+  done < <(git -C "$repo_root" ls-files --others --exclude-standard -- "$runtime_plugin_lock_rel_dir")
+  if [[ ${#new_files[@]} -gt 0 ]]; then
+    git -C "$repo_root" add --intent-to-add -- "${new_files[@]}"
+  fi
 }
 
 validate_runtime_plugin_locks() {
