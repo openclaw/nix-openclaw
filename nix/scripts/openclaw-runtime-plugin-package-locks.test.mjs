@@ -114,6 +114,60 @@ test("rejects a wrong lock digest or bundled entry", () => {
     packageName, version), /is bundled/);
 });
 
+test("accepts an explicitly empty omitted workspace dependency list", () => {
+  const evidence = evidenceReport();
+  assert.deepEqual(evidence.packages[0].omittedWorkspaceDependencies, []);
+  assert.equal(selectNpmPackageLock(evidence, packageName, version).lockText, jsonText(packageLock()));
+});
+
+test("missing or malformed omittedWorkspaceDependencies is a validation error, not a skip", () => {
+  for (const value of [undefined, null, "@openclaw/core", {}, [1]]) {
+    const entry = { ...packageEntry(), omittedWorkspaceDependencies: value };
+    if (value === undefined) delete entry.omittedWorkspaceDependencies;
+    const evidence = evidenceReport(entry);
+    const invalidField = (error) => {
+      assert.match(error.message, /omittedWorkspaceDependencies must be an array of dependency names/);
+      assert.equal(error.code, undefined);
+      return true;
+    };
+    assert.throws(() => selectNpmPackageLock(evidence, packageName, version), invalidField);
+    const materializer = createNpmPackageLockMaterializer({ loadEvidence: () => evidence });
+    assert.throws(() => materializer.materialize({
+      artifact: { packageName, version },
+      onFailure: () => assert.fail("invalid schema must not become a skip"),
+    }), invalidField);
+  }
+});
+
+test("partial evidence skips materialization with the distinct reason and omitted names", (t) => {
+  const omittedWorkspaceDependencies = ["@openclaw/core", "@openclaw/shared"];
+  const evidence = evidenceReport({ ...packageEntry(), omittedWorkspaceDependencies });
+  const reason = "package-lock-evidence-incomplete";
+  const detail = `npm package-lock evidence for ${packageName}@${version} omits workspace runtime dependencies: @openclaw/core, @openclaw/shared`;
+  assert.throws(() => selectNpmPackageLock(evidence, packageName, version), (error) => {
+    assert.equal(error.code, reason);
+    assert.equal(error.message, detail);
+    return true;
+  });
+  const materializer = createNpmPackageLockMaterializer({
+    loadEvidence: () => evidence,
+    prepare: () => assert.fail("partial locks must not be prepared"),
+    computeNpmDepsHash: () => assert.fail("partial locks must not be hashed"),
+  });
+  const directory = tempDir(t);
+  const packageRoot = path.join(directory, "package");
+  fs.mkdirSync(packageRoot);
+  const result = materializer.materialize({
+    artifact: { packageName, version }, packageRoot, attrName: "acpx",
+    probe: () => assert.fail("partial locks must not be probed"),
+    onFailure: (reason, error) => ({ skipped: { reason, detail: error.message } }),
+  });
+  assert.deepEqual(result, { skipped: { reason, detail } });
+  assert.equal(materializer.generatedFiles.size, 0);
+  assert.deepEqual(fs.readdirSync(directory), ["package"]);
+  assert.deepEqual(fs.readdirSync(packageRoot), []);
+});
+
 for (const [label, patch, pattern] of [
   ["dev", { dev: true }, /dev package/],
   ["link", { link: true }, /linked package/],

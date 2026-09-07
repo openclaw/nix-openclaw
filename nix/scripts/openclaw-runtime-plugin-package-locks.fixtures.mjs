@@ -36,6 +36,7 @@ export function packageEntry(lock = packageLock()) {
   return {
     packageDir: "extensions/acpx", name: packageName, version,
     bundleRuntimeDependencies: false, dependencyCount: 1, optionalDependencyCount: 0,
+    omittedWorkspaceDependencies: [],
     lockSha256: sha256(jsonText(lock)), lock,
   };
 }
@@ -44,6 +45,7 @@ export function evidenceReport(entry = packageEntry()) {
   return {
     schemaVersion: 1, generatedAt: "2026-09-06T12:00:00.000Z",
     sourceSha: releaseRev, lockfileVersion: 3, packages: [entry],
+    packagesWithOmittedWorkspaceDependencies: entry.omittedWorkspaceDependencies?.length > 0 ? 1 : 0,
   };
 }
 

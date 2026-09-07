@@ -1078,7 +1078,10 @@ function dependencyModeForArtifact(
     const result = packageLocks.materialize({
       artifact, packageRoot, attrName: attrNameForId(row.id),
       probe: (hash, lockFile) => probeLockMaterialization(row, artifact, hash, "package-lock", lockFile),
-      onFailure: (reason, error) => ({ skipped: skip(row, reason, briefError(error)) }),
+      onFailure: (reason, error) => ({
+        skipped: skip(row, reason,
+          reason === "package-lock-evidence-incomplete" ? error.message : briefError(error)),
+      }),
     });
     if (result) return result;
     return {

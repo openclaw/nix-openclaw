@@ -9,6 +9,10 @@ const evidenceDirName = "dependency-evidence";
 const manifestName = "dependency-evidence-manifest.json";
 const reportName = "npm-package-locks.json";
 
+class IncompletePackageLockEvidenceError extends Error {
+  code = "package-lock-evidence-incomplete";
+}
+
 function run(command, args) {
   const result = childProcess.spawnSync(command, args, {
     encoding: "utf8",
@@ -104,6 +108,14 @@ export function selectNpmPackageLock(evidence, packageName, version) {
   assert(entries.length === 1, `duplicate npm package-lock evidence for ${packageName}@${version}`);
   const [entry] = entries;
   assert(entry.bundleRuntimeDependencies === false, `npm package-lock evidence for ${packageName} is bundled`);
+  assert(Array.isArray(entry.omittedWorkspaceDependencies)
+    && entry.omittedWorkspaceDependencies.every((name) => typeof name === "string" && name.length > 0),
+  `npm package-lock evidence for ${packageName} omittedWorkspaceDependencies must be an array of dependency names`);
+  if (entry.omittedWorkspaceDependencies.length > 0) {
+    throw new IncompletePackageLockEvidenceError(
+      `npm package-lock evidence for ${packageName}@${version} omits workspace runtime dependencies: ${entry.omittedWorkspaceDependencies.join(", ")}`,
+    );
+  }
   const lock = entry.lock;
   assert(isRecord(lock) && lock.lockfileVersion === 3, "npm package-lock requires lockfileVersion 3");
   assert(isRecord(lock.packages), "npm package-lock packages must be an object");
@@ -177,7 +189,13 @@ export function createNpmPackageLockMaterializer({
       if (evidence === undefined) {
         evidence = loadEvidence({ releaseTag, releaseVersion, releaseRev });
       }
-      const selected = selectNpmPackageLock(evidence, artifact.packageName, artifact.version);
+      let selected;
+      try {
+        selected = selectNpmPackageLock(evidence, artifact.packageName, artifact.version);
+      } catch (error) {
+        if (error instanceof IncompletePackageLockEvidenceError) return onFailure(error.code, error);
+        throw error;
+      }
       if (!selected) return null;
       const { entry, lockText } = selected;
       const npmPackageLockFile = `${attrName}.package-lock.json`;

@@ -54,6 +54,7 @@ and source SHA, and writes `<attrName>.package-lock.json` next to its `.nix`
 lock. The generated record includes `npmDepsHash`, `npmPackageLockFile`,
 `npmPackageLockSha256`, and `npmPackageLockEvidence` (asset identity, Nix hash,
 source, source SHA, generation time). Only build copies are normalized.
+Entries must declare an empty `omittedWorkspaceDependencies` array; partial locks are skipped as `package-lock-evidence-incomplete`, with the omitted dependency names in `report.json`.
 
 Verification has two tiers. Pin-time validation in `scripts/update-pins.sh`
 sets `OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1`: for every package-lock
