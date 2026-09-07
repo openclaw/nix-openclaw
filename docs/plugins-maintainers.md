@@ -55,6 +55,16 @@ lock. The generated record includes `npmDepsHash`, `npmPackageLockFile`,
 `npmPackageLockSha256`, and `npmPackageLockEvidence` (asset identity, Nix hash,
 source, source SHA, generation time). Only build copies are normalized.
 
+Verification has two tiers. Pin-time validation in `scripts/update-pins.sh`
+sets `OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1`: for every package-lock
+record labeled `release`, the checker prefetches the pinned release evidence
+asset, checks its Nix hash, and compares the exact selected lock bytes and
+SHA-256 with the committed sidecar. Missing assets, missing entries, and
+mismatches fail validation. This verification ignores the local ZIP override
+for release records. Pure Nix CI keeps the existing structural and hash checks
+without network access; it does not enable asset verification. Explicitly
+allowed `override` records remain local validation inputs, not release proof.
+
 Rows lacking all three dependency shapes remain skipped as
 `runtime-dependencies-without-shrinkwrap`; see `report.json` for the current
 supported ids and diagnostics. Regenerate after upstream supplies a supported

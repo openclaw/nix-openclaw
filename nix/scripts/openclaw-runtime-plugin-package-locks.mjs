@@ -127,6 +127,41 @@ export function selectNpmPackageLock(evidence, packageName, version) {
   return { entry, lockText };
 }
 
+export function verifyNpmPackageLockEvidenceAssets({
+  locks, generatedDir, sourceInfo,
+  verifyAssets = process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET === "1",
+}, { loadEvidence = loadNpmPackageLocksEvidence } = {}) {
+  if (!verifyAssets) return;
+  let publishedEvidence;
+  for (const lock of Object.values(locks)) {
+    if (lock.dependencyMode !== "package-lock" || lock.npmPackageLockEvidence.source !== "release") continue;
+    if (publishedEvidence === undefined) {
+      publishedEvidence = loadEvidence({
+        releaseTag: sourceInfo.releaseTag, releaseVersion: sourceInfo.releaseVersion,
+        releaseRev: sourceInfo.rev, overrideZipPath: "",
+      });
+    }
+    assert(publishedEvidence, "published npm package-lock evidence asset or report is missing");
+    const evidence = lock.npmPackageLockEvidence;
+    assert(publishedEvidence.source === "release", "package-lock provenance verification requires release evidence");
+    assert(publishedEvidence.assetUrl === evidence.assetUrl, `lock ${lock.id} published evidence assetUrl mismatch`);
+    assert(publishedEvidence.assetNixHash === evidence.assetNixHash,
+      `lock ${lock.id} published evidence assetNixHash mismatch`);
+    const selected = selectNpmPackageLock(publishedEvidence, lock.packageName, lock.version);
+    assert(selected, `published npm package-lock evidence is missing ${lock.packageName}@${lock.version}`);
+    assert(selected.entry.lockSha256 === lock.npmPackageLockSha256,
+      `lock ${lock.id} published evidence lockSha256 mismatch`);
+    assert(Buffer.from(selected.lockText, "utf8").equals(fs.readFileSync(path.join(generatedDir, lock.npmPackageLockFile))),
+      `lock ${lock.id} sidecar bytes differ from published npm package-lock evidence`);
+  }
+}
+
+export function renderPackageLockProbeEnv(packageLockFile) {
+  if (!packageLockFile) return "";
+  const escapedPath = JSON.stringify(packageLockFile).replaceAll("${", "\\${");
+  return `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = /. + ${escapedPath};`;
+}
+
 // Keep original evidence bytes separate from the normalized build-time lock.
 export function createNpmPackageLockMaterializer({
   releaseTag, releaseVersion, releaseRev, prepare, computeNpmDepsHash,

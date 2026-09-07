@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   dependencyEvidenceAssetName, dependencyEvidenceAssetUrl, parseNpmPackageLocksEvidence,
   selectNpmPackageLock, createNpmPackageLockMaterializer, loadNpmPackageLocksEvidence,
+  renderPackageLockProbeEnv,
 } from "./openclaw-runtime-plugin-package-locks.mjs";
 import {
   releaseTag, releaseVersion, releaseRev, packageName, version, sri,
@@ -15,6 +16,17 @@ test("asset identity uses release version, not the runtime plugin version", () =
   assert.equal(dependencyEvidenceAssetName(releaseVersion), "openclaw-2026.9.1-2-dependency-evidence.zip");
   assert.equal(dependencyEvidenceAssetUrl({ releaseTag, releaseVersion }),
     "https://github.com/openclaw/openclaw/releases/download/v2026.9.1-2/openclaw-2026.9.1-2-dependency-evidence.zip");
+});
+
+test("probe evidence paths are quoted Nix paths even with spaces", () => {
+  assert.equal(renderPackageLockProbeEnv("/tmp/plugin evidence/acpx.package-lock.json"),
+    'OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = /. + "/tmp/plugin evidence/acpx.package-lock.json";');
+  assert.equal(renderPackageLockProbeEnv(""), "");
+});
+
+test("probe evidence paths escape quotes, backslashes, and Nix interpolation", () => {
+  assert.equal(renderPackageLockProbeEnv('/tmp/a"b\\c/${value}/acpx.package-lock.json'),
+    String.raw`OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = /. + "/tmp/a\"b\\c/\${value}/acpx.package-lock.json";`);
 });
 
 test("parses evidence and selects the exact package with canonical lock bytes", (t) => {

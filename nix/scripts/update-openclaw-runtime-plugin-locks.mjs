@@ -7,7 +7,9 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createNpmPackageLockMaterializer } from "./openclaw-runtime-plugin-package-locks.mjs";
+import {
+  createNpmPackageLockMaterializer, renderPackageLockProbeEnv,
+} from "./openclaw-runtime-plugin-package-locks.mjs";
 import {
   defaultCatalogVersion,
   resolveRuntimePluginVersion,
@@ -672,8 +674,7 @@ function prepareLockedPackage(packageRoot, artifact, dependencyMode = "shrinkwra
 }
 
 function probeLockMaterialization(row, artifact, npmDepsHash, dependencyMode = "shrinkwrap", packageLockFile = "") {
-  const packageLockEnv = packageLockFile
-    ? `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = ${packageLockFile};` : "";
+  const packageLockEnv = renderPackageLockProbeEnv(packageLockFile);
   const safeProbeName = attrNameForId(row.id);
   const expr = `
     let

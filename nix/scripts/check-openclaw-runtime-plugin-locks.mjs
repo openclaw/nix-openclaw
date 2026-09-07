@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { verifyNpmPackageLockEvidenceAssets } from "./openclaw-runtime-plugin-package-locks.mjs";
 
 const generatedDir = process.env.OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR;
 if (!generatedDir) {
@@ -235,3 +236,5 @@ assert(
   acpx.version === report.runtimePluginVersion,
   `ACPX version ${acpx.version} does not match runtime plugin version ${report.runtimePluginVersion}`,
 );
+
+verifyNpmPackageLockEvidenceAssets({ locks, generatedDir, sourceInfo });

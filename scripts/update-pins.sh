@@ -117,6 +117,9 @@ validate_runtime_plugin_locks() {
   if ! OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR="$runtime_plugin_lock_dir" \
     OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON="$locks_json" \
     OPENCLAW_SOURCE_INFO_PATH="$source_file" \
+    OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1 \
+    nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
+    nixpkgs#nodejs_22 nixpkgs#unzip -c \
     node "$repo_root/nix/scripts/check-openclaw-runtime-plugin-locks.mjs"; then
     rm -f "$locks_json"
     return 1

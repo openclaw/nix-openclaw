@@ -6,9 +6,11 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   releaseTag, releaseVersion, releaseRev, version, sri,
-  jsonText, sha256, packageLock, tempDir, writeJson,
+  jsonText, sha256, packageLock, tempDir, writeJson, evidenceReport,
 } from "./openclaw-runtime-plugin-package-locks.fixtures.mjs";
-import { dependencyEvidenceAssetName, dependencyEvidenceAssetUrl } from "./openclaw-runtime-plugin-package-locks.mjs";
+import {
+  dependencyEvidenceAssetName, dependencyEvidenceAssetUrl, verifyNpmPackageLockEvidenceAssets,
+} from "./openclaw-runtime-plugin-package-locks.mjs";
 
 const script = fileURLToPath(new URL("./check-openclaw-runtime-plugin-locks.mjs", import.meta.url));
 
@@ -53,10 +55,103 @@ function fixture(t) {
         ...process.env, OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR: directory,
         OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON: locksPath, OPENCLAW_SOURCE_INFO_PATH: sourceInfoPath,
         OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE: allow,
+        OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET: "",
       } });
     },
   };
 }
+
+function verificationFixture(t) {
+  const data = fixture(t);
+  const published = { ...evidenceReport(), ...data.locks.acpx.npmPackageLockEvidence };
+  const options = {
+    locks: data.locks, generatedDir: data.directory, verifyAssets: true,
+    sourceInfo: { releaseTag, releaseVersion, rev: releaseRev },
+  };
+  return { ...data, published, options };
+}
+
+test("release verification loads the pinned asset once and explicitly disables ZIP overrides", (t) => {
+  const { locks, published, options } = verificationFixture(t);
+  locks.second = { ...locks.acpx, id: "second" };
+  let loads = 0;
+  verifyNpmPackageLockEvidenceAssets(options, { loadEvidence: (input) => {
+    assert.deepEqual(input, { releaseTag, releaseVersion, releaseRev, overrideZipPath: "" });
+    loads += 1;
+    return published;
+  } });
+  assert.equal(loads, 1);
+});
+
+test("release verification is enabled only by the exact env value 1", (t) => {
+  const { published, options } = verificationFixture(t);
+  delete options.verifyAssets;
+  const oldValue = process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET;
+  t.after(() => {
+    if (oldValue === undefined) delete process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET;
+    else process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET = oldValue;
+  });
+  let loads = 0;
+  const loader = { loadEvidence: () => { loads += 1; return published; } };
+  for (const value of ["", "0", "true"]) {
+    process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET = value;
+    verifyNpmPackageLockEvidenceAssets(options, loader);
+  }
+  assert.equal(loads, 0);
+  process.env.OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET = "1";
+  verifyNpmPackageLockEvidenceAssets(options, loader);
+  assert.equal(loads, 1);
+});
+
+test("asset verification leaves override records to the existing structural gate", (t) => {
+  const { locks, options } = verificationFixture(t);
+  locks.acpx.npmPackageLockEvidence.source = "override";
+  verifyNpmPackageLockEvidenceAssets(options, { loadEvidence: () => assert.fail("must not fetch override evidence") });
+});
+
+test("a relabeled override passes pure checks but fails published lock verification", (t) => {
+  const { directory, locks, run, published, options } = verificationFixture(t);
+  const altered = packageLock();
+  altered.packages["node_modules/acpx"].version = "1.0.2";
+  const text = jsonText(altered);
+  fs.writeFileSync(path.join(directory, "acpx.package-lock.json"), text);
+  locks.acpx.npmPackageLockSha256 = sha256(text);
+  const pure = run();
+  assert.equal(pure.status, 0, pure.stderr);
+  assert.throws(() => verifyNpmPackageLockEvidenceAssets(options, { loadEvidence: () => published }),
+    /published evidence lockSha256 mismatch/);
+});
+
+for (const [label, mutate, pattern] of [
+  ["asset hash", ({ published }) => { published.assetNixHash = "different"; }, /assetNixHash mismatch/],
+  ["asset URL", ({ published }) => { published.assetUrl = "different"; }, /assetUrl mismatch/],
+  ["package version", ({ published }) => { published.packages[0].version = "different"; }, /is missing @openclaw\/acpx/],
+  ["sidecar bytes", ({ directory }) => {
+    fs.appendFileSync(path.join(directory, "acpx.package-lock.json"), "\n");
+  }, /sidecar bytes differ/],
+  ["second lock digest", ({ locks }) => {
+    locks.second = { ...locks.acpx, id: "second", npmPackageLockSha256: "different" };
+  }, /lock second published evidence lockSha256 mismatch/],
+]) {
+  test(`release verification rejects mismatched ${label}`, (t) => {
+    const data = verificationFixture(t);
+    mutate(data);
+    assert.throws(() => verifyNpmPackageLockEvidenceAssets(data.options, { loadEvidence: () => data.published }), pattern);
+  });
+}
+
+test("release verification fails loudly when the asset or npm report is missing", (t) => {
+  const { options } = verificationFixture(t);
+  assert.throws(() => verifyNpmPackageLockEvidenceAssets(options, { loadEvidence: () => null }),
+    /published npm package-lock evidence asset or report is missing/);
+});
+
+test("release verification propagates download failures", (t) => {
+  const { options } = verificationFixture(t);
+  assert.throws(() => verifyNpmPackageLockEvidenceAssets(options, {
+    loadEvidence: () => { throw new Error("HTTP error 503"); },
+  }), /HTTP error 503/);
+});
 
 test("checker accepts release evidence and gates override evidence explicitly", (t) => {
   const { locks, run } = fixture(t);
