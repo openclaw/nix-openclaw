@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { createNpmPackageLockMaterializer } from "./openclaw-runtime-plugin-package-locks.mjs";
 import {
   defaultCatalogVersion,
   resolveRuntimePluginVersion,
@@ -657,19 +658,22 @@ function computeNpmDepsHash(shrinkwrapPath) {
   return hash;
 }
 
-function prepareShrinkwrappedPackage(packageRoot, artifact) {
+function prepareLockedPackage(packageRoot, artifact, dependencyMode = "shrinkwrap", packageLockFile = "") {
   run(process.execPath, [prepareNpmScriptPath], {
     cwd: packageRoot,
     env: {
       ...process.env,
-      OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE: "shrinkwrap",
+      OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE: dependencyMode,
+      OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE: packageLockFile,
       OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME: artifact.packageName,
       OPENCLAW_RUNTIME_PLUGIN_VERSION: artifact.version,
     },
   });
 }
 
-function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
+function probeLockMaterialization(row, artifact, npmDepsHash, dependencyMode = "shrinkwrap", packageLockFile = "") {
+  const packageLockEnv = packageLockFile
+    ? `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = ${packageLockFile};` : "";
   const safeProbeName = attrNameForId(row.id);
   const expr = `
     let
@@ -700,7 +704,8 @@ function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
           sourceRoot = "package";
           hash = ${nixString(npmDepsHash)};
           nativeBuildInputs = [ pkgs.nodejs_22 ];
-          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = ${nixString(dependencyMode)};
+          ${packageLockEnv}
           OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = ${nixString(artifact.packageName)};
           OPENCLAW_RUNTIME_PLUGIN_VERSION = ${nixString(artifact.version)};
           postPatch = ''
@@ -719,14 +724,15 @@ function probeShrinkwrapMaterialization(row, artifact, npmDepsHash) {
           OPENCLAW_RUNTIME_PLUGIN_ID = ${nixString(row.id)};
           OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = ${nixString(artifact.packageName)};
           OPENCLAW_RUNTIME_PLUGIN_VERSION = ${nixString(artifact.version)};
-          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = ${nixString(dependencyMode)};
+          ${packageLockEnv}
         };
         postPatch = ''
           ${"\${pkgs.nodejs_22}"}/bin/node ${"\${prepareNpmScript}"}
         '';
         installPhase = ''
           mkdir -p "$out"
-          cp package.json npm-shrinkwrap.json "$out"/
+          cp package.json ${dependencyMode === "package-lock" ? "package-lock.json" : "npm-shrinkwrap.json"} "$out"/
         '';
       }
   `;
@@ -757,6 +763,7 @@ function desiredGeneratedFiles(locks, report) {
       path.join(outputDir, `${lock.attrName}.nix`),
       renderLock(lock),
     ]),
+    ...[...packageLocks.generatedFiles].map(([file, text]) => [path.join(outputDir, file), text]),
     [defaultOutputPath, renderDefault(locks)],
     [reportOutputPath, stableJson(report)],
   ]);
@@ -768,7 +775,7 @@ function existingGeneratedFiles() {
   }
   return fs
     .readdirSync(outputDir)
-    .filter((entry) => entry === "report.json" || entry.endsWith(".nix"))
+    .filter((entry) => entry === "report.json" || entry.endsWith(".nix") || entry.endsWith(".package-lock.json"))
     .map((entry) => path.join(outputDir, entry));
 }
 
@@ -1067,18 +1074,24 @@ function dependencyModeForArtifact(
   }
 
   if (!shrinkwrap) {
+    const result = packageLocks.materialize({
+      artifact, packageRoot, attrName: attrNameForId(row.id),
+      probe: (hash, lockFile) => probeLockMaterialization(row, artifact, hash, "package-lock", lockFile),
+      onFailure: (reason, error) => ({ skipped: skip(row, reason, briefError(error)) }),
+    });
+    if (result) return result;
     return {
       skipped: skip(
         row,
         "runtime-dependencies-without-shrinkwrap",
-        "package has runtime dependencies but no npm-shrinkwrap.json or bundled node_modules",
+        "package has runtime dependencies but no npm-shrinkwrap.json, bundled node_modules, or upstream npm package-lock evidence",
       ),
     };
   }
 
   const shrinkwrapPath = path.join(packageRoot, "npm-shrinkwrap.json");
   try {
-    prepareShrinkwrappedPackage(packageRoot, artifact);
+    prepareLockedPackage(packageRoot, artifact);
   } catch (error) {
     return {
       skipped: skip(row, "shrinkwrap-prepare-failed", briefError(error)),
@@ -1095,7 +1108,7 @@ function dependencyModeForArtifact(
   }
 
   try {
-    probeShrinkwrapMaterialization(row, artifact, npmDepsHash);
+    probeLockMaterialization(row, artifact, npmDepsHash);
   } catch (error) {
     return {
       skipped: skip(row, "shrinkwrap-materialization-failed", briefError(error)),
@@ -1218,8 +1231,7 @@ async function buildArtifactLock(row, artifact) {
       npmIntegrity: artifact.npmIntegrity,
       npmShasum: artifact.npmShasum,
       nixHash: artifact.nixHash,
-      dependencyMode: dependencyResult.dependencyMode,
-      npmDepsHash: dependencyResult.npmDepsHash,
+      ...dependencyResult,
       manifestId: manifest.id,
       openclawCompat,
       peerOpenClaw,
@@ -1305,6 +1317,10 @@ const runtimePluginVersion = readSourceField("runtimePluginVersion");
 const releaseTag = readSourceField("releaseTag");
 const pinnedRev = readSourceField("rev");
 const pinnedHash = readSourceField("hash");
+const packageLocks = createNpmPackageLockMaterializer({
+  releaseTag, releaseVersion, releaseRev: pinnedRev,
+  prepare: prepareLockedPackage, computeNpmDepsHash,
+});
 const openclawSourcePath = resolveOpenClawSourcePath();
 const taggedPackageVersion = JSON.parse(
   fs.readFileSync(path.join(openclawSourcePath, "package.json"), "utf8"),

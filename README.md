@@ -136,16 +136,20 @@ Do not put bare package names or unprefixed `@scope/package` strings in
 
 ### Dependency Rule
 
-The rule is simple: if a plugin has runtime npm dependencies, it must publish
-either bundled `node_modules` or `npm-shrinkwrap.json`. No bundled deps and no
-shrinkwrap means no Nix package.
+If a plugin has runtime npm dependencies, it must publish bundled
+`node_modules`, `npm-shrinkwrap.json`, or, for supported OpenClaw catalog
+plugins, upstream npm `package-lock.json` release evidence bound to the pinned
+release SHA. Without one of these, there is no reproducible Nix package.
 
 Regular OpenClaw can solve npm dependencies during `openclaw plugins install`.
 nix-openclaw cannot do a mutable dependency solve during `home-manager switch`.
 If a package has `npm-shrinkwrap.json`, nix-openclaw can replay that dependency
-graph with `npmDepsHash`. If it bundles `node_modules`, nix-openclaw validates
-and copies the bundled deps. If it has neither, ask the plugin author to publish
-shrinkwrap or bundled runtime deps.
+graph with `npmDepsHash`. For lockless OpenClaw catalog plugins, the pin updater
+can instead select the exact package name and version from the upstream
+`openclaw-<version>-dependency-evidence.zip` asset, record its lock and hashes,
+and replay it during the Nix build. If a plugin bundles `node_modules`,
+nix-openclaw validates and copies the bundled deps. Other plugin authors must
+publish shrinkwrap or bundled runtime deps.
 
 ### npm and ClawHub Sources
 

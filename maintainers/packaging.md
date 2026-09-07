@@ -37,6 +37,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - QMD is the Nix-supported local memory backend. Keep `qmd` internal to the OpenClaw runtime PATH, and pull it into the closure only when users opt in with upstream config.
 - ACPX compatibility files are staged at build time from locked package inputs,
   not installed or repaired by npm at runtime.
+- Lockless upstream runtime plugins are materialized from upstream npm package-lock evidence bound to the pinned release SHA and exact package name/version. Preserve the evidence lock bytes and hashes; normalize only build copies. Nothing resolves dependencies from live registry ranges. Local evidence overrides require explicit maintainer validation and cannot pass pure CI.
 - Keep files under 400 lines unless a maintainer explicitly accepts the larger file.
 
 ## Investigations

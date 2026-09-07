@@ -199,7 +199,7 @@ function reachablePackageRoots(pluginRoot, rootPackageJson) {
   return reachable;
 }
 
-function pruneExtraneousShrinkwrapPackages(pluginRoot, rootPackageJson) {
+function pruneExtraneousLockedPackages(pluginRoot, rootPackageJson) {
   const nodeModulesDir = path.join(pluginRoot, "node_modules");
   if (!fs.existsSync(nodeModulesDir)) {
     return;
@@ -283,8 +283,8 @@ const hasRuntimeDependencies =
     ? expectedHasRuntimeDependencies === "1"
     : Object.keys(dependencies).length > 0 || Object.keys(optionalDependencies).length > 0;
 
-if (dependencyMode === "shrinkwrap") {
-  pruneExtraneousShrinkwrapPackages(out, packageJson);
+if (["shrinkwrap", "package-lock"].includes(dependencyMode)) {
+  pruneExtraneousLockedPackages(out, packageJson);
   removeNodeModulesBinDirs(path.join(out, "node_modules"));
 }
 
@@ -361,7 +361,7 @@ if (hasRuntimeDependencies) {
       );
     } else {
       fail(
-        `runtime plugin ${expectedId} has runtime dependencies but does not bundle node_modules; publish npm-shrinkwrap.json and set npmDepsHash = lib.fakeHash`,
+        `runtime plugin ${expectedId} has runtime dependencies but no bundled node_modules, npm-shrinkwrap.json, or upstream npm package-lock evidence; publish shrinkwrap and set npmDepsHash = lib.fakeHash, or regenerate the catalog locks once upstream ships evidence`,
       );
     }
   }
@@ -379,9 +379,10 @@ if (hasRuntimeDependencies) {
         }
       }
     }
-  } else if (dependencyMode === "shrinkwrap") {
-    if (!fs.existsSync(path.join(out, "npm-shrinkwrap.json"))) {
-      fail(`runtime plugin ${expectedId} has runtime dependencies but no npm-shrinkwrap.json`);
+  } else if (["shrinkwrap", "package-lock"].includes(dependencyMode)) {
+    const lockName = dependencyMode === "package-lock" ? "package-lock.json" : "npm-shrinkwrap.json";
+    if (!fs.existsSync(path.join(out, lockName))) {
+      fail(`runtime plugin ${expectedId} has runtime dependencies but no ${lockName}`);
     }
     for (const dependencyName of Object.keys(packageJson.dependencies ?? {}).sort()) {
       const dependencyRoot = packageRootForName(dependencyName);
@@ -390,7 +391,7 @@ if (hasRuntimeDependencies) {
       }
     }
     // Optional dependencies may be omitted by npm for the current platform.
-    // The generator still requires shrinkwrap whenever optional deps exist.
+    // The generator still requires a lock whenever optional deps exist.
   } else {
     fail(`runtime plugin ${expectedId} has invalid dependency mode ${dependencyMode}`);
   }

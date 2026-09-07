@@ -63,7 +63,7 @@ pin_file_paths() {
   {
     git -C "$repo_root" ls-files -- "$runtime_plugin_lock_rel_dir"
     if [[ -d "$runtime_plugin_lock_dir" ]]; then
-      find "$runtime_plugin_lock_dir" -maxdepth 1 -type f \( -name '*.nix' -o -name 'report.json' \) -print \
+      find "$runtime_plugin_lock_dir" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.package-lock.json' -o -name 'report.json' \) -print \
         | sed "s|^$repo_root/||"
     fi
   } | sort -u
@@ -103,7 +103,7 @@ refresh_npm_wrapper_locks() {
 
 refresh_runtime_plugin_locks() {
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_22 -c \
+    nixpkgs#nodejs_22 nixpkgs#unzip -c \
     node "$repo_root/nix/scripts/update-openclaw-runtime-plugin-locks.mjs"
 }
 
