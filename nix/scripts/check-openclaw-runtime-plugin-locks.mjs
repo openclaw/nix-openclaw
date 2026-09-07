@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
+import { verifyNpmPackageLockEvidenceAssets } from "./openclaw-runtime-plugin-package-locks.mjs";
 
 const generatedDir = process.env.OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR;
 if (!generatedDir) {
@@ -161,7 +163,7 @@ for (const row of supported) {
   assert(row.selectedSource === "npm" || row.selectedSource === "clawhub", `supported row ${row.id} has invalid source`);
   assert(row.packageName, `supported row ${row.id} has no packageName`);
   assert(
-    row.dependencyMode === "none" || row.dependencyMode === "bundled" || row.dependencyMode === "shrinkwrap",
+    ["none", "bundled", "shrinkwrap", "package-lock"].includes(row.dependencyMode),
     `supported row ${row.id} has invalid dependencyMode`,
   );
   assert(!/[~^*]|latest/.test(row.version), `supported row ${row.id} has a floating version`);
@@ -189,11 +191,29 @@ for (const row of supported) {
   assert(lockSourceIsValid(lock), `lock ${row.id} has invalid source metadata`);
   assert(!lock.npmIntegrity || /^(sha512|sha384|sha256)-/.test(lock.npmIntegrity), `lock ${row.id} has invalid npm SRI integrity`);
   assert(/^sha256-/.test(lock.nixHash), `lock ${row.id} has missing Nix hash`);
-  if (lock.dependencyMode === "shrinkwrap") {
+  if (["shrinkwrap", "package-lock"].includes(lock.dependencyMode)) {
     assert(/^sha256-/.test(lock.npmDepsHash), `lock ${row.id} has missing npmDepsHash`);
-    assert((lock.bundledPackageRoots ?? []).length === 0, `lock ${row.id} shrinkwrap mode should not list bundled roots`);
+    assert((lock.bundledPackageRoots ?? []).length === 0, `lock ${row.id} ${lock.dependencyMode} mode should not list bundled roots`);
   } else {
     assert(!lock.npmDepsHash, `lock ${row.id} has unexpected npmDepsHash`);
+  }
+  if (lock.dependencyMode === "package-lock") {
+    assert(/^sha256-[A-Za-z0-9+/]{43}=$/.test(lock.npmDepsHash), `lock ${row.id} has invalid npmDepsHash SRI`);
+    assert(typeof lock.npmPackageLockFile === "string"
+      && /^[A-Za-z0-9_-]+\.package-lock\.json$/.test(lock.npmPackageLockFile),
+    `lock ${row.id} has invalid npmPackageLockFile`);
+    const lockPath = path.join(generatedDir, lock.npmPackageLockFile);
+    assert(fs.existsSync(lockPath) && fs.lstatSync(lockPath).isFile(), `lock ${row.id} package-lock file is missing`);
+    const digest = crypto.createHash("sha256").update(fs.readFileSync(lockPath)).digest("hex");
+    assert(digest === lock.npmPackageLockSha256, `lock ${row.id} npmPackageLockSha256 mismatch`);
+    const evidence = lock.npmPackageLockEvidence;
+    assert(typeof evidence?.assetUrl === "string" && evidence.assetUrl.startsWith(
+      `https://github.com/openclaw/openclaw/releases/download/${sourceInfo.releaseTag}/`,
+    ), `lock ${row.id} has invalid package-lock evidence assetUrl`);
+    assert(evidence?.sourceSha === sourceInfo.rev, `lock ${row.id} package-lock evidence sourceSha mismatch`);
+    assert(evidence?.source === "release" || (evidence?.source === "override"
+      && process.env.OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE === "1"),
+    `lock ${row.id} package-lock evidence source must be release (maintainer override requires OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1)`);
   }
   assert(!lock.minHostVersion || satisfiesVersionRange(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
   assert(!lock.openclawCompat || satisfiesVersionRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
@@ -216,3 +236,5 @@ assert(
   acpx.version === report.runtimePluginVersion,
   `ACPX version ${acpx.version} does not match runtime plugin version ${report.runtimePluginVersion}`,
 );
+
+verifyNpmPackageLockEvidenceAssets({ locks, generatedDir, sourceInfo });

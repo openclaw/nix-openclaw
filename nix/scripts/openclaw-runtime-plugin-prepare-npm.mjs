@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -25,15 +26,15 @@ function fail(message) {
   throw new Error(message);
 }
 
-function isUnsupportedResolvedSource(resolved) {
+export function isUnsupportedResolvedSource(resolved) {
   return /^(file:|workspace:|git\+|git:|ssh:|https:\/\/github\.com\/)/.test(resolved);
 }
 
-function dependencyPackagePath(parentPath, dependencyName) {
+function dependencyPackagePath(lock, parentPath, dependencyName) {
   let current = parentPath;
   while (true) {
     const candidate = `${current ? `${current}/` : ""}node_modules/${dependencyName}`;
-    if (shrinkwrap.packages?.[candidate]) {
+    if (lock.packages?.[candidate]) {
       return candidate;
     }
     if (!current) {
@@ -52,17 +53,17 @@ function dependencyPackagePath(parentPath, dependencyName) {
   }
 }
 
-function normalizeLockedDependencySpecs() {
+export function normalizeLockedDependencySpecs(lock) {
   let changed = false;
-  for (const [packagePath, entry] of Object.entries(shrinkwrap.packages ?? {})) {
+  for (const [packagePath, entry] of Object.entries(lock.packages ?? {})) {
     for (const field of ["dependencies", "optionalDependencies"]) {
       const dependencies = entry[field];
       if (!dependencies || typeof dependencies !== "object" || Array.isArray(dependencies)) {
         continue;
       }
       for (const dependencyName of Object.keys(dependencies).sort()) {
-        const resolvedPath = dependencyPackagePath(packagePath, dependencyName);
-        const lockedVersion = resolvedPath ? shrinkwrap.packages?.[resolvedPath]?.version : null;
+        const resolvedPath = dependencyPackagePath(lock, packagePath, dependencyName);
+        const lockedVersion = resolvedPath ? lock.packages?.[resolvedPath]?.version : null;
         if (!lockedVersion || dependencies[dependencyName] === lockedVersion) {
           continue;
         }
@@ -74,64 +75,80 @@ function normalizeLockedDependencySpecs() {
   return changed;
 }
 
-const dependencyMode = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE");
-if (dependencyMode !== "shrinkwrap") {
-  process.exit(0);
-}
-
-const packageJsonPath = path.resolve("package.json");
-const shrinkwrapPath = path.resolve("npm-shrinkwrap.json");
-
-if (!fs.existsSync(packageJsonPath)) {
-  fail("package.json missing from shrinkwrapped runtime plugin package root");
-}
-if (!fs.existsSync(shrinkwrapPath)) {
-  fail("npm-shrinkwrap.json missing from shrinkwrapped runtime plugin package root");
-}
-
-const packageJson = readJson(packageJsonPath);
-const shrinkwrap = readJson(shrinkwrapPath);
-const rootLock = shrinkwrap.packages?.[""];
-const expectedPackageName = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME") || packageJson.name;
-const expectedVersion = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_VERSION") || packageJson.version;
-
-if (packageJson.name !== expectedPackageName) {
-  fail(`package name mismatch: expected ${expectedPackageName}, got ${packageJson.name}`);
-}
-if (packageJson.version !== expectedVersion) {
-  fail(`package version mismatch: expected ${expectedVersion}, got ${packageJson.version}`);
-}
-if (![2, 3].includes(shrinkwrap.lockfileVersion)) {
-  fail(`unsupported npm-shrinkwrap.json lockfileVersion ${shrinkwrap.lockfileVersion}`);
-}
-if (rootLock?.name && rootLock.name !== expectedPackageName) {
-  fail(`shrinkwrap root name mismatch: expected ${expectedPackageName}, got ${rootLock.name}`);
-}
-if (rootLock?.version && rootLock.version !== expectedVersion) {
-  fail(`shrinkwrap root version mismatch: expected ${expectedVersion}, got ${rootLock.version}`);
-}
-
-for (const [packagePath, entry] of Object.entries(shrinkwrap.packages ?? {})) {
-  if (packagePath === "") {
-    continue;
+function prepare() {
+  const dependencyMode = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE");
+  if (!["shrinkwrap", "package-lock"].includes(dependencyMode)) {
+    return;
   }
-  if (entry.dev === true) {
-    fail(`shrinkwrap contains dev package ${packagePath}`);
+
+  const packageJsonPath = path.resolve("package.json");
+  const lockName = dependencyMode === "package-lock" ? "package-lock.json" : "npm-shrinkwrap.json";
+  const lockPath = path.resolve(lockName);
+  if (!fs.existsSync(packageJsonPath)) {
+    fail(`package.json missing from ${dependencyMode} runtime plugin package root`);
   }
-  if (entry.link === true) {
-    fail(`shrinkwrap contains linked package ${packagePath}`);
+  if (dependencyMode === "package-lock") {
+    const evidenceLock = requiredEnv("OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE");
+    for (const existing of ["package-lock.json", "npm-shrinkwrap.json"]) {
+      if (fs.existsSync(existing)) {
+        fail(`cannot inject package-lock evidence: package already contains ${existing}`);
+      }
+    }
+    fs.copyFileSync(evidenceLock, lockPath);
+    // Nix store inputs are read-only; the build copy must allow normalization.
+    fs.chmodSync(lockPath, 0o644);
   }
-  if (typeof entry.resolved === "string" && isUnsupportedResolvedSource(entry.resolved)) {
-    fail(`shrinkwrap contains unsupported resolved source for ${packagePath}: ${entry.resolved}`);
+  if (!fs.existsSync(lockPath)) {
+    fail(`${lockName} missing from ${dependencyMode} runtime plugin package root`);
+  }
+
+  const packageJson = readJson(packageJsonPath);
+  const lock = readJson(lockPath);
+  const rootLock = lock.packages?.[""];
+  const expectedPackageName = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME") || packageJson.name;
+  const expectedVersion = optionalEnv("OPENCLAW_RUNTIME_PLUGIN_VERSION") || packageJson.version;
+
+  if (packageJson.name !== expectedPackageName) {
+    fail(`package name mismatch: expected ${expectedPackageName}, got ${packageJson.name}`);
+  }
+  if (packageJson.version !== expectedVersion) {
+    fail(`package version mismatch: expected ${expectedVersion}, got ${packageJson.version}`);
+  }
+  if (![2, 3].includes(lock.lockfileVersion)) {
+    fail(`unsupported ${lockName} lockfileVersion ${lock.lockfileVersion}`);
+  }
+  if (rootLock?.name && rootLock.name !== expectedPackageName) {
+    fail(`${dependencyMode} root name mismatch: expected ${expectedPackageName}, got ${rootLock.name}`);
+  }
+  if (rootLock?.version && rootLock.version !== expectedVersion) {
+    fail(`${dependencyMode} root version mismatch: expected ${expectedVersion}, got ${rootLock.version}`);
+  }
+
+  for (const [packagePath, entry] of Object.entries(lock.packages ?? {})) {
+    if (packagePath === "") {
+      continue;
+    }
+    if (entry.dev === true) {
+      fail(`${dependencyMode} contains dev package ${packagePath}`);
+    }
+    if (entry.link === true) {
+      fail(`${dependencyMode} contains linked package ${packagePath}`);
+    }
+    if (typeof entry.resolved === "string" && isUnsupportedResolvedSource(entry.resolved)) {
+      fail(`${dependencyMode} contains unsupported resolved source for ${packagePath}: ${entry.resolved}`);
+    }
+  }
+
+  const lockChanged = normalizeLockedDependencySpecs(lock);
+  if (packageJson.devDependencies) {
+    delete packageJson.devDependencies;
+    writeJson(packageJsonPath, packageJson);
+  }
+  if (lockChanged) {
+    writeJson(lockPath, lock);
   }
 }
 
-const shrinkwrapChanged = normalizeLockedDependencySpecs();
-
-if (packageJson.devDependencies) {
-  delete packageJson.devDependencies;
-  writeJson(packageJsonPath, packageJson);
-}
-if (shrinkwrapChanged) {
-  writeJson(shrinkwrapPath, shrinkwrap);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  prepare();
 }

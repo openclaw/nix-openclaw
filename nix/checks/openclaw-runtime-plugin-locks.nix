@@ -23,11 +23,17 @@ stdenvNoCC.mkDerivation {
     OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR = "${../generated/openclaw-runtime-plugins}";
     OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON = "${generatedLocksJson}";
     OPENCLAW_SOURCE_INFO_PATH = "${../sources/openclaw-source.nix}";
+    # Pure CI evaluation cannot opt into local release-evidence overrides.
+    OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE =
+      builtins.getEnv "OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE";
   };
 
   doCheck = true;
   checkPhase = ''
     ${nodejs_22}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-version.test.mjs
+    ${nodejs_22}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-package-locks.test.mjs \
+      ${scriptsDir}/openclaw-runtime-plugin-prepare-npm.test.mjs \
+      ${scriptsDir}/check-openclaw-runtime-plugin-locks.test.mjs
     ${nodejs_22}/bin/node ${scriptsDir}/check-openclaw-runtime-plugin-locks.mjs
   '';
   installPhase = "${../scripts/empty-install.sh}";

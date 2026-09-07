@@ -63,7 +63,11 @@ let
       throw "runtime plugin ${lock.id} must define tarballUrl, sourceUrl, or sourceSpec";
   dependencyMode =
     lock.dependencyMode or (if (lock.npmDepsHash or null) != null then "shrinkwrap" else "auto");
-  isShrinkwrap = dependencyMode == "shrinkwrap";
+  isLocked = builtins.elem dependencyMode [ "shrinkwrap" "package-lock" ];
+  packageLockEnv = lib.optionalAttrs (dependencyMode == "package-lock") {
+    OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE =
+      "${../generated/openclaw-runtime-plugins}/${lock.npmPackageLockFile}";
+  };
   hasRuntimeDependencies =
     (lock.dependencies or { }) != { } || (lock.optionalDependencies or { }) != { };
   safeName = lib.replaceStrings [ "@" "/" ":" ] [ "" "-" "-" ] lock.id;
@@ -82,24 +86,24 @@ let
       nativeBuildInputs = [
         nodejs_22
       ]
-      ++ lib.optionals isShrinkwrap [
+      ++ lib.optionals isLocked [
         nodejs_22.python
         npmHooksForNode.npmConfigHook
       ]
-      ++ lib.optionals (isShrinkwrap && stdenvNoCC.hostPlatform.isDarwin) [ cctools ];
+      ++ lib.optionals (isLocked && stdenvNoCC.hostPlatform.isDarwin) [ cctools ];
 
-      npmInstallFlags = lib.optionals isShrinkwrap [
+      npmInstallFlags = lib.optionals isLocked [
         "--omit=dev"
         "--omit=peer"
         "--legacy-peer-deps"
       ];
 
-      npmRebuildFlags = lib.optionals isShrinkwrap [ "--ignore-scripts" ];
+      npmRebuildFlags = lib.optionals isLocked [ "--ignore-scripts" ];
 
       dontConfigure = true;
       dontBuild = true;
 
-      postPatch = lib.optionalString isShrinkwrap ''
+      postPatch = lib.optionalString isLocked ''
         ${nodejs_22}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
       '';
 
@@ -117,6 +121,7 @@ let
         OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
         OPENCLAW_RUNTIME_PLUGIN_LINK_PEER_OPENCLAW = if linkOpenClawPeer then "1" else "0";
       }
+      // packageLockEnv
       // lib.optionalAttrs linkOpenClawPeer {
         OPENCLAW_GATEWAY_PACKAGE = "${openclawPackage}";
       }
@@ -151,20 +156,20 @@ let
         platforms = platforms.darwin ++ platforms.linux;
       };
     }
-    // lib.optionalAttrs isShrinkwrap {
-      npmDeps = fetchNpmDeps {
+    // lib.optionalAttrs isLocked {
+      npmDeps = fetchNpmDeps ({
         name = "${packageName}-npm-deps";
         src = pluginSrc;
         sourceRoot = "package";
         hash = lock.npmDepsHash;
         nativeBuildInputs = [ nodejs_22 ];
-        OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = "shrinkwrap";
+        OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
         OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName or "";
         OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version or "";
         postPatch = ''
           ${nodejs_22}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
         '';
-      };
+      } // packageLockEnv);
     }
   );
 in
