@@ -31,6 +31,9 @@ let
       inherit major;
       pnpm = "${package.selectedPnpm}/bin/pnpm";
       version = package.selectedPnpm.version;
+      prePnpmInstall = writeShellScript "pnpm-${major}-pre-install" (
+        package.pnpmDeps.prePnpmInstall or ""
+      );
       preFixup = writeShellScript "pnpm-${major}-pre-fixup" package.pnpmDeps.preFixup;
       postInstall = writeShellScript "pnpm-${major}-post-install" (
         package.pnpmDeps.postInstall or ""

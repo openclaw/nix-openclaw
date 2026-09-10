@@ -59,6 +59,9 @@ function environment(root, contract) {
 function assertUnchanged(project) {
   assert.equal(fs.readFileSync(`${project.cwd}/pnpm-lock.yaml`, "utf8"), project.lock);
   assert.equal(fs.readFileSync(`${project.cwd}/pnpm-workspace.yaml`, "utf8"), policy);
+  if (project.registryConfig !== undefined) {
+    assert.equal(fs.readFileSync(`${project.cwd}/.npmrc`, "utf8"), project.registryConfig);
+  }
 }
 
 test("pnpm source producer and offline consumer contracts", async (t) => {
@@ -121,12 +124,41 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
     registry = `http://127.0.0.1:${server.address().port}/`;
 
     for (const contract of contracts) {
+      const versionEnv = environment(`${tmp}/version-${contract.major}`, contract);
       const version = await run(contract.pnpm, ["--version"], {
-        cwd: tmp,
-        env: environment(`${tmp}/version-${contract.major}`, contract),
+        cwd: versionEnv.HOME,
+        env: versionEnv,
       });
       assert.equal(version.stdout.trim(), contract.version);
-      for (const kind of ["standalone", "bootstrap", "env-only", "third-document", "young"]) {
+      for (const override of [undefined, "", "https://registry.example.test/custom"]) {
+        await t.test(
+          `pnpm ${contract.major} registry getter ${JSON.stringify(override)}`,
+          async () => {
+            const env = { ...versionEnv };
+            if (override !== undefined) env.NIX_NPM_REGISTRY = override;
+            const output = await run(
+              process.env.BASH,
+              [
+                "-ec",
+                'pnpm() { echo GETTER_CALLED >&2; return 73; }; . "$1"; printf "CONTINUED:%s\\n" "$NIX_NPM_REGISTRY"',
+                "bash",
+                contract.prePnpmInstall,
+              ],
+              { cwd: env.HOME, env, status: override ? 0 : 73 },
+            );
+            assert.equal(output.stdout, override ? `CONTINUED:${override}\n` : "");
+            assert.equal(output.stderr, override ? "" : "GETTER_CALLED\n");
+          },
+        );
+      }
+      for (const kind of [
+        "standalone",
+        "bootstrap",
+        "explicit-registry",
+        "env-only",
+        "third-document",
+        "young",
+      ]) {
         await t.test(`pnpm ${contract.major} producer ${kind}`, async (producerTest) => {
           const root = `${tmp}/${contract.major}-${kind}`;
           const cwd = `${root}/project`;
@@ -160,7 +192,7 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
           };
           const main = JSON.stringify(workspace) + "\n";
           const prefix = "---\n" + JSON.stringify(bootstrap) + "\n";
-          const lock = ["standalone", "young"].includes(kind)
+          const lock = ["standalone", "explicit-registry", "young"].includes(kind)
             ? main
             : kind === "env-only"
               ? prefix
@@ -175,19 +207,43 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
           );
           write(`${cwd}/pnpm-lock.yaml`, lock);
           write(`${cwd}/pnpm-workspace.yaml`, policy);
-          const project = { root, cwd, lock, env: environment(root, contract), contract };
-          const valid = ["standalone", "bootstrap"].includes(kind);
+          const expectedRegistry = kind === "explicit-registry" ? registry.slice(0, -1) : registry;
+          const configuredRegistry =
+            kind === "explicit-registry" ? `${registry}unused-default/` : registry;
+          const scopedRegistry = `${registry}scoped/`;
+          const registryConfig = `registry=${configuredRegistry}\n@fixture:registry=${scopedRegistry}\n`;
+          write(`${cwd}/.npmrc`, registryConfig);
+          const project = {
+            root,
+            cwd,
+            lock,
+            registryConfig,
+            env: environment(root, contract),
+            contract,
+          };
+          if (kind !== "standalone") {
+            project.env.NIX_NPM_REGISTRY = kind === "bootstrap" ? "" : expectedRegistry;
+          }
+          const valid = ["standalone", "bootstrap", "explicit-registry"].includes(kind);
           const output = await run(
-            contract.pnpm,
+            process.env.BASH,
             [
-              "install",
-              "--force",
-              "--ignore-scripts",
-              "--frozen-lockfile",
-              "--store-dir",
+              "-ec",
+              `
+pnpm config set reporter append-only
+pnpm config set store-dir "$2"
+. "$1"
+printf 'Effective registry: %s\\n' "\${NIX_NPM_REGISTRY-}"
+test "\${NIX_NPM_REGISTRY-}" = "$3"
+test "$(pnpm config get @fixture:registry)" = "$4"
+pnpm config list
+pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lockfile
+`,
+              "bash",
+              contract.prePnpmInstall,
               `${root}/store`,
-              "--registry",
-              registry,
+              expectedRegistry,
+              scopedRegistry,
             ],
             { ...project, status: valid ? 0 : 1 },
           );
@@ -202,6 +258,14 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
             return;
           }
           assert.match(output.stdout + output.stderr, /Lockfile passes supply-chain policies/);
+          await run(
+            "node",
+            [
+              "-e",
+              `if (require(${JSON.stringify(name)}) !== "registry-offline-ok") process.exit(1)`,
+            ],
+            project,
+          );
           const deps = `${root}/deps`;
           mkdir(deps);
           const env = { ...project.env, storePath: `${root}/store`, out: deps };

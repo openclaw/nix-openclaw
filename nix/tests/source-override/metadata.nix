@@ -158,6 +158,12 @@ let
       && (package.pnpmDeps.env.pnpm_config_trust_lockfile or null) == null
       && (package.pnpmDeps.env.PNPM_CONFIG_TRUST_LOCKFILE or null) == null
       && package.pnpmDeps.fetcherVersion == (if trusted then 4 else 3)
+      && (
+        if trusted then
+          (package.pnpmDeps.prePnpmInstall or "") != ""
+        else
+          !(package.pnpmDeps ? prePnpmInstall)
+      )
     )
     [
       "10"

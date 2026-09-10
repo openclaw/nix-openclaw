@@ -99,38 +99,43 @@ let
     "12"
   ];
 
-  pnpmDeps = fetchPnpmDeps {
-    pname = pnpmDepsPname;
-    inherit version;
-    src = resolvedSrc;
-    pnpm = selectedPnpm;
-    hash = if pnpmDepsHash != null then pnpmDepsHash else lib.fakeHash;
-    fetcherVersion = if pnpmNeedsVerifiedStore then 4 else 3;
-    preFixup = lib.optionalString pnpmNeedsVerifiedStore ''
-      expectedIntegrities="$(mktemp)"
-      actualIntegrities="$(mktemp)"
-      missingIntegrities="$(mktemp)"
-      expectedPackages="$(mktemp)"
-      # Frozen install validates the stream; its last document owns workspace dependencies.
-      yq -sr 'last | .packages | to_entries[] | select(.value.resolution.integrity) | [.key, .value.resolution.integrity] | @tsv' pnpm-lock.yaml > "$expectedPackages"
-      cut -f2 "$expectedPackages" | sort -u > "$expectedIntegrities"
-      ${nodejs_24}/bin/node --no-warnings ${../scripts/list-pnpm-store-integrities.js} "$storePath" | sort -u > "$actualIntegrities"
-      comm -23 "$expectedIntegrities" "$actualIntegrities" > "$missingIntegrities"
-      if [ -s "$missingIntegrities" ]; then
-        echo "ERROR: pnpm store is missing package tarballs from pnpm-lock.yaml:" >&2
-        grep -F -f "$missingIntegrities" "$expectedPackages" >&2
-        exit 1
-      fi
+  pnpmDeps = fetchPnpmDeps (
+    {
+      pname = pnpmDepsPname;
+      inherit version;
+      src = resolvedSrc;
+      pnpm = selectedPnpm;
+      hash = if pnpmDepsHash != null then pnpmDepsHash else lib.fakeHash;
+      fetcherVersion = if pnpmNeedsVerifiedStore then 4 else 3;
+      preFixup = lib.optionalString pnpmNeedsVerifiedStore ''
+        expectedIntegrities="$(mktemp)"
+        actualIntegrities="$(mktemp)"
+        missingIntegrities="$(mktemp)"
+        expectedPackages="$(mktemp)"
+        # Frozen install validates the stream; its last document owns workspace dependencies.
+        yq -sr 'last | .packages | to_entries[] | select(.value.resolution.integrity) | [.key, .value.resolution.integrity] | @tsv' pnpm-lock.yaml > "$expectedPackages"
+        cut -f2 "$expectedPackages" | sort -u > "$expectedIntegrities"
+        ${nodejs_24}/bin/node --no-warnings ${../scripts/list-pnpm-store-integrities.js} "$storePath" | sort -u > "$actualIntegrities"
+        comm -23 "$expectedIntegrities" "$actualIntegrities" > "$missingIntegrities"
+        if [ -s "$missingIntegrities" ]; then
+          echo "ERROR: pnpm store is missing package tarballs from pnpm-lock.yaml:" >&2
+          grep -F -f "$missingIntegrities" "$expectedPackages" >&2
+          exit 1
+        fi
 
-      ${nodejs_24}/bin/node --no-warnings ${../scripts/normalize-pnpm-store-index.js} "$storePath"
-    '';
-    npm_config_arch = pnpmArch;
-    npm_config_platform = pnpmPlatform;
-    nativeBuildInputs = [
-      git
-      nodejs_24
-    ];
-  };
+        ${nodejs_24}/bin/node --no-warnings ${../scripts/normalize-pnpm-store-index.js} "$storePath"
+      '';
+      npm_config_arch = pnpmArch;
+      npm_config_platform = pnpmPlatform;
+      nativeBuildInputs = [
+        git
+        nodejs_24
+      ];
+    }
+    // lib.optionalAttrs pnpmNeedsVerifiedStore {
+      prePnpmInstall = ". ${../scripts/pnpm-registry-default.sh}";
+    }
+  );
 
   envBase = {
     npm_config_arch = pnpmArch;
