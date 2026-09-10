@@ -978,6 +978,13 @@ programs.openclaw = {
 };
 ```
 
+`gatewayPath` builds use the selected source's declared pnpm major and package
+build command. Ownership patch profiles cover package versions `2026.7.1`
+(the `2026.7.1-2` source release) and `2026.9.3`. Other source versions require
+a maintainer-reviewed `sourceInfo.nixStorePluginOwnershipPatch` in the package
+override; unknown profiles and failed patches stop the build. Stable npm
+packaging is unchanged.
+
 ### Plugin collisions
 
 Plugins are keyed by their declared `name`. If two plugins declare the same name, the **last entry wins** (use this to override a prod plugin with a local dev one).

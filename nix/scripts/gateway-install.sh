@@ -57,7 +57,12 @@ copy_extension_manifests() {
 
 mkdir -p "$out/lib/openclaw" "$out/bin"
 
-set -- dist node_modules package.json
+set -- dist node_modules package.json openclaw.mjs
+# Older launchers inline this helper; declared runtime files must not be silently omitted.
+node_version_file="$(jq -r '.files[] | select(. == "node-version.mjs")' package.json)"
+if [ -n "$node_version_file" ]; then
+  set -- "$@" "$node_version_file"
+fi
 if [ -d dist-runtime ]; then
   set -- "$@" dist-runtime
 fi

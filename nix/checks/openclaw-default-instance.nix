@@ -593,13 +593,28 @@ let
   sourceOverrideEval = moduleEval {
     instances.dev = {
       enable = true;
-      gatewayPath = toString ../..;
+      gatewayPath = toString ../tests/source-override/fixture;
       gatewayPnpmDepsHash = lib.fakeHash;
     };
   };
   sourceOverrideConfig = generatedConfig sourceOverrideEval ".openclaw-dev/openclaw.json";
-  sourceOverrideCheck = builtins.deepSeq (requireNoAssertionFailures "source override" sourceOverrideEval) (
-    if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
+  sourceOverridePackage = builtins.head sourceOverrideEval.config.home.packages;
+  sourceOverrideCheck = builtins.deepSeq [
+    (requireNoAssertionFailures "source override" sourceOverrideEval)
+    (import ../tests/source-override/metadata.nix { inherit lib; })
+  ] (
+    if
+      sourceOverridePackage.pnpmMajor != "12"
+      || sourceOverridePackage.selectedPnpm.version != "12.3.4"
+      || sourceOverridePackage.version != "2026.9.3"
+      || sourceOverridePackage.pinnedRev != null
+      || sourceOverridePackage.sourceInfo ? rev
+      || sourceOverridePackage.sourceInfo ? gatewayNpmDepsHash
+      || sourceOverridePackage.sourceInfo.nixStorePluginOwnershipPatch
+      != ../patches/allow-nix-store-plugin-ownership-cached.patch
+    then
+      throw "Source override instance inherited stable package metadata."
+    else if (((sourceOverrideConfig.gateway or { }).mode or null) != "local") then
       throw "Source override instance lost gateway.mode."
     else if pkgs.stdenv.hostPlatform.isLinux then
       let

@@ -47,6 +47,7 @@ let
     "applySkipPluginAutoEnableNixModePatch"
     "applyNixStorePluginOwnershipPatch"
     "publicSurfaceHardlinksPatch"
+    "nixStorePluginOwnershipPatch"
     "fsSafeSource"
   ];
 
@@ -54,8 +55,21 @@ let
   pnpmPlatform = stdenv.hostPlatform.node.platform;
   pnpmArch = stdenv.hostPlatform.node.arch;
 
-  revShort = lib.substring 0 8 sourceInfo.rev;
-  version = "unstable-${revShort}";
+  hasSourceOverride = src != null || gatewaySrc != null;
+  sourceMetadata =
+    if hasSourceOverride then
+      import ./openclaw-gateway-source-info.nix {
+        inherit sourceInfo;
+        manifest = builtins.fromJSON (builtins.readFile "${resolvedSrc}/package.json");
+        supportedPnpmMajors = builtins.attrNames pnpmByMajor;
+      }
+    else
+      sourceInfo;
+  version =
+    if hasSourceOverride then
+      sourceMetadata.releaseVersion
+    else
+      "unstable-${lib.substring 0 8 sourceInfo.rev}";
 
   resolvedSrc =
     if src != null then
@@ -65,12 +79,15 @@ let
     else
       fetchFromGitHub sourceFetch;
 
-  fsSafeSource = if sourceInfo ? fsSafeSource then fetchFromGitHub sourceInfo.fsSafeSource else null;
+  fsSafeSource =
+    if sourceMetadata ? fsSafeSource then fetchFromGitHub sourceMetadata.fsSafeSource else null;
   publicSurfaceHardlinksPatch =
-    sourceInfo.publicSurfaceHardlinksPatch or ../patches/allow-package-public-surface-hardlinks.patch;
+    sourceMetadata.publicSurfaceHardlinksPatch or ../patches/allow-package-public-surface-hardlinks.patch;
+  nixStorePluginOwnershipPatch =
+    sourceMetadata.nixStorePluginOwnershipPatch or ../patches/allow-nix-store-plugin-ownership.patch;
 
   nodeAddonApi = import ../packages/node-addon-api.nix { inherit stdenv fetchurl; };
-  pnpmMajor = toString (sourceInfo.pnpmMajor or "10");
+  pnpmMajor = toString (sourceMetadata.pnpmMajor or "10");
   pnpmByMajor = {
     "10" = pnpm_10;
     "11" = pnpm_11;
@@ -139,18 +156,18 @@ let
     GATEWAY_PREBUILD_SH = "${../scripts/gateway-prebuild.sh}";
     PATCH_BUNDLED_RUNTIME_DEPS_SCRIPT = "${../patches/stage-bundled-plugin-runtime-deps.mjs}";
     PATCH_PUBLIC_SURFACE_HARDLINKS =
-      if sourceInfo.applyPublicSurfaceHardlinksPatch or true then
+      if sourceMetadata.applyPublicSurfaceHardlinksPatch or true then
         "${publicSurfaceHardlinksPatch}"
       else
         "";
     PATCH_SKIP_PLUGIN_AUTO_ENABLE_NIX_MODE =
-      if sourceInfo.applySkipPluginAutoEnableNixModePatch or true then
+      if sourceMetadata.applySkipPluginAutoEnableNixModePatch or true then
         "${../patches/skip-plugin-auto-enable-persist-in-nix-mode.patch}"
       else
         "";
     PATCH_NIX_STORE_PLUGIN_OWNERSHIP =
-      if sourceInfo.applyNixStorePluginOwnershipPatch or false then
-        "${../patches/allow-nix-store-plugin-ownership.patch}"
+      if sourceMetadata.applyNixStorePluginOwnershipPatch or false then
+        "${nixStorePluginOwnershipPatch}"
       else
         "";
     PROMOTE_PNPM_INTEGRITY_SH = "${../scripts/promote-pnpm-integrity.sh}";
@@ -191,11 +208,11 @@ in
 
   passthru = {
     inherit
-      sourceInfo
       pnpmDeps
       pnpmMajor
       selectedPnpm
       ;
-    pinnedRev = sourceInfo.rev;
+    sourceInfo = sourceMetadata;
+    pinnedRev = sourceMetadata.rev or null;
   };
 }

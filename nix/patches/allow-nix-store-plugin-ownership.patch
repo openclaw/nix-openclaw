@@ -1,8 +1,7 @@
 diff --git a/src/plugins/discovery.ts b/src/plugins/discovery.ts
-index 1437836a44..7622c7b66e 100644
 --- a/src/plugins/discovery.ts
 +++ b/src/plugins/discovery.ts
-@@ -15,7 +15,10 @@ import {
+@@ -18,7 +18,10 @@
    resolvePackagedBundledLoadPathAlias,
  } from "./bundled-load-path-aliases.js";
  import { listBundledSourceOverlayDirs } from "./bundled-source-overlays.js";
@@ -14,7 +13,7 @@ index 1437836a44..7622c7b66e 100644
  import { readLegacyNpmPluginDeclaration } from "./legacy-npm-declaration.js";
  import type { PluginBundleFormat, PluginDiagnostic, PluginFormat } from "./manifest-types.js";
  import {
-@@ -141,6 +144,8 @@ function checkPathStatAndPermissions(params: {
+@@ -155,6 +158,8 @@
    rootDir: string;
    origin: PluginOrigin;
    uid: number | null;
@@ -23,7 +22,7 @@ index 1437836a44..7622c7b66e 100644
  }): CandidateBlockIssue | null {
    if (process.platform === "win32") {
      return null;
-@@ -196,6 +201,7 @@ function checkPathStatAndPermissions(params: {
+@@ -210,6 +215,7 @@
      if (
        params.origin !== "bundled" &&
        params.uid !== null &&
@@ -31,7 +30,7 @@ index 1437836a44..7622c7b66e 100644
        typeof stat.uid === "number" &&
        stat.uid !== params.uid &&
        stat.uid !== 0
-@@ -219,6 +225,7 @@ function findCandidateBlockIssue(params: {
+@@ -233,6 +239,7 @@
    origin: PluginOrigin;
    ownershipUid?: number | null;
    realpathCache: Map<string, string>;
@@ -39,7 +38,7 @@ index 1437836a44..7622c7b66e 100644
  }): CandidateBlockIssue | null {
    const escaped = checkSourceEscapesRoot({
      source: params.source,
-@@ -233,6 +240,8 @@ function findCandidateBlockIssue(params: {
+@@ -247,6 +254,8 @@
      rootDir: params.rootDir,
      origin: params.origin,
      uid: currentUid(params.ownershipUid),
@@ -47,8 +46,8 @@ index 1437836a44..7622c7b66e 100644
 +    realpathCache: params.realpathCache,
    });
  }
-
-@@ -257,6 +266,7 @@ function isUnsafePluginCandidate(params: {
+ 
+@@ -271,6 +280,7 @@
    diagnostics: PluginDiagnostic[];
    ownershipUid?: number | null;
    realpathCache: Map<string, string>;
@@ -56,7 +55,7 @@ index 1437836a44..7622c7b66e 100644
  }): boolean {
    const issue = findCandidateBlockIssue({
      source: params.source,
-@@ -264,6 +274,7 @@ function isUnsafePluginCandidate(params: {
+@@ -278,6 +288,7 @@
      origin: params.origin,
      ownershipUid: params.ownershipUid,
      realpathCache: params.realpathCache,
@@ -64,15 +63,15 @@ index 1437836a44..7622c7b66e 100644
    });
    if (!issue) {
      return false;
-@@ -665,6 +676,7 @@ function addCandidate(params: {
-   bundledManifest?: PluginManifest;
-   bundledManifestPath?: string;
+@@ -746,6 +757,7 @@
+   requiredPluginIds?: string[];
+   requiredPluginSource?: string;
    realpathCache: Map<string, string>;
 +  env: NodeJS.ProcessEnv;
  }) {
    const resolved = path.resolve(params.source);
    if (params.seen.has(resolved)) {
-@@ -681,6 +693,7 @@ function addCandidate(params: {
+@@ -762,6 +774,7 @@
        diagnostics: params.diagnostics,
        ownershipUid: params.ownershipUid,
        realpathCache: params.realpathCache,
@@ -80,15 +79,15 @@ index 1437836a44..7622c7b66e 100644
      })
    ) {
      params.seen.add(resolved);
-@@ -769,6 +782,7 @@ function discoverBundleInRoot(params: {
-     bundledManifestId: bundleManifest.manifest.id,
-     bundledManifestPath: bundleManifest.manifestPath,
-     realpathCache: params.realpathCache,
-+    env: params.env,
+@@ -856,6 +869,7 @@
+       bundledManifestId: bundleManifest.manifest.id,
+       bundledManifestPath: bundleManifest.manifestPath,
+       realpathCache: params.realpathCache,
++      env: params.env,
+     });
+     return "added";
    });
-   return "added";
- }
-@@ -849,6 +863,7 @@ function discoverInDirectory(params: {
+@@ -983,6 +997,7 @@
          ownershipUid: params.ownershipUid,
          workspaceDir: params.workspaceDir,
          realpathCache: params.realpathCache,
@@ -96,23 +95,23 @@ index 1437836a44..7622c7b66e 100644
        });
        continue;
      }
-@@ -944,6 +959,7 @@ function discoverInDirectory(params: {
-           manifest,
-           packageDir: fullPath,
+@@ -1092,6 +1107,7 @@
+           requiredPluginIds: candidateManifest?.manifest.requiresPlugins,
+           requiredPluginSource: candidateManifest?.manifestPath,
            realpathCache: params.realpathCache,
 +          env: params.env,
          });
        }
        continue;
-@@ -983,6 +999,7 @@ function discoverInDirectory(params: {
-         manifest,
-         packageDir: fullPath,
+@@ -1133,6 +1149,7 @@
+         requiredPluginIds: candidateManifest?.manifest.requiresPlugins,
+         requiredPluginSource: candidateManifest?.manifestPath,
          realpathCache: params.realpathCache,
 +        env: params.env,
        });
        continue;
      }
-@@ -1106,6 +1123,7 @@ function discoverFromPath(params: {
+@@ -1257,6 +1274,7 @@
        ownershipUid: params.ownershipUid,
        workspaceDir: params.workspaceDir,
        realpathCache: params.realpathCache,
@@ -120,31 +119,31 @@ index 1437836a44..7622c7b66e 100644
      });
      return;
    }
-@@ -1189,6 +1207,7 @@ function discoverFromPath(params: {
-           manifest,
-           packageDir: resolved,
+@@ -1354,6 +1372,7 @@
+           requiredPluginIds: candidateManifest?.manifest.requiresPlugins,
+           requiredPluginSource: candidateManifest?.manifestPath,
            realpathCache: params.realpathCache,
 +          env: params.env,
          });
        }
        return;
-@@ -1229,6 +1248,7 @@ function discoverFromPath(params: {
-         manifest,
-         packageDir: resolved,
+@@ -1396,6 +1415,7 @@
+         requiredPluginIds: candidateManifest?.manifest.requiresPlugins,
+         requiredPluginSource: candidateManifest?.manifestPath,
          realpathCache: params.realpathCache,
 +        env: params.env,
        });
        return;
      }
 diff --git a/src/plugins/hardlink-policy.ts b/src/plugins/hardlink-policy.ts
-index c1f7b72561..96bc8579a6 100644
 --- a/src/plugins/hardlink-policy.ts
 +++ b/src/plugins/hardlink-policy.ts
-@@ -22,6 +22,14 @@ export function isNixStorePluginRoot(
+@@ -24,6 +24,16 @@
    return rootRealPath === NIX_STORE_ROOT || rootRealPath.startsWith(`${NIX_STORE_ROOT}/`);
  }
--
-+
+ 
++// Nix store ownership can differ from the runtime uid; containment and writable
++// path checks remain discovery's responsibility before this exemption is used.
 +export function isTrustedNixStorePluginRoot(params: {
 +  rootDir: string;
 +  env?: NodeJS.ProcessEnv;
@@ -153,10 +152,10 @@ index c1f7b72561..96bc8579a6 100644
 +  return resolveIsNixMode(params.env) && isNixStorePluginRoot(params.rootDir, params.realpathCache);
 +}
 +
+ /** Decides whether plugin file hardlinks should fail boundary validation for one root. */
  export function shouldRejectHardlinkedPluginFiles(params: {
    origin: PluginOrigin;
-   rootDir: string;
-@@ -31,7 +39,7 @@ export function shouldRejectHardlinkedPluginFiles(params: {
+@@ -34,7 +44,7 @@
    if (params.origin === "bundled") {
      return false;
    }

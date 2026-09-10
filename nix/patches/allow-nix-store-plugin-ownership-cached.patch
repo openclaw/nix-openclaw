@@ -1,0 +1,98 @@
+diff --git a/src/plugins/discovery.ts b/src/plugins/discovery.ts
+--- a/src/plugins/discovery.ts
++++ b/src/plugins/discovery.ts
+@@ -25,7 +25,10 @@
+   resolvePluginCandidateInstallOwner,
+ } from "./candidate-install-owner.js";
+ import type { PluginCandidate, PluginDiscoveryResult } from "./discovery.types.js";
+-import { shouldRejectHardlinkedPluginFiles } from "./hardlink-policy.js";
++import {
++  isTrustedNixStorePluginRoot,
++  shouldRejectHardlinkedPluginFiles,
++} from "./hardlink-policy.js";
+ import { hashStableJson } from "./installed-plugin-index-hash.js";
+ import { readLegacyNpmPluginDeclaration } from "./legacy-npm-declaration.js";
+ import type { PluginBundleFormat, PluginDiagnostic, PluginFormat } from "./manifest-types.js";
+@@ -135,6 +138,7 @@
+   rootDir: string;
+   origin: PluginOrigin;
+   uid: number | null;
++  env: NodeJS.ProcessEnv;
+ }): CandidateBlockIssue | null {
+   if (process.platform === "win32") {
+     return null;
+@@ -190,6 +194,7 @@
+     if (
+       params.origin !== "bundled" &&
+       params.uid !== null &&
++      !isTrustedNixStorePluginRoot(params) &&
+       typeof stat.uid === "number" &&
+       stat.uid !== params.uid &&
+       stat.uid !== 0
+@@ -212,6 +217,7 @@
+   rootDir: string;
+   origin: PluginOrigin;
+   ownershipUid?: number | null;
++  env: NodeJS.ProcessEnv;
+ }): CandidateBlockIssue | null {
+   const escaped = checkSourceEscapesRoot({
+     source: params.source,
+@@ -225,6 +231,7 @@
+     rootDir: params.rootDir,
+     origin: params.origin,
+     uid: currentUid(params.ownershipUid),
++    env: params.env,
+   });
+ }
+ 
+@@ -248,12 +255,14 @@
+   pluginId?: string;
+   diagnostics: PluginDiagnostic[];
+   ownershipUid?: number | null;
++  env: NodeJS.ProcessEnv;
+ }): boolean {
+   const issue = findCandidateBlockIssue({
+     source: params.source,
+     rootDir: params.rootDir,
+     origin: params.origin,
+     ownershipUid: params.ownershipUid,
++    env: params.env,
+   });
+   if (!issue) {
+     return false;
+@@ -782,6 +791,7 @@
+         pluginId: params.idHint,
+         diagnostics,
+         ownershipUid,
++        env,
+       })
+     ) {
+       attemptedSources.set(resolved, undefined);
+diff --git a/src/plugins/hardlink-policy.ts b/src/plugins/hardlink-policy.ts
+--- a/src/plugins/hardlink-policy.ts
++++ b/src/plugins/hardlink-policy.ts
+@@ -21,6 +21,15 @@
+   return rootRealPath === NIX_STORE_ROOT || rootRealPath.startsWith(`${NIX_STORE_ROOT}/`);
+ }
+ 
++// Share the immutable-store exception without bypassing discovery's containment
++// or write-permission checks. Nix store ownership need not match the runtime uid.
++export function isTrustedNixStorePluginRoot(params: {
++  rootDir: string;
++  env?: NodeJS.ProcessEnv;
++}): boolean {
++  return resolveIsNixMode(params.env) && isNixStorePluginRoot(params.rootDir);
++}
++
+ /** Decides whether plugin file hardlinks should fail boundary validation for one root. */
+ export function shouldRejectHardlinkedPluginFiles(params: {
+   origin: PluginOrigin;
+@@ -31,7 +40,7 @@
+   if (params.origin === "bundled") {
+     return false;
+   }
+-  if (resolveIsNixMode(params.env) && isNixStorePluginRoot(params.rootDir)) {
++  if (isTrustedNixStorePluginRoot(params)) {
+     return false;
+   }
+   return true;
