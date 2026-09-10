@@ -72,7 +72,7 @@ let
     (sourcePackage.passthru.pinnedRev == null)
     (!(sourcePackage.passthru.sourceInfo ? rev))
     (!(sourcePackage.passthru.sourceInfo ? hash))
-    (sourcePackage.env.PATCH_NIX_STORE_PLUGIN_OWNERSHIP == toString customPatch)
+    (sourcePackage.env.PATCH_NIX_STORE_PLUGIN_OWNERSHIP == "${customPatch}")
     (sourcePackage.pnpmDeps.pnpm.version == "12.0.0")
     (sourcePackage.pnpmDeps.src == ./fixture)
     (
