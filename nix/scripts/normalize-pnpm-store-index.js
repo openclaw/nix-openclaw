@@ -216,7 +216,10 @@ function normalizeStore(storePath) {
     if (!entry.isDirectory() || !/^v[0-9]+$/.test(entry.name)) continue;
 
     const versionDir = path.join(storePath, entry.name);
+    // Derived package trees are rebuilt from CAS; their payloads are not metadata
+    // and must not reach the fetcher's recursive JSON normalization.
     fs.rmSync(path.join(versionDir, "projects"), { force: true, recursive: true });
+    fs.rmSync(path.join(versionDir, "links"), { force: true, recursive: true });
 
     const dbPath = path.join(versionDir, "index.db");
     if (fs.existsSync(dbPath)) {

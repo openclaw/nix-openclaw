@@ -18,34 +18,71 @@ function msgpackCheckedAt(token, value) {
   } else {
     valueBuffer.writeBigInt64BE(value);
   }
-  return Buffer.concat([Buffer.from([0x81, 0xa9]), Buffer.from("checkedAt"), Buffer.from([token]), valueBuffer]);
+  return Buffer.concat([
+    Buffer.from([0x81, 0xa9]),
+    Buffer.from("checkedAt"),
+    Buffer.from([token]),
+    valueBuffer,
+  ]);
 }
 
-function createStore(data) {
+function createStore(t, data, version = "v10") {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pnpm-store-index-"));
-  const versionDir = path.join(root, "v10");
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const versionDir = path.join(root, version);
   fs.mkdirSync(versionDir, { recursive: true });
   const db = new DatabaseSync(path.join(versionDir, "index.db"));
   db.exec("CREATE TABLE package_index (key TEXT PRIMARY KEY, data BLOB NOT NULL) WITHOUT ROWID");
-  db.prepare("INSERT INTO package_index (key, data) VALUES (?, ?)").run("sha512-test\tpackage", data);
+  db.prepare("INSERT INTO package_index (key, data) VALUES (?, ?)").run(
+    "sha512-test\tpackage",
+    data,
+  );
   db.close();
   return root;
 }
 
-function readData(root) {
-  const db = new DatabaseSync(path.join(root, "v10", "index.db"), { readOnly: true });
-  const row = db.prepare("SELECT data FROM package_index WHERE key = ?").get("sha512-test\tpackage");
+function readData(root, version = "v10") {
+  const db = new DatabaseSync(path.join(root, version, "index.db"), { readOnly: true });
+  const row = db
+    .prepare("SELECT data FROM package_index WHERE key = ?")
+    .get("sha512-test\tpackage");
   db.close();
   return row.data;
 }
 
-test("normalizes integer msgpack checkedAt timestamps", () => {
+test("normalizes integer msgpack checkedAt timestamps", (t) => {
   for (const token of [0xcf, 0xd3]) {
-    const root = createStore(msgpackCheckedAt(token, 1764230400123n));
+    const root = createStore(t, msgpackCheckedAt(token, 1764230400123n));
     const result = spawnSync(process.execPath, [script, root], { encoding: "utf8" });
     assert.equal(result.status, 0, result.stderr);
 
     const got = Buffer.from(readData(root));
     assert.equal(got.readBigUInt64BE(got.length - 8), 4102444800000n);
+  }
+});
+
+test("removes derived package caches without changing CAS payloads or losing index data", (t) => {
+  const payloads = [
+    '// package JSONC\n{"compilerOptions":{"strict":true}}\n',
+    '{"checkedAt":"application-value","nested":{"checkedAt":42}}\n',
+  ];
+  for (const version of ["v10", "v11"]) {
+    const root = createStore(t, msgpackCheckedAt(0xcf, 1764230400123n), version);
+    const versionDir = path.join(root, version);
+    for (const directory of ["projects", "links", "files"]) {
+      fs.mkdirSync(path.join(versionDir, directory));
+      payloads.forEach((payload, i) =>
+        fs.writeFileSync(path.join(versionDir, directory, `${i}.json`), payload),
+      );
+    }
+
+    const result = spawnSync(process.execPath, [script, root], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(fs.existsSync(path.join(versionDir, "projects")), false);
+    assert.equal(fs.existsSync(path.join(versionDir, "links")), false);
+    payloads.forEach((payload, i) => {
+      assert.equal(fs.readFileSync(path.join(versionDir, "files", `${i}.json`), "utf8"), payload);
+    });
+    assert.deepEqual(Buffer.from(readData(root, version)), msgpackCheckedAt(0xcf, 4102444800000n));
   }
 });
