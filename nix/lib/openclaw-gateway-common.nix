@@ -111,7 +111,8 @@ let
       actualIntegrities="$(mktemp)"
       missingIntegrities="$(mktemp)"
       expectedPackages="$(mktemp)"
-      yq -r '.packages | to_entries[] | select(.value.resolution.integrity) | [.key, .value.resolution.integrity] | @tsv' pnpm-lock.yaml > "$expectedPackages"
+      # Frozen install validates the stream; its last document owns workspace dependencies.
+      yq -sr 'last | .packages | to_entries[] | select(.value.resolution.integrity) | [.key, .value.resolution.integrity] | @tsv' pnpm-lock.yaml > "$expectedPackages"
       cut -f2 "$expectedPackages" | sort -u > "$expectedIntegrities"
       ${nodejs_24}/bin/node --no-warnings ${../scripts/list-pnpm-store-integrities.js} "$storePath" | sort -u > "$actualIntegrities"
       comm -23 "$expectedIntegrities" "$actualIntegrities" > "$missingIntegrities"
@@ -122,18 +123,6 @@ let
       fi
 
       ${nodejs_24}/bin/node --no-warnings ${../scripts/normalize-pnpm-store-index.js} "$storePath"
-    '';
-    postInstall = lib.optionalString pnpmNeedsVerifiedStore ''
-      verifiedCache="$(find "$HOME" -path '*/lockfile-verified.jsonl' -type f -print -quit)"
-      if [ -n "$verifiedCache" ]; then
-        jq -c '
-          .lockfile.path = ""
-          | .lockfile.size = -1
-          | .lockfile.mtimeNs = ""
-          | .lockfile.inode = ""
-          | .verifiedAt = "1970-01-01T00:00:01.000Z"
-        ' "$verifiedCache" | LC_ALL=C sort -u > "$out/pnpm-lockfile-verified.jsonl"
-      fi
     '';
     npm_config_arch = pnpmArch;
     npm_config_platform = pnpmPlatform;
@@ -176,6 +165,10 @@ let
   }
   // lib.optionalAttrs (fsSafeSource != null) {
     OPENCLAW_FS_SAFE_SOURCE = fsSafeSource;
+  }
+  // lib.optionalAttrs pnpmNeedsVerifiedStore {
+    # fetchPnpmDeps already verifies policy; offline builds have no registry metadata.
+    pnpm_config_trust_lockfile = "true";
   };
 
 in

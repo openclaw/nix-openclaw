@@ -34,19 +34,6 @@ fi
 
 printf "%s" "$store_path" > "$store_path_file"
 
-verified_lockfile_cache="$PNPM_DEPS/pnpm-lockfile-verified.jsonl"
-if [ -f "$verified_lockfile_cache" ]; then
-  if [ -n "${out:-}" ]; then
-    pnpm_cache_dir="$PWD/.pnpm-cache"
-    rm -rf "$pnpm_cache_dir"
-    mkdir -p "$pnpm_cache_dir"
-  else
-    pnpm_cache_dir="$(mktemp -d)"
-  fi
-  cp "$verified_lockfile_cache" "$pnpm_cache_dir/lockfile-verified.jsonl"
-  export PNPM_CONFIG_CACHE_DIR="$pnpm_cache_dir"
-fi
-
 fetcherVersion=$(cat "$PNPM_DEPS/.fetcher-version" 2>/dev/null || echo 1)
 if [ "$fetcherVersion" -ge 3 ]; then
   # tar --zstd uses libzstd; on some platforms it ends up single-threaded.

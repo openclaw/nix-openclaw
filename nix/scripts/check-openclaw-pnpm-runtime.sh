@@ -114,3 +114,5 @@ JSON
   )
   echo "pnpm $version: baseline, intact-index control, and both prebuild roundtrips passed"
 done
+
+node "$CHECK_PNPM_REGISTRY"

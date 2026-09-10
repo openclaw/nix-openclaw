@@ -73,6 +73,7 @@ let
     (!(sourcePackage.passthru.sourceInfo ? rev))
     (!(sourcePackage.passthru.sourceInfo ? hash))
     (sourcePackage.env.PATCH_NIX_STORE_PLUGIN_OWNERSHIP == "${customPatch}")
+    (sourcePackage.env.pnpm_config_trust_lockfile == "true")
     (sourcePackage.pnpmDeps.pnpm.version == "12.0.0")
     (sourcePackage.pnpmDeps.src == ./fixture)
     (
@@ -134,6 +135,30 @@ let
     ]
   ++ map
     (major: (select (manifest // { packageManager = "pnpm@${major}.0.0"; }) { }).pnpmMajor == major)
+    [
+      "10"
+      "11"
+      "12"
+    ]
+  ++ map
+    (
+      major:
+      let
+        package = common {
+          pname = "source-contract";
+          sourceInfo = stable // {
+            pnpmMajor = major;
+          };
+        };
+        trusted = major != "10";
+      in
+      (package.env.pnpm_config_trust_lockfile or null) == (if trusted then "true" else null)
+      && !(package.pnpmDeps ? pnpm_config_trust_lockfile)
+      && !(package.pnpmDeps ? PNPM_CONFIG_TRUST_LOCKFILE)
+      && (package.pnpmDeps.env.pnpm_config_trust_lockfile or null) == null
+      && (package.pnpmDeps.env.PNPM_CONFIG_TRUST_LOCKFILE or null) == null
+      && package.pnpmDeps.fetcherVersion == (if trusted then 4 else 3)
+    )
     [
       "10"
       "11"
