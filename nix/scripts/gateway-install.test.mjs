@@ -61,11 +61,23 @@ function fixture(t, version) {
     out,
     root,
     away,
+    put,
     run,
     install: () =>
       run("sh", [installer], {
         cwd: build,
-        env: { ...env, out, NODE_BIN: process.execPath, STDENV_SETUP: setup },
+        env: {
+          ...env,
+          out,
+          NODE_BIN: process.execPath,
+          STDENV_SETUP: setup,
+          NIX_BUILD_TOP: temp,
+          OPENCLAW_BUILD_ROOT_SH: path.join(import.meta.dirname, "build-root.sh"),
+          COPY_GATEWAY_WORKSPACES_MJS: path.join(
+            import.meta.dirname,
+            "copy-gateway-workspaces.mjs",
+          ),
+        },
       }),
   };
 }
@@ -133,3 +145,167 @@ for (const dir of ["node_modules", "dist-runtime"]) {
     assert.equal(fs.existsSync(path.join(f.out, "wrapper-args")), false);
   });
 }
+
+function workspaceFixture(t) {
+  const f = fixture(t, "2026.9.3");
+  const manifest = JSON.parse(fs.readFileSync(path.join(f.build, "package.json"), "utf8"));
+  Object.assign(manifest, {
+    dependencies: { "registry-bridge": "1.0.0" },
+    optionalDependencies: { "@fixture/optional": "workspace:*", "absent-optional": "1.0.0" },
+    peerDependencies: { "fixture-peer": "*", "absent-peer": "*" },
+    devDependencies: { "unreachable-workspace": "workspace:*" },
+  });
+  f.put("package.json", JSON.stringify(manifest));
+  const link = (name, target) => {
+    const file = path.join(f.build, name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.symlinkSync(target, file);
+  };
+  const pkg = (dir, name, content) => {
+    f.put(
+      `${dir}/package.json`,
+      JSON.stringify({ name, version: "1.0.0", main: "dist/index.cjs" }),
+    );
+    f.put(`${dir}/dist/index.cjs`, content);
+    f.put(`${dir}/src/input.txt`, `source:${name}\n`);
+    f.put(`${dir}/test/input.txt`, `test:${name}\n`);
+  };
+  pkg(
+    "packages/alpha",
+    "workspace-alpha",
+    'exports.value = "alpha"; exports.beta = () => require("workspace-beta").value;\n',
+  );
+  pkg(
+    "packages/beta",
+    "workspace-beta",
+    'exports.value = "beta"; exports.alpha = () => require("workspace-alpha").value;\n',
+  );
+  pkg("packages/optional", "@fixture/optional", 'module.exports = "optional";\n');
+  pkg("packages/peer", "fixture-peer", 'module.exports = "peer";\n');
+  pkg("packages/dev-only", "unreachable-workspace", 'module.exports = "dev";\n');
+  const slot = "node_modules/.pnpm/registry-bridge@1.0.0/node_modules";
+  pkg(
+    `${slot}/registry-bridge`,
+    "registry-bridge",
+    'exports.alpha = require("workspace-alpha"); exports.beta = require("workspace-beta");\n',
+  );
+  link("node_modules/registry-bridge", ".pnpm/registry-bridge@1.0.0/node_modules/registry-bridge");
+  link(`${slot}/workspace-alpha`, "../../../../packages/alpha");
+  link(`${slot}/registry-bridge/node_modules/workspace-beta`, path.join(f.build, "packages/beta"));
+  link("packages/alpha/node_modules/workspace-beta", "../../beta");
+  link("packages/alpha/node_modules/openclaw", "../../..");
+  link("packages/beta/node_modules/workspace-alpha", "../../alpha");
+  link("node_modules/@fixture/optional", "../../packages/optional");
+  link("node_modules/fixture-peer", "../packages/peer");
+  link("packages/alpha/dist/absolute.txt", path.join(f.build, "packages/beta/src/input.txt"));
+  link("packages/alpha/dist/relative.txt", "../src/input.txt");
+  const store = path.join(f.away, "fixture-store");
+  fs.mkdirSync(store);
+  fs.writeFileSync(path.join(store, "artifact"), "native-built-bytes\n");
+  fs.linkSync(path.join(store, "artifact"), path.join(f.build, "packages/alpha/dist/native.bin"));
+  return { ...f, link, store };
+}
+
+function inventory(root) {
+  const files = {};
+  function visit(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      const relative = path.relative(root, file);
+      if (entry.isDirectory()) visit(file);
+      else if (entry.isSymbolicLink()) files[relative] = { link: fs.readlinkSync(file) };
+      else files[relative] = { bytes: fs.readFileSync(file).toString("base64") };
+    }
+  }
+  visit(root);
+  return files;
+}
+
+test("workspace closure survives removal of build and store with artifacts and imports intact", (t) => {
+  const f = workspaceFixture(t);
+  const reached = ["alpha", "beta", "optional", "peer"];
+  const expected = Object.fromEntries(
+    reached.map((name) => [name, inventory(path.join(f.build, "packages", name))]),
+  );
+  const installed = f.install();
+  assert.equal(installed.status, 0, installed.stdout + installed.stderr);
+  assert.equal(fs.existsSync(path.join(f.root, "packages/dev-only")), false);
+  for (const name of reached) {
+    const actual = inventory(path.join(f.root, "packages", name));
+    const remapped = Object.fromEntries(
+      Object.entries(expected[name]).map(([file, value]) => [
+        file,
+        value.link?.startsWith(`${f.build}/`)
+          ? { link: path.join(f.root, path.relative(f.build, value.link)) }
+          : value,
+      ]),
+    );
+    assert.deepEqual(actual, remapped);
+  }
+  assert.equal(
+    fs.readlinkSync(
+      path.join(
+        f.root,
+        "node_modules/.pnpm/registry-bridge@1.0.0/node_modules/registry-bridge/node_modules/workspace-beta",
+      ),
+    ),
+    path.join(f.root, "packages/beta"),
+  );
+  fs.rmSync(f.build, { recursive: true });
+  fs.rmSync(f.store, { recursive: true });
+  const loaded = f.run(process.execPath, [
+    "-e",
+    `
+const assert = require("node:assert/strict");
+const req = require("node:module").createRequire(${JSON.stringify(path.join(f.root, "package.json"))});
+const bridge = req("registry-bridge");
+assert.equal(bridge.alpha.value, "alpha");
+assert.equal(bridge.alpha.beta(), "beta");
+assert.equal(bridge.beta.alpha(), "alpha");
+assert.equal(req("@fixture/optional"), "optional");
+assert.equal(req("fixture-peer"), "peer");
+assert.throws(() => req("unreachable-workspace"), {code: "MODULE_NOT_FOUND"});
+assert.equal(require("node:fs").readFileSync(${JSON.stringify(path.join(f.root, "packages/alpha/dist/native.bin"))}, "utf8"), "native-built-bytes\\n");
+console.log("WORKSPACE_CLOSURE_OK");
+`,
+  ]);
+  assert.equal(loaded.status, 0, loaded.stderr);
+  assert.equal(loaded.stdout.trim(), "WORKSPACE_CLOSURE_OK");
+  assert.ok(fs.existsSync(path.join(f.out, "wrapper-args")));
+});
+
+test("workspace closure fails for a missing required root dependency", (t) => {
+  const f = workspaceFixture(t);
+  fs.unlinkSync(path.join(f.build, "node_modules/registry-bridge"));
+  const installed = f.install();
+  assert.notEqual(installed.status, 0);
+  assert.match(installed.stderr, /required dependency.*registry-bridge/i);
+  assert.equal(fs.existsSync(path.join(f.out, "wrapper-args")), false);
+});
+
+for (const absolute of [false, true]) {
+  test(`workspace closure rejects ${absolute ? "absolute" : "relative"} escapes before wrapping`, (t) => {
+    const f = workspaceFixture(t);
+    const outside = path.join(f.away, "external-package");
+    fs.mkdirSync(outside);
+    fs.writeFileSync(path.join(outside, "package.json"), '{"name":"external-package"}');
+    const file = "packages/alpha/node_modules/external-package";
+    f.link(
+      file,
+      absolute ? outside : path.relative(path.dirname(path.join(f.build, file)), outside),
+    );
+    const installed = f.install();
+    assert.notEqual(installed.status, 0);
+    assert.match(installed.stderr, /outside.*build|escape/i);
+    assert.equal(fs.existsSync(path.join(f.out, "wrapper-args")), false);
+  });
+}
+
+test("workspace closure keeps validation strict for broken workspace artifact links", (t) => {
+  const f = workspaceFixture(t);
+  f.link("packages/alpha/dist/broken", "missing-artifact");
+  const installed = f.install();
+  assert.notEqual(installed.status, 0);
+  assert.match(installed.stderr, /dangling|ENOENT|broken/i);
+  assert.equal(fs.existsSync(path.join(f.out, "wrapper-args")), false);
+});

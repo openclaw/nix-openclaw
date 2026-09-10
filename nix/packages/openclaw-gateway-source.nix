@@ -62,6 +62,7 @@ let
         extraBuildInputs = [ vips ];
         extraEnv = {
           NODE_BIN = "${nodejs_24}/bin/node";
+          COPY_GATEWAY_WORKSPACES_MJS = "${../scripts/copy-gateway-workspaces.mjs}";
           PATCH_CLIPBOARD_SH = "${../scripts/patch-clipboard.sh}";
           PATCH_CLIPBOARD_WRAPPER = "${../scripts/clipboard-wrapper.cjs}";
         };

@@ -19,6 +19,7 @@ Older repository history is available in git.
 - Use the configured registry for pnpm 11/12 source dependency fetches when `NIX_NPM_REGISTRY` is absent or empty, preserving explicit overrides and scoped registries (2026-09-10).
 - Discard pnpm's derived package clone cache before source-store metadata normalization, avoiding JSONC parse failures and changes to application JSON while retaining offline dependencies (2026-09-10).
 - Keep source builds on one offline pnpm store through rebuild and production conversion, preserve dependency build artifacts under pnpm-owned links, and remove development dependencies without rerunning lifecycle scripts (2026-09-10).
+- Retain reachable production workspace packages and their built artifacts in source installations, relocating build-local links and rejecting dependencies outside the installed closure (2026-09-10).
 - Add an opt-in, non-main installed-baseline qualification for the unmodified `v2026.7.1` Nix recipe, using a disposable Linux VM and isolated macOS Home Manager profile. Build or startup failures block qualification without substituting packages; installed-generation upgrades remain unproven (2026-09-09).
 - Clarify that Home Manager generations restore package/configuration selections, not OpenClaw's mutable state or database schema; remove unconditional instant-rollback claims (2026-09-09).
 - Run Linux JavaScript contract tests with Node.js 22 from the repository's locked Nixpkgs input and disable the global flake registry for that command, avoiding registry fetch failures (2026-09-09).

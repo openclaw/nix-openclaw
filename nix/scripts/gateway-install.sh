@@ -22,26 +22,6 @@ if [ -n "${OPENCLAW_BUILD_ROOT_SH:-}" ]; then
   openclaw_enter_build_root
 fi
 
-check_no_broken_symlinks() {
-  root="$1"
-  if [ ! -d "$root" ]; then
-    return 0
-  fi
-
-  broken_tmp="$(mktemp)"
-  # Portable and faster than `find ... -exec test -e {} \;` on large trees.
-  find "$root" -type l -print | while IFS= read -r link; do
-    [ -e "$link" ] || printf '%s\n' "$link"
-  done > "$broken_tmp"
-  if [ -s "$broken_tmp" ]; then
-    echo "dangling symlinks found under $root" >&2
-    cat "$broken_tmp" >&2
-    rm -f "$broken_tmp"
-    return 1
-  fi
-  rm -f "$broken_tmp"
-}
-
 copy_extension_manifests() {
   if [ ! -d extensions ]; then
     return 0
@@ -159,13 +139,10 @@ if [ -n "$hasown_src" ]; then
   fi
 fi
 
+gateway_build_root="$PWD"
 if [ -n "${OPENCLAW_BUILD_ROOT_SH:-}" ]; then
   openclaw_cleanup_output_pnpm_store
 fi
-
-log_step "validate node_modules symlinks" check_no_broken_symlinks "$out/lib/openclaw/node_modules"
-if [ -d "$out/lib/openclaw/dist-runtime" ]; then
-  log_step "validate dist-runtime symlinks" check_no_broken_symlinks "$out/lib/openclaw/dist-runtime"
-fi
+log_step "copy workspace dependency closure" "$NODE_BIN" "$COPY_GATEWAY_WORKSPACES_MJS" "$gateway_build_root" "$out/lib/openclaw"
 
 log_step "wrap openclaw" bash -e -c '. "$STDENV_SETUP"; makeWrapper "$NODE_BIN" "$out/bin/openclaw" --add-flags "$out/lib/openclaw/dist/index.js" --prefix PATH : "$(dirname "$NODE_BIN")" --set-default OPENCLAW_NIX_MODE "1" --set-default OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY "1"'
