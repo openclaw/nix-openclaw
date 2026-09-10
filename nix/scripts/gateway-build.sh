@@ -48,9 +48,10 @@ log_step "chmod node_modules writable" chmod -R u+w node_modules
 # sharp may leave build artifacts around; remove to keep output smaller + avoid stale builds.
 rm -rf node_modules/.pnpm/sharp@*/node_modules/sharp/src/build
 
-# Rebuild only native deps (avoid `pnpm rebuild` over the entire workspace).
+# Build approval is not workspace selection; rebuild only the gateway root.
 # node-llama-cpp postinstall attempts to download/compile llama.cpp (network blocked in Nix).
 # Also defensively disable other common downloaders.
+root_name="$(jq -er '.name' package.json)"
 rebuild_list="$(jq -r '.pnpm.onlyBuiltDependencies // [] | .[]' package.json 2>/dev/null || true)"
 if [ -z "$rebuild_list" ]; then
   allow_builds_json="$(pnpm config get --json allowBuilds 2>/dev/null || true)"
@@ -64,14 +65,14 @@ if [ -n "$rebuild_list" ]; then
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
     PUPPETEER_SKIP_DOWNLOAD=1 \
     ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    pnpm rebuild $rebuild_list
+    pnpm --filter "$root_name" rebuild $rebuild_list
 else
   log_step "pnpm rebuild (all)" env \
     NODE_LLAMA_CPP_SKIP_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
     PUPPETEER_SKIP_DOWNLOAD=1 \
     ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    pnpm rebuild
+    pnpm --filter "$root_name" rebuild
 fi
 
 log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patchShebangs node_modules/.bin"

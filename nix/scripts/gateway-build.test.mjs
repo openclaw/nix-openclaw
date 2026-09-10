@@ -7,7 +7,13 @@ import test from "node:test";
 
 const builder = path.join(import.meta.dirname, "gateway-build.sh");
 
-function fixture(t, failAt = "", extraEnv = {}, sourceVariant) {
+function fixture(
+  t,
+  failAt = "",
+  extraEnv = {},
+  sourceVariant,
+  rebuildDependencies = ["fixture-native"],
+) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "gateway-build-")));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   function put(name, contents, mode = 0o644) {
@@ -18,7 +24,13 @@ function fixture(t, failAt = "", extraEnv = {}, sourceVariant) {
   }
   for (const dir of ["home", "store", "node_modules/.bin", "node_modules/.pnpm"])
     fs.mkdirSync(path.join(root, dir), { recursive: true });
-  put("package.json", JSON.stringify({ pnpm: { onlyBuiltDependencies: ["fixture-native"] } }));
+  put(
+    "package.json",
+    JSON.stringify({
+      name: "fixture-gateway",
+      pnpm: { onlyBuiltDependencies: rebuildDependencies },
+    }),
+  );
   put(".pnpm-store-path", path.join(root, "store"));
   let source;
   if (sourceVariant) {
@@ -52,6 +64,14 @@ function fixture(t, failAt = "", extraEnv = {}, sourceVariant) {
     "bin/pnpm",
     `#!/bin/sh
 set -eu
+if [ "$1" = --filter ]; then
+  test "$2" = fixture-gateway
+  test "$3" = rebuild
+  shift 2
+elif [ "$1" = rebuild ]; then
+  printf 'rebuild requires the exact root project filter\\n' >&2
+  exit 92
+fi
 stage="$1"
 if [ "$1" = install ]; then
   if [ "$2" = --prod ]; then stage=install-prod; else stage=install-dev; fi
@@ -67,6 +87,10 @@ else
   test -z "\${PNPM_CONFIG_MODULES_CACHE_MAX_AGE+x}\${NPM_CONFIG_MODULES_CACHE_MAX_AGE+x}"
 fi
 case "$1" in
+  config)
+    test "$*" = 'config get --json allowBuilds'
+    printf 'null\\n'
+    ;;
   install)
     if [ "$stage" = install-prod ]; then
       test -f dist/control-ui/index.html
@@ -81,7 +105,7 @@ case "$1" in
     test "$6" = "$PNPM_CONFIG_STORE_DIR"
     ;;
   rebuild)
-    test "$2" = fixture-native
+    test "$*" = ${JSON.stringify(["rebuild", ...rebuildDependencies].join(" "))}
     test "$NODE_LLAMA_CPP_SKIP_DOWNLOAD" = 1
     test "$PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD" = 1
     ;;
@@ -162,6 +186,21 @@ test("source build delegates complete artifacts to the upstream package command"
 test("package build cannot inherit an updater's runtime-only declaration profile", (t) => {
   const { result } = fixture(t, "", { OPENCLAW_RUN_NODE_SKIP_DTS_BUILD: "1" });
   assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+test("empty approval configuration keeps the root-filtered all-rebuild fallback", (t) => {
+  const { result, events } = fixture(t, "", {}, undefined, []);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.deepEqual(events, [
+    "prepare",
+    "install-dev",
+    "config",
+    "rebuild",
+    "shebangs",
+    "build",
+    "install-prod",
+    "cleanup",
+  ]);
 });
 
 for (const [failAt, expected] of [
