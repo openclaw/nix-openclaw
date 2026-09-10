@@ -75,6 +75,9 @@ stdenvNoCC.mkDerivation {
     PROMOTE_PNPM_INTEGRITY_SH = "${../scripts/promote-pnpm-integrity.sh}";
     NODE_GYP_WRAPPER_SH = "${../scripts/node-gyp-wrapper.sh}";
     REMOVE_PACKAGE_MANAGER_FIELD_SH = "${../scripts/remove-package-manager-field.sh}";
+    GATEWAY_BUILD_SH = "${../scripts/gateway-build.sh}";
+    STDENV_SETUP = "${stdenvNoCC}/setup";
+    PNPM_BUILD_FIXTURE = "${../scripts/check-openclaw-pnpm-build-fixture.mjs}";
     PNPM_REGISTRY_CONTRACTS = writeText "pnpm-registry-contracts.json" (builtins.toJSON contracts);
     CHECK_PNPM_REGISTRY = "${../scripts/check-openclaw-pnpm-registry.mjs}";
   };

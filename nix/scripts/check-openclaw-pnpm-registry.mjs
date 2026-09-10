@@ -6,9 +6,12 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 
 const contracts = JSON.parse(fs.readFileSync(process.env.PNPM_REGISTRY_CONTRACTS, "utf8"));
-const policy = "packages:\n  - '.'\nminimumReleaseAge: 10080\nminimumReleaseAgeStrict: true\n";
+const { policy, packageFixtures, workspaceFixture, verifyBuiltProject } = await import(
+  pathToFileURL(process.env.PNPM_BUILD_FIXTURE).href
+);
 const hash = (bytes, algorithm = "sha512") =>
   `${algorithm}-${createHash(algorithm).update(bytes).digest("base64")}`;
 const write = (file, value) => fs.writeFileSync(file, value);
@@ -68,12 +71,19 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pnpm-registry-"));
   const packages = new Map();
   const prepared = [];
+  const consumerRequests = [];
+  let consuming = false;
   let registry;
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, registry).pathname;
     const name = pathname.split("/")[1];
     const entry = packages.get(name);
     assert.equal(req.headers.authorization, undefined);
+    if (consuming) {
+      consumerRequests.push(pathname);
+      res.writeHead(404).end();
+      return;
+    }
     if (req.method !== "GET" || !entry) {
       res.writeHead(404).end();
     } else if (pathname === `/${name}/-/${name}-1.0.0.tgz`) {
@@ -87,9 +97,7 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
           time: { created: entry.published, modified: entry.published, "1.0.0": entry.published },
           versions: {
             "1.0.0": {
-              name,
-              version: "1.0.0",
-              main: "index.js",
+              ...entry.manifest,
               dist: {
                 integrity: entry.integrity,
                 tarball: `${registry}${name}/-/${name}-1.0.0.tgz`,
@@ -101,23 +109,23 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
     }
   });
   try {
-    for (const name of ["pnpm-contract-mature", "pnpm-contract-young"]) {
+    for (const fixture of packageFixtures()) {
+      const { name } = fixture.manifest;
       const root = `${tmp}/${name}`;
       mkdir(`${root}/package`);
-      write(
-        `${root}/package/package.json`,
-        JSON.stringify({ name, version: "1.0.0", main: "index.js" }),
-      );
-      write(`${root}/package/index.js`, 'module.exports = "registry-offline-ok";\n');
+      write(`${root}/package/package.json`, JSON.stringify(fixture.manifest));
+      for (const [file, bytes] of Object.entries(fixture.files))
+        write(`${root}/package/${file}`, bytes);
       await run("tar", ["-czf", `${root}/package.tgz`, "-C", root, "package"], {
         cwd: root,
         env: environment(root, contracts[0]),
       });
       const tarball = fs.readFileSync(`${root}/package.tgz`);
       packages.set(name, {
+        manifest: fixture.manifest,
         tarball,
         integrity: hash(tarball),
-        published: name.endsWith("young") ? new Date().toISOString() : "2020-01-01T00:00:00.000Z",
+        published: fixture.published,
       });
     }
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -164,17 +172,7 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
           const cwd = `${root}/project`;
           mkdir(cwd);
           const name = kind === "young" ? "pnpm-contract-young" : "pnpm-contract-mature";
-          const workspace = {
-            lockfileVersion: "9.0",
-            settings: { autoInstallPeers: true, excludeLinksFromLockfile: false },
-            importers: {
-              ".": { dependencies: { [name]: { specifier: "1.0.0", version: "1.0.0" } } },
-            },
-            packages: {
-              [`${name}@1.0.0`]: { resolution: { integrity: packages.get(name).integrity } },
-            },
-            snapshots: { [`${name}@1.0.0`]: {} },
-          };
+          const { workspace, manifest, files } = workspaceFixture(packages, name);
           // The bootstrap manager is provided by Nix, not installed into the workspace store.
           const bootstrap = {
             lockfileVersion: "9.0",
@@ -200,13 +198,16 @@ test("pnpm source producer and offline consumer contracts", async (t) => {
           write(
             `${cwd}/package.json`,
             JSON.stringify({
-              private: true,
+              ...manifest,
               packageManager: `pnpm@${contract.version}`,
-              dependencies: { [name]: "1.0.0" },
             }),
           );
           write(`${cwd}/pnpm-lock.yaml`, lock);
           write(`${cwd}/pnpm-workspace.yaml`, policy);
+          for (const [file, bytes] of Object.entries(files)) {
+            mkdir(path.dirname(`${cwd}/${file}`));
+            write(`${cwd}/${file}`, bytes);
+          }
           const expectedRegistry = kind === "explicit-registry" ? registry.slice(0, -1) : registry;
           const configuredRegistry =
             kind === "explicit-registry" ? `${registry}unused-default/` : registry;
@@ -270,7 +271,7 @@ pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lo
           mkdir(deps);
           const env = { ...project.env, storePath: `${root}/store`, out: deps };
           await run(process.env.BASH, ["-e", contract.postInstall], { cwd, env });
-          if (kind === "standalone") prepared.push({ ...project, deps });
+          if (kind === "standalone") prepared.push({ ...project, deps, files });
           await producerTest.test(`pnpm ${contract.major} ${kind} actual preFixup`, async () => {
             await run(process.env.BASH, ["-e", contract.preFixup], { cwd, env });
             assertUnchanged(project);
@@ -296,8 +297,9 @@ pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lo
         });
       }
     }
-    await new Promise((resolve) => server.close(resolve));
-    await assert.rejects(fetch(registry), (error) => error.cause?.code === "ECONNREFUSED");
+    // Rebuild has no offline flag: keep a rejecting recorder alive to detect requests.
+    consuming = true;
+    for (const entry of packages.values()) delete entry.tarball;
 
     for (const producer of prepared) {
       const { contract, deps } = producer;
@@ -312,10 +314,13 @@ pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lo
         producer,
       );
       await run("zstd", ["-q", "--rm", `${deps}/pnpm-store.tar`], producer);
+      fs.rmSync(`${producer.cwd}/node_modules`, { recursive: true });
+      fs.rmSync(`${producer.root}/store`, { recursive: true });
       for (const mismatch of [false, true]) {
         await t.test(
-          `pnpm ${contract.major} consumer ${mismatch ? "frozen rejection" : "offline import"}`,
+          `pnpm ${contract.major} consumer ${mismatch ? "frozen rejection" : "actual source build"}`,
           async () => {
+            const requestStart = consumerRequests.length;
             const root = `${producer.root}/consumer-${mismatch}`;
             const cwd = `${root}/project`;
             mkdir(cwd);
@@ -323,12 +328,18 @@ pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lo
             for (const file of ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"]) {
               fs.copyFileSync(`${producer.cwd}/${file}`, `${cwd}/${file}`);
             }
+            for (const [file, bytes] of Object.entries(producer.files)) {
+              mkdir(path.dirname(`${cwd}/${file}`));
+              write(`${cwd}/${file}`, bytes);
+            }
             const manifest = JSON.parse(fs.readFileSync(`${cwd}/package.json`, "utf8"));
             if (mismatch) manifest.dependencies["not-in-frozen-lock"] = "1.0.0";
             write(`${cwd}/package.json`, JSON.stringify(manifest));
             const env = {
               ...environment(root, contract),
               ...contract.consumerEnv,
+              PNPM_CONFIG_REGISTRY: registry,
+              NPM_CONFIG_REGISTRY: registry,
               PNPM_DEPS: deps,
               NIX_BUILD_TOP: `${root}/build-top`,
               out: `${root}/out`,
@@ -339,36 +350,34 @@ pnpm install --force --ignore-scripts --registry="$NIX_NPM_REGISTRY" --frozen-lo
               "PROMOTE_PNPM_INTEGRITY_SH",
               "NODE_GYP_WRAPPER_SH",
               "REMOVE_PACKAGE_MANAGER_FIELD_SH",
+              "GATEWAY_BUILD_SH",
+              "STDENV_SETUP",
             ]) {
               env[key] = process.env[key];
             }
             assert.deepEqual(fs.readdirSync(env.HOME), []);
             await run("sh", [env.REMOVE_PACKAGE_MANAGER_FIELD_SH, "package.json"], { cwd, env });
+            const manifestBytes = fs.readFileSync(`${cwd}/package.json`, "utf8");
             delete manifest.packageManager;
             assert.deepEqual(JSON.parse(fs.readFileSync(`${cwd}/package.json`, "utf8")), manifest);
             assertUnchanged({ cwd, lock: producer.lock });
-            const output = await run(
-              "sh",
-              [
-                "-ec",
-                `
-. "$GATEWAY_PREBUILD_SH"
-store_path="$(cat .pnpm-store-path)"
-test -f "$store_path/v11/index.db"
-test ! -f "$store_path/v11/index.db.sql"
-pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "$store_path" --registry "$1"
-node -e 'if (require("pnpm-contract-mature") !== "registry-offline-ok") process.exit(1); console.log("REAL_PACKAGE_IMPORT_OK");'
-`,
-                "sh",
-                registry,
-              ],
-              { cwd, env, status: mismatch ? 1 : 0 },
+            const output = await run("sh", [env.GATEWAY_BUILD_SH], {
+              cwd,
+              env,
+              status: mismatch ? 1 : 0,
+            });
+            const built = `${root}/build-top/.openclaw-build`;
+            assertUnchanged({ cwd: built, lock: producer.lock });
+            assert.equal(
+              fs.readFileSync(`${built}/packages/worker/package.json`, "utf8"),
+              producer.files["packages/worker/package.json"],
             );
-            assert.match(
-              output.stdout + output.stderr,
-              mismatch ? /ERR_PNPM_OUTDATED_LOCKFILE/ : /REAL_PACKAGE_IMPORT_OK/,
-            );
-            assertUnchanged({ cwd: `${root}/build-top/.openclaw-build`, lock: producer.lock });
+            assert.equal(fs.readFileSync(`${built}/package.json`, "utf8"), manifestBytes);
+            assert.ok(fs.existsSync(`${built}/.pnpm-store/v11/index.db`));
+            assert.equal(fs.existsSync(`${built}/.pnpm-store/v11/index.db.sql`), false);
+            if (mismatch) assert.match(output.stdout + output.stderr, /ERR_PNPM_OUTDATED_LOCKFILE/);
+            else verifyBuiltProject(built);
+            assert.deepEqual(consumerRequests.slice(requestStart), []);
           },
         );
       }

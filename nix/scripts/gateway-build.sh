@@ -37,10 +37,8 @@ if [ ! -f "$store_path_file" ]; then
   exit 1
 fi
 store_path="$(cat "$store_path_file")"
-export PNPM_STORE_DIR="$store_path"
-export PNPM_STORE_PATH="$store_path"
+export PNPM_CONFIG_STORE_DIR="$store_path"
 export NPM_CONFIG_STORE_DIR="$store_path"
-export NPM_CONFIG_STORE_PATH="$store_path"
 export HOME="$(mktemp -d)"
 
 log_step "pnpm install (offline, frozen, ignore-scripts)" env CI=true pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "$store_path"
@@ -81,9 +79,12 @@ log_step "patchShebangs node_modules/.bin" bash -e -c ". \"$STDENV_SETUP\"; patc
 # Git tarball dependencies do not get their npm prepack output in offline Nix
 # builds. OpenClaw currently depends on @openclaw/fs-safe this way.
 if [ -n "${OPENCLAW_FS_SAFE_SOURCE:-}" ] && [ ! -d "node_modules/@openclaw/fs-safe/dist" ]; then
-  rm -rf node_modules/@openclaw/fs-safe
-  mkdir -p node_modules/@openclaw
-  cp -R "$OPENCLAW_FS_SAFE_SOURCE" node_modules/@openclaw/fs-safe
+  # Preserve pnpm's link and indexed files so production conversion retains dist.
+  for input in src tsconfig.json; do
+    if [ ! -e "node_modules/@openclaw/fs-safe/$input" ] && [ ! -L "node_modules/@openclaw/fs-safe/$input" ]; then
+      cp -R "$OPENCLAW_FS_SAFE_SOURCE/$input" "node_modules/@openclaw/fs-safe/$input"
+    fi
+  done
   chmod -R u+w node_modules/@openclaw/fs-safe
   log_step "build dependency: @openclaw/fs-safe" pnpm exec tsc -p node_modules/@openclaw/fs-safe/tsconfig.json
 fi
@@ -92,16 +93,16 @@ fi
 # A package build must not inherit the runtime-only profile used by source updates.
 log_step "build: package" env OPENCLAW_RUN_NODE_SKIP_DTS_BUILD=0 pnpm build
 
-log_step "pnpm prune --prod" env \
+# Frozen install reuses verified metadata; zero age removes unused dev directories.
+log_step "pnpm install (production, offline, frozen)" env \
   CI=true \
-  PNPM_CONFIG_OFFLINE=true \
-  PNPM_CONFIG_STORE_DIR="$store_path" \
-  NPM_CONFIG_STORE_DIR="$store_path" \
-  pnpm prune --prod
+  PNPM_CONFIG_MODULES_CACHE_MAX_AGE=0 \
+  NPM_CONFIG_MODULES_CACHE_MAX_AGE=0 \
+  pnpm install --prod --offline --frozen-lockfile --ignore-scripts --store-dir "$store_path"
 
 # Reduce output size (pnpm implementation detail; safe to remove)
 rm -rf node_modules/.pnpm/node_modules
 
-# pnpm prune can leave orphaned .bin links behind for removed prod deps.
+# Production conversion can leave orphaned .bin links for removed dependencies.
 # Keep install-phase symlink validation strict by dropping only broken links here.
 find node_modules -xtype l -delete
