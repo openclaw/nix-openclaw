@@ -17,6 +17,7 @@
   vips,
   git,
   zstd,
+  sqlite,
   sourceInfo,
   gatewaySrc ? null,
   pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
@@ -56,6 +57,7 @@ let
         extraNativeBuildInputs = [
           perl
           makeWrapper
+          sqlite
         ];
         extraBuildInputs = [ vips ];
         extraEnv = {
