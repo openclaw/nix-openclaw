@@ -25,6 +25,11 @@ If both tracks are current and stable pin automation/CI are healthy, stop with a
 
 ## Repair Loop
 
+To prove stable-pin repairs before landing, dispatch `Pin Stable OpenClaw
+Version` on a maintainer branch. It runs the Linux/macOS package gates and
+verifies a local promotion commit, including added and removed generated files.
+Only `main` pushes the resulting pin update and dispatches publication CI.
+
 If the desired state is not true, keep working until it is true or until the exact blocker is proven.
 
 Diagnose across:

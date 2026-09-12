@@ -98,9 +98,9 @@ jobs:
           while IFS= read -r file; do
             pin_files+=("$file")
           done < <(scripts/update-pins.sh files)
-          git add --intent-to-add -- "${pin_files[@]}"
+          git add -- "${pin_files[@]}"
           digest="$(
-            git diff --binary -- "${pin_files[@]}" \
+            git diff --cached --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -190,9 +190,9 @@ jobs:
           while IFS= read -r file; do
             pin_files+=("$file")
           done < <(scripts/update-pins.sh files)
-          git add --intent-to-add -- "${pin_files[@]}"
+          git add -- "${pin_files[@]}"
           digest="$(
-            git diff --binary -- "${pin_files[@]}" \
+            git diff --cached --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -293,7 +293,6 @@ jobs:
       - verify-materialization
     if: >-
       ${{
-        github.ref == 'refs/heads/main' &&
         needs.select.outputs.has_update == 'true'
       }}
     runs-on: ubuntu-latest
@@ -314,6 +313,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATED_MATERIALIZATION_DIGEST: ${{ needs.verify-materialization.outputs.materialization_digest }}
+          PROMOTE_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
           git config user.name "openclaw-ci"
@@ -329,15 +329,15 @@ jobs:
           while IFS= read -r file; do
             pin_files+=("$file")
           done < <(scripts/update-pins.sh files)
-          git add --intent-to-add -- "${pin_files[@]}"
+          git add -- "${pin_files[@]}"
 
-          if git diff --quiet -- "${pin_files[@]}"; then
+          if git diff --cached --quiet -- "${pin_files[@]}"; then
             echo "No pin changes detected."
             exit 0
           fi
 
           promote_digest="$(
-            git diff --binary -- "${pin_files[@]}" \
+            git diff --cached --binary -- "${pin_files[@]}" \
               | shasum -a 256 \
               | awk '{ print $1 }'
           )"
@@ -348,10 +348,8 @@ jobs:
             exit 1
           fi
 
-          git add "${pin_files[@]}"
-
           git commit -F - <<EOF
-          🤖 codex: mirror OpenClaw stable source ${{ needs.select.outputs.source_tag }}
+          chore: mirror OpenClaw stable source ${{ needs.select.outputs.source_tag }}
 
           What:
           - update nix-openclaw to the latest stable OpenClaw source release
@@ -366,6 +364,11 @@ jobs:
           - nix build --accept-flake-config --option max-jobs 2 .#checks.aarch64-darwin.package-artifacts .#checks.aarch64-darwin.module-render .#checks.aarch64-darwin.runtime-smoke .#checks.aarch64-darwin.platform-activation .#checks.aarch64-darwin.runtime-plugin-packages .#checks.aarch64-darwin.runtime-plugin-host .#checks.aarch64-darwin.qmd-opt-in
           - scripts/hm-activation-macos.sh
           EOF
+
+          if [[ "$PROMOTE_REF" != "refs/heads/main" ]]; then
+            echo "Validated promotion commit on $PROMOTE_REF; skipping main push."
+            exit 0
+          fi
 
           git fetch origin main
           git rebase origin/main

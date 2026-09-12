@@ -64,6 +64,7 @@ jobs:
         run: |
           nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_22 --command node --test \
             scripts/select-openclaw-release.test.mjs \
+            scripts/pin-promotion.test.mjs \
             maintainers/scripts/markdown-table.test.mjs \
             nix/scripts/openclaw-runtime-plugin-version.test.mjs \
             nix/scripts/openclaw-runtime-plugin-package-locks.test.mjs \
