@@ -59,8 +59,8 @@ let
 
   bundledPluginSources =
     let
-      openclawToolsRev = "25fcec492e22996af9ee87106338a448bc6893a2";
-      openclawToolsNarHash = "sha256-FF75z2jVZJjymkLtt7e7rKBLQZtC1LBEoM8qDhQPLQ8=";
+      openclawToolsRev = "c40fa16f6bef6bef2d89f0cdd3daf142364a4060";
+      openclawToolsNarHash = "sha256-7see6mPJxBpPHilgFGOTZS3bAh2HrIP5ZVtaUdrNDUI=";
       openclawTools =
         tool:
         "github:openclaw/nix-openclaw-tools?dir=tools/${tool}&rev=${openclawToolsRev}&narHash=${openclawToolsNarHash}";

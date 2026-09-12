@@ -12,11 +12,11 @@ let
     {
       aarch64-darwin = {
         package = "exe.darwin-arm64";
-        hash = "sha256-9UrTZ9ikLa+dhIMOS9akXAlX4OMoekXaCMOguNBOx/c=";
+        hash = "sha256-nI4gCXq7OtTzC/oxw+WT016REfuGdaBq1rOR/N17yKA=";
       };
       x86_64-linux = {
         package = "exe.linux-x64";
-        hash = "sha256-mxyV/EE2AMp1pR6+gzLXAZ3DVo/UGH9aXy30oVbvtlw=";
+        hash = "sha256-YU0YvcsSGoRMAmCzFddrc35oc0bAAbjgk/0KkyAsLWs=";
       };
     }
     .${stdenvNoCC.hostPlatform.system}
@@ -24,7 +24,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "pnpm";
-  version = "12.3.4";
+  version = "12.4.1";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@pnpm/${platformSource.package}/-/${platformSource.package}-${finalAttrs.version}.tgz";
