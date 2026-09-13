@@ -53,6 +53,7 @@ let
 in
 {
   inherit pnpm_11 pnpm_12;
+  node-semver = pkgs.callPackage ./node-semver.nix { };
   inherit openclawRuntimePlugins;
   qmd = qmdPackage;
   openclaw-gateway = openclawGateway;

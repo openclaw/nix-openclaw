@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   nodejs_24,
+  callPackage,
 }:
 
 let
@@ -19,7 +20,10 @@ stdenvNoCC.mkDerivation {
   dontConfigure = true;
   dontBuild = true;
 
-  nativeBuildInputs = [ nodejs_24 ];
+  nativeBuildInputs = [
+    nodejs_24
+    (callPackage ../packages/node-semver.nix { })
+  ];
 
   env = {
     OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR = "${../generated/openclaw-runtime-plugins}";
@@ -31,7 +35,7 @@ stdenvNoCC.mkDerivation {
 
   doCheck = true;
   checkPhase = ''
-    ${nodejs_24}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-version.test.mjs
+    ${nodejs_24}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-version.test.mjs ${scriptsDir}/plugin-compatibility.test.mjs
     ${nodejs_24}/bin/node --test ${scriptsDir}/openclaw-runtime-plugin-package-locks.test.mjs \
       ${scriptsDir}/openclaw-runtime-plugin-prepare-npm.test.mjs \
       ${scriptsDir}/check-openclaw-runtime-plugin-locks.test.mjs

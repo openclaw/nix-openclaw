@@ -60,7 +60,7 @@ jobs:
       - name: Test JavaScript contracts
         timeout-minutes: 5
         run: |
-          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git --command node --test \
+          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git .#node-semver --command node --test \
             scripts/*.test.mjs maintainers/scripts/*.test.mjs \
             nix/scripts/*.test.mjs nix/scripts/*.test.js
 
@@ -104,7 +104,7 @@ jobs:
       - name: Test JavaScript contracts
         timeout-minutes: 5
         run: |
-          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git --command node --test \
+          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git .#node-semver --command node --test \
             scripts/*.test.mjs maintainers/scripts/*.test.mjs \
             nix/scripts/*.test.mjs nix/scripts/*.test.js
 

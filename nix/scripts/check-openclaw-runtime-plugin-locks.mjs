@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { satisfiesMinHostVersion, satisfiesPluginApiRange, satisfiesPeerRange } from "./plugin-compatibility.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -61,49 +62,6 @@ function readNixStringFields(file) {
       match[2],
     ]),
   );
-}
-
-function parseVersion(value) {
-  const match = typeof value === "string" ? value.match(/^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/) : null;
-  return match ? match.slice(1).map((part) => Number.parseInt(part, 10)) : null;
-}
-
-function compareVersions(left, right) {
-  const a = parseVersion(left);
-  const b = parseVersion(right);
-  if (!a || !b) {
-    return null;
-  }
-  for (let index = 0; index < 3; index += 1) {
-    if (a[index] !== b[index]) {
-      return a[index] < b[index] ? -1 : 1;
-    }
-  }
-  return 0;
-}
-
-function satisfiesVersionRange(version, range) {
-  const parts = typeof range === "string" ? range.trim().split(/\s+/).filter(Boolean) : [];
-  if (parts.length === 0) {
-    return true;
-  }
-  for (const part of parts) {
-    const match = part.match(/^(>=|>|<=|<|=)?(.+)$/);
-    if (!match) {
-      return false;
-    }
-    const operator = match[1] ?? "=";
-    const comparison = compareVersions(version, match[2]);
-    if (comparison === null) {
-      return false;
-    }
-    if (operator === ">=" && comparison < 0) return false;
-    if (operator === ">" && comparison <= 0) return false;
-    if (operator === "<=" && comparison > 0) return false;
-    if (operator === "<" && comparison >= 0) return false;
-    if (operator === "=" && comparison !== 0) return false;
-  }
-  return true;
 }
 
 function sameArray(left, right) {
@@ -215,9 +173,9 @@ for (const row of supported) {
       && process.env.OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE === "1"),
     `lock ${row.id} package-lock evidence source must be release (maintainer override requires OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1)`);
   }
-  assert(!lock.minHostVersion || satisfiesVersionRange(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
-  assert(!lock.openclawCompat || satisfiesVersionRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
-  assert(!lock.peerOpenClaw || satisfiesVersionRange(report.openclawVersion, lock.peerOpenClaw), `lock ${row.id} peerOpenClaw excludes OpenClaw ${report.openclawVersion}`);
+  assert(satisfiesMinHostVersion(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
+  assert(satisfiesPluginApiRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);
+  assert(satisfiesPeerRange(report.openclawVersion, lock.peerOpenClaw), `lock ${row.id} peerOpenClaw excludes OpenClaw ${report.openclawVersion}`);
 }
 
 for (const row of skipped) {
