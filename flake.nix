@@ -101,6 +101,13 @@
               default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = false;
               };
+              source-patches = pkgs.callPackage ./nix/checks/openclaw-source-patches.nix {
+                openclawSource =
+                  (pkgs.callPackage ./nix/packages/openclaw-gateway-source.nix {
+                    sourceInfo = sourceInfoStable;
+                    inherit (packageSetStable) pnpm_11 pnpm_12;
+                  }).src;
+              };
               source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeSourceOverrideChecks = true;
               };
@@ -171,6 +178,7 @@
               stableChecks.bin-surface
               stableChecks.package-contents
               stableChecks.pnpm-runtime
+              stableChecks.source-patches
             ]
             ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
               packageSetStable.openclaw-app

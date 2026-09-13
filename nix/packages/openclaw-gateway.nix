@@ -21,6 +21,7 @@ else
     inherit
       sourceInfo
       gatewaySrc
+      bundledAcpx
       pnpmDepsHash
       pnpm_11
       pnpm_12

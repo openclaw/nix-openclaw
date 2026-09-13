@@ -58,46 +58,6 @@ check_no_broken_symlinks() {
   rm -f "$broken_tmp"
 }
 
-copy_dist_extension_manifests() {
-  if [ ! -d "$root/dist/extensions" ]; then
-    return 0
-  fi
-
-  mkdir -p "$root/extensions"
-  find "$root/dist/extensions" -mindepth 2 -maxdepth 2 -name openclaw.plugin.json -type f -print |
-    while IFS= read -r manifest; do
-      name="$(basename "$(dirname "$manifest")")"
-      mkdir -p "$root/extensions/$name"
-      cp "$manifest" "$root/extensions/$name/openclaw.plugin.json"
-    done
-}
-
-stage_dist_runtime() {
-  if [ ! -d "$root/dist/extensions" ]; then
-    return 0
-  fi
-
-  # Keep relative chunk imports and module identity on the canonical dist graph.
-  rm -rf "$root/dist-runtime"
-  ln -s dist "$root/dist-runtime"
-}
-
-stage_acpx() {
-  if [ -z "${OPENCLAW_BUNDLED_ACPX:-}" ]; then
-    return 0
-  fi
-  if [ ! -d "$OPENCLAW_BUNDLED_ACPX" ]; then
-    echo "OPENCLAW_BUNDLED_ACPX missing: $OPENCLAW_BUNDLED_ACPX" >&2
-    exit 1
-  fi
-
-  acpx_root="$root/dist/extensions/acpx"
-  rm -rf "$acpx_root"
-  # Bundled plugin discovery requires physical containment, not a store-root link.
-  mkdir -p "$acpx_root"
-  cp -R "$OPENCLAW_BUNDLED_ACPX/." "$acpx_root/"
-}
-
 ensure_legacy_node_module_entry() {
   package="$1"
   if [ -e "$root/node_modules/$package" ] || [ -e "$modules_root/$package" ] || [ ! -d "$root/node_modules" ]; then
@@ -110,12 +70,8 @@ ensure_legacy_node_module_entry() {
   fi
 }
 
-log_step "copy extension manifests"
-copy_dist_extension_manifests
-log_step "stage dist-runtime"
-stage_dist_runtime
-log_step "stage acpx"
-stage_acpx
+log_step "stage Nix runtime layout"
+"$OPENCLAW_RUNTIME_LAYOUT_SH" "$root"
 log_step "restore legacy dependency entries"
 ensure_legacy_node_module_entry combined-stream
 ensure_legacy_node_module_entry hasown
