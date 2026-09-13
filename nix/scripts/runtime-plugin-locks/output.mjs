@@ -1,10 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { stableJson } from "./io.mjs";
-
-function nixString(value) {
-  return JSON.stringify(value);
-}
+import { nixString } from "../nix-string.mjs";
 
 function nixAttrName(name) {
   return /^[A-Za-z_][A-Za-z0-9_'-]*$/.test(name) ? name : nixString(name);

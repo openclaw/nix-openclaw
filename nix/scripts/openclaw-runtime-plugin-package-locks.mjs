@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { nixString } from "./nix-string.mjs";
 import { isUnsupportedResolvedSource } from "./openclaw-runtime-plugin-prepare-npm.mjs";
 
 const evidenceDirName = "dependency-evidence";
@@ -172,7 +173,7 @@ export function verifyNpmPackageLockEvidenceAssets({
 // the file into the store and yields its store path as a string.
 export function renderPackageLockProbeEnv(packageLockFile) {
   if (!packageLockFile) return "";
-  const escapedPath = JSON.stringify(packageLockFile).replaceAll("${", "\\${");
+  const escapedPath = nixString(packageLockFile);
   return `OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = "\${/. + ${escapedPath}}";`;
 }
 
