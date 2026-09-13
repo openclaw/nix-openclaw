@@ -299,6 +299,6 @@ nix-openclaw source evidence:
   and skipped-row diagnostics.
 - `nix/lib/openclaw-runtime-plugin.nix`: runtime plugin builder currently
   fetches one package tarball and validates already-present dependency roots.
-- `nix/scripts/openclaw-runtime-plugin-install.mjs`: output validator already
+- `nix/scripts/runtime-plugin/install.mjs`: output validator already
   checks manifest, runtime entries, bundled package roots, and the `openclaw`
   peer link.

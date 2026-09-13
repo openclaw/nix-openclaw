@@ -132,7 +132,7 @@ let
         OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW = lock.peerOpenClaw;
       };
 
-      installPhase = "${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-install.mjs}";
+      installPhase = "${nodejs_24}/bin/node ${../scripts/runtime-plugin}/install.mjs";
 
       passthru.openclawRuntimePlugin = {
         inherit (lock) id;
