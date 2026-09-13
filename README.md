@@ -709,7 +709,7 @@ Config flags the host will use:
 - `config.settings` for typed config keys (rendered to config.json in the first stateDir)
 
 CI note:
-- If the repo uses Garnix, add the plugin build to its `garnix.yaml` (or equivalent) so CI verifies it.
+- Build the plugin package outputs in CI on each supported system.
 
 Why: explicit, minimal, fail-fast, no inline JSON strings.
 Deliverables: flake output, env overrides, AGENTS.md, skill update.

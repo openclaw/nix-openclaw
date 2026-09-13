@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Verify flake.lock owners
         run: scripts/check-flake-lock-owners.sh
@@ -45,36 +45,23 @@ jobs:
     # Linux is the primary install/apply regression surface. Build every named
     # Linux proof group in one Nix invocation so shared dependencies are built
     # or substituted once, while the attr list still documents each contract.
-    if: >-
-      ${{
-        github.repository == 'openclaw/nix-openclaw' &&
-        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
-        contains(fromJSON('["Asleep123","asleep123","badlogic","bjesuiter","christianklotz","cpojer","Evizero","evizero","gumadeiras","joshp123","mbelinky","mukhtharcm","obviyus","onutc","pasogott","sebslight","sergiopesch","shakkernerd","steipete","Takhoffman","takhoffman","thewilloftheshadow","tyler6204","vignesh07","vincentkoc","github-actions[bot]"]'), github.actor)
-      }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Check Nix formatting
+        run: nix fmt -- --ci
 
       - name: Test JavaScript contracts
         run: |
-          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_22 --command node --test \
-            scripts/select-openclaw-release.test.mjs \
-            scripts/pin-promotion.test.mjs \
-            scripts/publish-release-notes.test.mjs \
-            maintainers/scripts/markdown-table.test.mjs \
-            nix/scripts/openclaw-runtime-plugin-version.test.mjs \
-            nix/scripts/openclaw-runtime-plugin-package-locks.test.mjs \
-            nix/scripts/openclaw-runtime-plugin-prepare-npm.test.mjs \
-            nix/scripts/check-openclaw-runtime-plugin-locks.test.mjs \
-            nix/scripts/check-openclaw-npm-wrapper-lock.test.mjs \
-            nix/scripts/openclaw-gateway-npm-install.test.mjs \
-            nix/scripts/patch-openclaw-npm-dist.test.mjs \
-            nix/scripts/normalize-pnpm-store-index.test.js
+          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 --command node --test \
+            scripts/*.test.mjs maintainers/scripts/*.test.mjs \
+            nix/scripts/*.test.mjs nix/scripts/*.test.js
 
       - name: Test installed-baseline profile isolation
         run: python3 -B nix/tests/installed-baseline/probe_test.py -v
@@ -104,27 +91,21 @@ jobs:
     # macOS proves the same supported package/module contracts on Darwin. The
     # launchd step applies the already-built activation package from an explicit
     # out-link so later builds cannot accidentally replace the `result` symlink.
-    if: >-
-      ${{
-        github.repository == 'openclaw/nix-openclaw' &&
-        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
-        contains(fromJSON('["Asleep123","asleep123","badlogic","bjesuiter","christianklotz","cpojer","Evizero","evizero","gumadeiras","joshp123","mbelinky","mukhtharcm","obviyus","onutc","pasogott","sebslight","sergiopesch","shakkernerd","steipete","Takhoffman","takhoffman","thewilloftheshadow","tyler6204","vignesh07","vincentkoc","github-actions[bot]"]'), github.actor)
-      }}
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
       - name: Build macOS supported surface
         timeout-minutes: 45
         run: |
           maintainers/scripts/ci-nix-build.sh macos-supported-surface \
             --accept-flake-config \
-            --option max-jobs 2 \
+            --option max-jobs 3 \
             .#checks.aarch64-darwin.package-artifacts \
             .#checks.aarch64-darwin.module-render \
             .#checks.aarch64-darwin.runtime-smoke \
@@ -138,7 +119,7 @@ jobs:
         run: |
           nix build \
             --accept-flake-config \
-            --option max-jobs 2 \
+            --option max-jobs 3 \
             --out-link result-platform-activation \
             .#checks.aarch64-darwin.platform-activation
           OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result-platform-activation" scripts/hm-activation-macos.sh
@@ -160,15 +141,15 @@ jobs:
           - system: x86_64-linux
             runner: ubuntu-latest
           - system: aarch64-darwin
-            runner: macos-14
+            runner: macos-15
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
       - name: Realize and probe installed baseline
         run: |
@@ -193,7 +174,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 

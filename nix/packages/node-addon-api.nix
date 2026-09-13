@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation {
   pname = "node-addon-api";
-  version = "8.5.0";
+  version = "8.9.2";
 
   src = fetchurl {
-    url = "https://registry.npmjs.org/node-addon-api/-/node-addon-api-8.5.0.tgz";
-    hash = "sha256-0S8HyBYig7YhNVGFXx2o2sFiMxN0YpgwteZA8TDweRA=";
+    url = "https://registry.npmjs.org/node-addon-api/-/node-addon-api-8.9.2.tgz";
+    hash = "sha256-TNZWmFQbGaM/eY8dwlwCxu0cnXdJuIJLGhzOzdGXyOo=";
   };
 
   dontConfigure = true;

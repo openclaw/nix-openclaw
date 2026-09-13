@@ -2,7 +2,7 @@
   lib,
   pkgs,
   stdenv,
-  nodejs_22,
+  nodejs_24,
   includePluginChecks ? false,
   includeQmdChecks ? false,
   includeSourceOverrideChecks ? false,
@@ -104,13 +104,13 @@ stdenv.mkDerivation {
   # Evaluation alone missed installPhase regressions in helper scripts.
   nativeBuildInputs =
     lib.optionals includePluginChecks [
-      nodejs_22
+      nodejs_24
     ]
     ++ lib.optional (includeQmdChecks && qmd.qmdMemoryPackage != null) qmd.qmdMemoryPackage;
   env = {
     OPENCLAW_DEFAULT_INSTANCE = checkKey;
   };
   installPhase =
-    lib.optionalString includePluginChecks "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/runtime-plugin}/install.mjs && "
+    lib.optionalString includePluginChecks "${nodejs_24}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/runtime-plugin}/install.mjs && "
     + "${../scripts/empty-install.sh}";
 }

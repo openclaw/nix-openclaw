@@ -27,7 +27,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - Plugin-owned extension surfaces, such as `channels.<plugin-id>`, must remain accepted by the Home Manager module even when core does not type every plugin key.
 - Runtime tool injection belongs here. If a plugin or battery is enabled, the active OpenClaw harness must see its CLI tools and required environment without asking downstream to expose those tools globally on the user PATH.
 - OpenClaw runtime plugin roots belong here too. The Home Manager module consumes `runtimePlugins` catalog ids or locked `runtimePluginSources` and writes `plugins.load.paths` plus enabled entries. Tool-plugin flakes expose packages and skills; `openclawPlugin.plugins` is rejected.
-- Raw npm/ClawHub plugin names are not batteries-included deployment config. Curated plugins packaged here must be exposed through packages/checks so CI/Garnix caches them. Arbitrary user specs need a deterministic lock/hash-backed Nix builder so Nix reuses the user's store/cache and only rebuilds when the spec, lock, or hash changes.
+- Raw npm/ClawHub plugin names are not batteries-included deployment config. Curated plugins packaged here must be exposed through packages/checks so CI validates them and consumers can build or cache them. Arbitrary user specs need a deterministic lock/hash-backed Nix builder so Nix reuses the user's store/cache and only rebuilds when the spec, lock, or hash changes.
 
 ## Build Contract
 

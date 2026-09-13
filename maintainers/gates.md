@@ -5,7 +5,8 @@ Use targeted checks while debugging, then run the full relevant gate before hand
 ## Required Checks
 
 - `scripts/check-flake-lock-owners.sh`
-- selector tests
+- `nix fmt -- --ci`
+- JavaScript contracts on the pinned Node 24 runtime: `node --test scripts/*.test.mjs maintainers/scripts/*.test.mjs nix/scripts/*.test.mjs nix/scripts/*.test.js`
 - Private pnpm runtime check (`checks.<system>.pnpm-runtime`, included in `package-artifacts`): offline local-tarball install, package execution, and frozen-lockfile rejection for both supported private pnpm majors
 - updater shell syntax
 - workflow YAML parse
@@ -19,6 +20,11 @@ Use targeted checks while debugging, then run the full relevant gate before hand
   `source-override-render`, `runtime-smoke`, `platform-activation`,
   `runtime-plugin-packages`, `runtime-plugin-host`, and `qmd-opt-in`
 - `scripts/hm-activation-macos.sh` when a macOS runner is available
+
+The provenance job also gates maintainer and same-repository authorization; the
+platform jobs depend on it. Linux and macOS 15 retain all supported-surface
+checks. The historical installed-baseline qualification still verifies Node 22
+from its pinned historical package; current packaging contracts use Node 24.
 
 ## CI Verification
 

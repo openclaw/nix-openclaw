@@ -1,7 +1,7 @@
 {
   lib,
   stdenvNoCC,
-  nodejs_22,
+  nodejs_24,
   openclawPackage,
   qmdPackage ? null,
 }:
@@ -13,7 +13,7 @@ stdenvNoCC.mkDerivation {
   dontUnpack = true;
   dontConfigure = true;
   dontBuild = true;
-  nativeBuildInputs = [ nodejs_22 ];
+  nativeBuildInputs = [ nodejs_24 ];
 
   env = {
     OPENCLAW_PACKAGE = openclawPackage;
