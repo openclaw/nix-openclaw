@@ -1,7 +1,3 @@
----
-written_by: ai
----
-
 # nix-openclaw Plugin Architecture (Maintainer Memo)
 
 Purpose: define nix-openclaw plugins without confusing them with OpenClaw runtime plugins. A nix-openclaw plugin is a Nix-managed bundle of tools, skills, and config requirements.
