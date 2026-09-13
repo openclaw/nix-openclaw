@@ -67,14 +67,12 @@ let
       existingAllowList,
       userPluginEntries,
       denyList,
-      nixOpenClawPluginIds,
     }:
     let
       sourceIds = map (source: source.id) sources;
       allIds = ids ++ sourceIds;
       duplicates = duplicateIds allIds;
       unknownIds = lib.filter (id: !(builtins.hasAttr id packageSet)) ids;
-      collisions = lib.filter (id: lib.elem id nixOpenClawPluginIds) allIds;
       disabledIds = lib.filter (id: (((userPluginEntries.${id} or { }).enabled or null) == false)) allIds;
       deniedIds = lib.filter (id: lib.elem id denyList) allIds;
       sourceWithAmbiguousInputs = lib.filter (
@@ -141,10 +139,6 @@ let
         {
           assertion = sourceWithInvalidUrl == [ ];
           message = "programs.openclaw.instances.${name}.runtimePluginSources url must start with https://: ${lib.concatStringsSep ", " (map sourceLabel sourceWithInvalidUrl)}";
-        }
-        {
-          assertion = collisions == [ ];
-          message = "programs.openclaw.instances.${name}.runtimePlugins/runtimePluginSources collides with nix-openclaw plugin ids: ${lib.concatStringsSep ", " collisions}";
         }
         {
           assertion = allIds == [ ] || existingLoadPaths == [ ];
