@@ -1512,6 +1512,6 @@ stdenv.mkDerivation {
     OPENCLAW_DEFAULT_INSTANCE = checkKey;
   };
   installPhase =
-    lib.optionalString includePluginChecks "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/openclaw-runtime-plugin-install.mjs} && "
+    lib.optionalString includePluginChecks "${nodejs_22}/bin/node ${../scripts/check-openclaw-runtime-plugin-installer.mjs} ${../scripts/runtime-plugin}/install.mjs && "
     + "${../scripts/empty-install.sh}";
 }
