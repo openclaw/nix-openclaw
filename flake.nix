@@ -233,6 +233,8 @@
 
         devShells.default = pkgs.mkShell {
           packages = [
+            pkgs.nodejs_24
+            pkgs.bash
             pkgs.git
             pkgs.nixfmt-tree
             pkgs.nil

@@ -21,6 +21,9 @@ Use targeted checks while debugging, then run the full relevant gate before hand
   `runtime-plugin-packages`, `runtime-plugin-host`, and `qmd-opt-in`
 - `scripts/hm-activation-macos.sh` when a macOS runner is available
 
+Run contract tests inside `nix develop` to select the pinned Node, Bash, and Git.
+CI selects those same packages with `nix shell` on both Linux and macOS.
+
 The provenance job also gates maintainer and same-repository authorization; the
 platform jobs depend on it. Linux and macOS 15 retain all supported-surface
 checks. The historical installed-baseline qualification still verifies Node 22

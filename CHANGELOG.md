@@ -6,6 +6,8 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Provide Node 24 and Bash in the development shell, and run contract tests with the same pinned Node/Bash/Git toolchain on Linux and macOS.
+
 - Update the source-build Node addon headers to `node-addon-api` 8.9.2; retain the existing Node 24 runtime floor.
 - Compatibility: stop advertising the retired Garnix cache (`cache.garnix.io` returns NXDOMAIN); builds use the operator's configured substituters and the default NixOS cache.
 

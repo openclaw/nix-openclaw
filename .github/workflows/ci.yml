@@ -58,8 +58,9 @@ jobs:
         run: nix fmt -- --ci
 
       - name: Test JavaScript contracts
+        timeout-minutes: 5
         run: |
-          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 --command node --test \
+          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git --command node --test \
             scripts/*.test.mjs maintainers/scripts/*.test.mjs \
             nix/scripts/*.test.mjs nix/scripts/*.test.js
 
@@ -99,6 +100,13 @@ jobs:
 
       - name: Install Nix
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Test JavaScript contracts
+        timeout-minutes: 5
+        run: |
+          nix shell --option flake-registry '' --inputs-from . nixpkgs#nodejs_24 nixpkgs#bash nixpkgs#git --command node --test \
+            scripts/*.test.mjs maintainers/scripts/*.test.mjs \
+            nix/scripts/*.test.mjs nix/scripts/*.test.js
 
       - name: Build macOS supported surface
         timeout-minutes: 45
