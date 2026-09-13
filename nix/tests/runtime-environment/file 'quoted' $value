@@ -1,0 +1,1 @@
+literal file contents $HOME $(touch unexpected-command)

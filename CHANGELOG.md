@@ -6,6 +6,8 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Compatibility: pass runtime environment values and plugin secret-file paths literally, preserving quotes and `$` without shell expansion; resolve home paths in Nix. File loading, matching `NAME=` prefixes, `_FILE` paths, and instance overrides remain supported.
+
 - Provide Node 24 and Bash in the development shell, and run contract tests with the same pinned Node/Bash/Git toolchain on Linux and macOS.
 
 - Update the source-build Node addon headers to `node-addon-api` 8.9.2; retain the existing Node 24 runtime floor.
