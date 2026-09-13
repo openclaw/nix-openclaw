@@ -7,6 +7,7 @@ Older repository history is available in git.
 ## Unreleased
 
 - Escape Nix string interpolation in generated schema and plugin metadata, including paths containing spaces; reject unknown updater arguments and keep `--check` from creating generated directories.
+- Compatibility: pass runtime environment values and plugin secret-file paths literally, preserving quotes and `$` without shell expansion; resolve home paths in Nix. File loading, matching `NAME=` prefixes, `_FILE` paths, and instance overrides remain supported.
 
 - Provide Node 24 and Bash in the development shell, and run contract tests with the same pinned Node/Bash/Git toolchain on Linux and macOS.
 

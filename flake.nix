@@ -105,6 +105,7 @@
                 includeSourceOverrideChecks = true;
               };
               workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
+              runtime-environment = pkgs.callPackage ./nix/checks/openclaw-runtime-environment.nix { };
               pnpm-runtime = pkgs.callPackage ./nix/checks/openclaw-pnpm-runtime.nix {
                 inherit (packageSetStable) pnpm_11 pnpm_12;
               };
@@ -194,6 +195,7 @@
                 paths = [
                   stableChecks.config-validity
                   stableChecks.gateway-smoke
+                  stableChecks.runtime-environment
                 ];
               };
               # Runtime plugin host contract: lock consistency plus module/config
