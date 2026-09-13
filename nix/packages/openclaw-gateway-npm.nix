@@ -19,10 +19,14 @@ in
 
 assert lib.assertMsg (lockedVersion == sourceInfo.releaseVersion)
   "OpenClaw npm lock version ${toString lockedVersion} does not match OpenClaw ${sourceInfo.releaseVersion}";
-assert lib.assertMsg ((bundledAcpx.openclawRuntimePlugin.id or null) == "acpx")
-  "bundledAcpx must be the generated ACPX runtime plugin package";
-assert lib.assertMsg ((bundledAcpx.openclawRuntimePlugin.version or null) == sourceInfo.runtimePluginVersion)
-  "ACPX runtime plugin version ${toString (bundledAcpx.openclawRuntimePlugin.version or null)} does not match OpenClaw runtime plugins ${sourceInfo.runtimePluginVersion}";
+assert lib.assertMsg (
+  (bundledAcpx.openclawRuntimePlugin.id or null) == "acpx"
+) "bundledAcpx must be the generated ACPX runtime plugin package";
+assert lib.assertMsg
+  ((bundledAcpx.openclawRuntimePlugin.version or null) == sourceInfo.runtimePluginVersion)
+  "ACPX runtime plugin version ${
+    toString (bundledAcpx.openclawRuntimePlugin.version or null)
+  } does not match OpenClaw runtime plugins ${sourceInfo.runtimePluginVersion}";
 
 buildNpmPackageForOpenClaw {
   pname = "openclaw-gateway";

@@ -18,8 +18,9 @@ stdenvNoCC.mkDerivation {
   env = {
     OPENCLAW_PACKAGE = openclawPackage;
     QMD_PACKAGE = lib.optionalString (qmdPackage != null) "${qmdPackage}";
-    OPENCLAW_QMD_BACKEND_SUPPORTED = lib.boolToString
-      (import ../lib/openclaw-config-capabilities.nix { inherit lib; }).supportsQmdBackend;
+    OPENCLAW_QMD_BACKEND_SUPPORTED =
+      lib.boolToString
+        (import ../lib/openclaw-config-capabilities.nix { inherit lib; }).supportsQmdBackend;
   };
 
   doCheck = true;

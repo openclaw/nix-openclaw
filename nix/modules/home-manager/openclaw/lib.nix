@@ -38,9 +38,7 @@ let
         # Only underscore-prefixed valid keys take upstream's trailing-dash fallback.
         normalized = map (
           key:
-          lib.toLower (
-            if lib.hasPrefix "_" key then builtins.head (builtins.match "(.*[^-])-*" key) else key
-          )
+          lib.toLower (if lib.hasPrefix "_" key then builtins.head (builtins.match "(.*[^-])-*" key) else key)
         ) keys;
       in
       # Generated options omit upstream key patterns; validate before forming paths.

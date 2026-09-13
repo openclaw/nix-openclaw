@@ -63,10 +63,12 @@ let
       throw "runtime plugin ${lock.id} must define tarballUrl, sourceUrl, or sourceSpec";
   dependencyMode =
     lock.dependencyMode or (if (lock.npmDepsHash or null) != null then "shrinkwrap" else "auto");
-  isLocked = builtins.elem dependencyMode [ "shrinkwrap" "package-lock" ];
+  isLocked = builtins.elem dependencyMode [
+    "shrinkwrap"
+    "package-lock"
+  ];
   packageLockEnv = lib.optionalAttrs (dependencyMode == "package-lock") {
-    OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE =
-      "${../generated/openclaw-runtime-plugins}/${lock.npmPackageLockFile}";
+    OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = "${../generated/openclaw-runtime-plugins}/${lock.npmPackageLockFile}";
   };
   hasRuntimeDependencies =
     (lock.dependencies or { }) != { } || (lock.optionalDependencies or { }) != { };
@@ -157,19 +159,22 @@ let
       };
     }
     // lib.optionalAttrs isLocked {
-      npmDeps = fetchNpmDeps ({
-        name = "${packageName}-npm-deps";
-        src = pluginSrc;
-        sourceRoot = "package";
-        hash = lock.npmDepsHash;
-        nativeBuildInputs = [ nodejs_24 ];
-        OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
-        OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName or "";
-        OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version or "";
-        postPatch = ''
-          ${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
-        '';
-      } // packageLockEnv);
+      npmDeps = fetchNpmDeps (
+        {
+          name = "${packageName}-npm-deps";
+          src = pluginSrc;
+          sourceRoot = "package";
+          hash = lock.npmDepsHash;
+          nativeBuildInputs = [ nodejs_24 ];
+          OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE = dependencyMode;
+          OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName or "";
+          OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version or "";
+          postPatch = ''
+            ${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
+          '';
+        }
+        // packageLockEnv
+      );
     }
   );
 in

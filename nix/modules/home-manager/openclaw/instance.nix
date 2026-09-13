@@ -8,7 +8,12 @@
 }:
 
 let
-  inherit (openclawLib) cfg homeDir appPackage qmdPackage;
+  inherit (openclawLib)
+    cfg
+    homeDir
+    appPackage
+    qmdPackage
+    ;
   toJSONWithContext = import ../../../lib/json-with-context.nix { inherit lib; };
   runtimePlugins = import ./runtime-plugins.nix { inherit lib pkgs; };
 
@@ -310,13 +315,14 @@ let
             Restart = "always";
             RestartSec = "1s";
             # Systemd needs whole quoted items, not shell quote concatenation.
-            Environment = map builtins.toJSON [
-              "HOME=${homeDir}"
-              "OPENCLAW_CONFIG_PATH=${configPath}"
-              "OPENCLAW_STATE_DIR=${stateDir}"
-              "OPENCLAW_NIX_MODE=1"
-            ]
-            ++ lib.optional disablePersistedPluginRegistry "OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=1";
+            Environment =
+              map builtins.toJSON [
+                "HOME=${homeDir}"
+                "OPENCLAW_CONFIG_PATH=${configPath}"
+                "OPENCLAW_STATE_DIR=${stateDir}"
+                "OPENCLAW_NIX_MODE=1"
+              ]
+              ++ lib.optional disablePersistedPluginRegistry "OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=1";
             StandardOutput = "append:${inst.logPath}";
             StandardError = "append:${inst.logPath}";
           };

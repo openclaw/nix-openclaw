@@ -142,8 +142,7 @@ let
       qmdPath = builtins.unsafeDiscardStringContext (pkg.OPENCLAW_QMD_PATH or "");
     in
     qmdPath != "";
-  isPluginSkillPath =
-    path: path == "/tmp/.local/share/nix-openclaw/skills/default/skill";
+  isPluginSkillPath = path: path == "/tmp/.local/share/nix-openclaw/skills/default/skill";
 
   defaultEval = moduleEval { };
   openclawLib = import ../../modules/home-manager/openclaw/lib.nix {

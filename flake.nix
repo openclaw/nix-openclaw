@@ -77,7 +77,7 @@
       {
         formatter = pkgs.nixfmt-tree.override {
           settings = {
-            global.excludes = [ "nix/generated/openclaw-config-options.nix" ];
+            global.excludes = [ "nix/generated/**" ];
           };
         };
 
@@ -168,17 +168,16 @@
                   ];
                 }).activationPackage;
             };
-            packageArtifactPaths =
-              [
-                packageSetStable.openclaw
-                packageSetStable.openclaw-gateway
-                stableChecks.bin-surface
-                stableChecks.package-contents
-                stableChecks.pnpm-runtime
-              ]
-              ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
-                packageSetStable.openclaw-app
-              ];
+            packageArtifactPaths = [
+              packageSetStable.openclaw
+              packageSetStable.openclaw-gateway
+              stableChecks.bin-surface
+              stableChecks.package-contents
+              stableChecks.pnpm-runtime
+            ]
+            ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
+              packageSetStable.openclaw-app
+            ];
             proofChecks = {
               # Product artifacts: user-facing package plus component packages
               # and content/surface checks that prove those artifacts are sane.

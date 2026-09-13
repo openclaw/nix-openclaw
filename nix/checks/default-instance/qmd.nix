@@ -1,7 +1,19 @@
-{ lib, pkgs, helpers }:
+{
+  lib,
+  pkgs,
+  helpers,
+}:
 
 let
-  inherit (helpers) moduleEval requireNoAssertionFailures requireAssertionFailure requireEvalFailure generatedConfig packageHasQmd openclawLib;
+  inherit (helpers)
+    moduleEval
+    requireNoAssertionFailures
+    requireAssertionFailure
+    requireEvalFailure
+    generatedConfig
+    packageHasQmd
+    openclawLib
+    ;
 
   inherit (import ../../lib/openclaw-config-capabilities.nix { inherit lib; }) supportsQmdBackend;
   retiredQmdConfigs = [
@@ -16,17 +28,20 @@ let
   qmdControlEval = moduleEval {
     config = qmdControlConfig;
   };
-  qmdControlCheck = builtins.deepSeq [
-    (requireNoAssertionFailures "QMD valid config control" qmdControlEval)
-    qmdControlEval.config.home.activation
-  ] (
-    if (generatedConfig qmdControlEval ".openclaw/openclaw.json").memory != qmdControlConfig.memory then
-      throw "QMD valid config control changed authored memory config."
-    else if lib.any packageHasQmd qmdControlEval.config.home.packages then
-      throw "Valid memory config without QMD opt-in added an internal QMD wrapper."
-    else
-      "ok"
-  );
+  qmdControlCheck =
+    builtins.deepSeq
+      [
+        (requireNoAssertionFailures "QMD valid config control" qmdControlEval)
+        qmdControlEval.config.home.activation
+      ]
+      (
+        if (generatedConfig qmdControlEval ".openclaw/openclaw.json").memory != qmdControlConfig.memory then
+          throw "QMD valid config control changed authored memory config."
+        else if lib.any packageHasQmd qmdControlEval.config.home.packages then
+          throw "Valid memory config without QMD opt-in added an internal QMD wrapper."
+        else
+          "ok"
+      );
   qmdPrewarmEval = moduleEval {
     qmd.prewarmModels.enable = true;
   };
@@ -74,9 +89,18 @@ let
               type = lib.types.listOf lib.types.attrs;
               default = [ ];
             };
-            users = lib.mkOption { type = lib.types.attrs; default = { }; };
-            systemd = lib.mkOption { type = lib.types.attrs; default = { }; };
-            environment = lib.mkOption { type = lib.types.attrs; default = { }; };
+            users = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+            systemd = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+            environment = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
           };
         }
         ../../modules/nixos/openclaw-gateway.nix
@@ -84,7 +108,8 @@ let
           services.openclaw-gateway = {
             enable = true;
             createUser = false;
-          } // gatewayConfig;
+          }
+          // gatewayConfig;
         }
       ];
       specialArgs = { inherit pkgs; };
@@ -97,35 +122,50 @@ let
       servicePath = evaluated.config.systemd.services.openclaw-gateway.path;
       expectedQmd = supportsQmdBackend && (config.memory.backend or null) == "qmd";
     in
-    builtins.deepSeq (
-      if supportsQmdBackend || config == qmdControlConfig then
-        requireNoAssertionFailures "NixOS QMD config" evaluated
-      else
-        requireAssertionFailure "NixOS retired QMD config" "schema retired the QMD backend" evaluated
-    ) (
-      if rendered != config then
-        throw "NixOS QMD handling changed authored config."
-      else if lib.elem openclawLib.qmdPackage servicePath != expectedQmd then
-        throw "NixOS automatic QMD service PATH disagrees with schema capability and opt-in."
-      else
-        "ok"
-    )
+    builtins.deepSeq
+      (
+        if supportsQmdBackend || config == qmdControlConfig then
+          requireNoAssertionFailures "NixOS QMD config" evaluated
+        else
+          requireAssertionFailure "NixOS retired QMD config" "schema retired the QMD backend" evaluated
+      )
+      (
+        if rendered != config then
+          throw "NixOS QMD handling changed authored config."
+        else if lib.elem openclawLib.qmdPackage servicePath != expectedQmd then
+          throw "NixOS automatic QMD service PATH disagrees with schema capability and opt-in."
+        else
+          "ok"
+      )
   ) ([ qmdControlConfig ] ++ retiredQmdConfigs);
   nixosQmdExplicitEval = nixosQmdEval {
     configFile = ../../tests/workspace/LORE.md;
     servicePath = [ openclawLib.qmdPackage ];
   };
   nixosQmdExplicitCheck =
-    builtins.deepSeq (requireNoAssertionFailures "NixOS explicit QMD tooling" nixosQmdExplicitEval) (
-      if nixosQmdExplicitEval.config.environment.etc."openclaw/openclaw.json".source != ../../tests/workspace/LORE.md then
-        throw "NixOS QMD handling must leave configFile opaque and unchanged."
-      else if !(lib.elem openclawLib.qmdPackage nixosQmdExplicitEval.config.systemd.services.openclaw-gateway.path) then
-        throw "NixOS QMD handling removed an explicit servicePath package."
-      else
-        "ok"
-    );
+    builtins.deepSeq (requireNoAssertionFailures "NixOS explicit QMD tooling" nixosQmdExplicitEval)
+      (
+        if
+          nixosQmdExplicitEval.config.environment.etc."openclaw/openclaw.json".source
+          != ../../tests/workspace/LORE.md
+        then
+          throw "NixOS QMD handling must leave configFile opaque and unchanged."
+        else if
+          !(lib.elem openclawLib.qmdPackage nixosQmdExplicitEval.config.systemd.services.openclaw-gateway.path)
+        then
+          throw "NixOS QMD handling removed an explicit servicePath package."
+        else
+          "ok"
+      );
 
 in
 {
-  inherit qmdControlCheck qmdPrewarmCheck qmdMemoryCheck qmdMemoryPackage nixosQmdChecks nixosQmdExplicitCheck;
+  inherit
+    qmdControlCheck
+    qmdPrewarmCheck
+    qmdMemoryCheck
+    qmdMemoryPackage
+    nixosQmdChecks
+    nixosQmdExplicitCheck
+    ;
 }

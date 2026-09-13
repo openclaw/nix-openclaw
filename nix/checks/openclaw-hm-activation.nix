@@ -91,7 +91,8 @@ pkgs.testers.nixosTest {
                   plugins = {
                     enabled = false;
                   };
-                } // lib.optionalAttrs openclawLib.usesAgentEntries {
+                }
+                // lib.optionalAttrs openclawLib.usesAgentEntries {
                   agents.entries = { };
                 };
               };
@@ -101,9 +102,21 @@ pkgs.testers.nixosTest {
                 config.agents =
                   if openclawLib.usesAgentEntries then
                     lib.optionalAttrs openclawLib.hasAgentOwnership { ownership = "explicit"; }
-                    // { entries = { Writer = { }; research = { }; "_worker--" = { }; "a--" = { }; }; }
+                    // {
+                      entries = {
+                        Writer = { };
+                        research = { };
+                        "_worker--" = { };
+                        "a--" = { };
+                      };
+                    }
                   else
-                    { list = [ { id = "writer"; } { id = "research"; } ]; };
+                    {
+                      list = [
+                        { id = "writer"; }
+                        { id = "research"; }
+                      ];
+                    };
               };
             };
 
