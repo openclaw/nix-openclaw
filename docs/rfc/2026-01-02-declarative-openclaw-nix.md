@@ -1,8 +1,12 @@
 # RFC: Declarative OpenClaw as a Nix Package (nix-openclaw)
 
 - Date: 2026-01-02
-- Status: Implementing
+- Status: Historical design record
 - Audience: Nix users, agents (Codex/Claude), package maintainers, operators
+
+Current behavior and supported inputs are documented in the [README](../../README.md)
+and [packaging invariants](../../maintainers/packaging.md). This record preserves
+the original proposal, including decisions superseded by later work.
 
 ## 1) Narrative: what we are building and why
 

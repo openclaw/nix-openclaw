@@ -1,31 +1,24 @@
----
-written_by: ai
----
-
 # Performance Audit
 
 Commit-tied metrics for packaging and CI changes. Keep this file short: current
 snapshot, decision-relevant history, and exact commands. Raw logs belong in
 GitHub Actions, local `/tmp` captures, or ignored `.agent/` notes.
 
-## Current Snapshot
+## Historical npm packaging comparison
 
-- Compared refs:
-  - pre-#101 baseline: `d69b1fc1e736bbe78b46bd886fcc1791b5b9d942`
-  - current main: `4f0a37d3068f6b98e7da1fa26014b2ba72342d00`
-  - PR #100 remote head before this slice:
-    `4db66bdb2ced44fcf4e476cb30afdde7e09dc5c1`
-  - local merge/proof head before this audit edit:
-    `9e5fb2cb12f4b5d93ab26a192311925195c70e91`
-- The local branch now contains current `main`; remote PR #100 remains dirty
-  until this branch is pushed and GitHub recomputes mergeability. The #101
-  overlap is intentionally replaced: Garnix no longer references the deleted
-  `ci` aggregate and remains a small cache-publication target set.
-- Product change: stable `openclaw-gateway` uses the upstream npm package and
-  `npm-shrinkwrap.json` through `buildNpmPackage`; source/pnpm remains available
-  for explicit `gatewayPath` source overrides.
+[PR #100](https://github.com/openclaw/nix-openclaw/pull/100) compared the npm
+package path with the source/pnpm build. These measurements describe that
+change, not current release sizes:
 
-| Metric | main | PR #100 | Change | Command |
+- Source baseline: `d69b1fc1e736bbe78b46bd886fcc1791b5b9d942`.
+- Comparison main: `4f0a37d3068f6b98e7da1fa26014b2ba72342d00`.
+- Candidate: `4db66bdb2ced44fcf4e476cb30afdde7e09dc5c1`.
+- Post-merge proof: `9e5fb2cb12f4b5d93ab26a192311925195c70e91`.
+
+Stable gateway packages use upstream npm/shrinkwrap artifacts. Explicit
+`gatewayPath` overrides retain the source/pnpm builder.
+
+| Metric | Source baseline | npm candidate | Change | Command |
 | --- | ---: | ---: | ---: | --- |
 | Gateway closure | 2,273,877,888 B | 904,981,328 B | 60.2% smaller | `nix path-info -S "$gateway"` |
 | `openclaw` closure | 3,215,431,032 B | 1,846,534,464 B | 42.6% smaller | `nix path-info -S "$openclaw"` |
@@ -37,7 +30,9 @@ GitHub Actions, local `/tmp` captures, or ignored `.agent/` notes.
 
 ## CI Proof Shape
 
-GitHub Actions now has three jobs:
+The regular [CI workflow](../.github/workflows/ci.yml) has three validation jobs.
+A branch-only dispatch can additionally qualify the historical installed baseline;
+publication runs only after the main-branch validation jobs pass.
 
 | Job | Proves | Notes |
 | --- | --- | --- |
@@ -62,7 +57,7 @@ Deleted surface:
 - `packages.<system>.openclaw-gateway-dogfood`
 - `checks.<system>.package-contents-dogfood`
 
-## Current Local Proof
+## Historical local proof for PR #100
 
 | Proof | Result | Notes |
 | --- | --- | --- |
