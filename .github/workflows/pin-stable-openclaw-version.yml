@@ -206,7 +206,7 @@ jobs:
         run: |
           maintainers/scripts/ci-nix-build.sh macos-supported-surface \
             --accept-flake-config \
-            --option max-jobs 3 \
+            --option max-jobs 2 \
             .#checks.aarch64-darwin.package-artifacts \
             .#checks.aarch64-darwin.module-render \
             .#checks.aarch64-darwin.runtime-smoke \
@@ -223,7 +223,7 @@ jobs:
         run: |
           nix build \
             --accept-flake-config \
-            --option max-jobs 3 \
+            --option max-jobs 2 \
             --out-link result-platform-activation \
             .#checks.aarch64-darwin.platform-activation
           OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result-platform-activation" scripts/hm-activation-macos.sh
@@ -361,7 +361,7 @@ jobs:
 
           Tests:
           - nix build .#checks.x86_64-linux.package-artifacts .#checks.x86_64-linux.module-render .#checks.x86_64-linux.runtime-smoke .#checks.x86_64-linux.platform-activation .#checks.x86_64-linux.runtime-plugin-packages .#checks.x86_64-linux.runtime-plugin-host .#checks.x86_64-linux.qmd-opt-in --accept-flake-config
-          - nix build --accept-flake-config --option max-jobs 3 .#checks.aarch64-darwin.package-artifacts .#checks.aarch64-darwin.module-render .#checks.aarch64-darwin.runtime-smoke .#checks.aarch64-darwin.platform-activation .#checks.aarch64-darwin.runtime-plugin-packages .#checks.aarch64-darwin.runtime-plugin-host .#checks.aarch64-darwin.qmd-opt-in
+          - nix build --accept-flake-config --option max-jobs 2 .#checks.aarch64-darwin.package-artifacts .#checks.aarch64-darwin.module-render .#checks.aarch64-darwin.runtime-smoke .#checks.aarch64-darwin.platform-activation .#checks.aarch64-darwin.runtime-plugin-packages .#checks.aarch64-darwin.runtime-plugin-host .#checks.aarch64-darwin.qmd-opt-in
           - scripts/hm-activation-macos.sh
           EOF
 

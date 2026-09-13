@@ -100,7 +100,7 @@ nix eval --accept-flake-config --json .#checks.aarch64-darwin --apply 'c: builti
 nix eval --accept-flake-config --json .#checks.x86_64-linux --apply 'c: builtins.attrNames c'
 
 maintainers/scripts/ci-nix-build.sh local-macos-supported-surface-current \
-  --accept-flake-config --option max-jobs 3 --no-link \
+  --accept-flake-config --option max-jobs 2 --no-link \
   .#checks.aarch64-darwin.package-artifacts \
   .#checks.aarch64-darwin.module-render \
   .#checks.aarch64-darwin.runtime-smoke \

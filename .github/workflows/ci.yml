@@ -113,7 +113,7 @@ jobs:
         run: |
           maintainers/scripts/ci-nix-build.sh macos-supported-surface \
             --accept-flake-config \
-            --option max-jobs 3 \
+            --option max-jobs 2 \
             .#checks.aarch64-darwin.package-artifacts \
             .#checks.aarch64-darwin.module-render \
             .#checks.aarch64-darwin.runtime-smoke \
@@ -127,7 +127,7 @@ jobs:
         run: |
           nix build \
             --accept-flake-config \
-            --option max-jobs 3 \
+            --option max-jobs 2 \
             --out-link result-platform-activation \
             .#checks.aarch64-darwin.platform-activation
           OPENCLAW_HM_ACTIVATION_PACKAGE="$PWD/result-platform-activation" scripts/hm-activation-macos.sh
