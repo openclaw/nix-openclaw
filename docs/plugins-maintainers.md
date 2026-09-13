@@ -94,6 +94,8 @@ openclawPlugin = {
 };
 ```
 
+The output is top-level, not nested under a system key. It can also be a function `system: { ... }` to select packages for the consuming host. Commit the plugin flake lock for pure, pinned consumption.
+
 Host responsibilities (what the runtime guarantees):
 - Resolve plugin source; read contract.
 - Install `packages`; prepend to PATH for the gateway wrapper.
@@ -145,7 +147,7 @@ programs.openclaw.bundledPlugins.summarize.enable = true;
 Plugin contract (inside the plugin repo):
 
 ```nix
-openclawPlugin = {
+openclawPlugin = system: {
   name = "summarize";
   skills = [ ./skills/summarize ];
   packages = [ self.packages.${system}.summarize-cli ];
@@ -189,7 +191,7 @@ programs.openclaw.customPlugins = [
 Plugin contract (inside `xuezh`):
 
 ```nix
-openclawPlugin = {
+openclawPlugin = system: {
   name = "xuezh";
   skills = [ ./skills/xuezh ];
   packages = [ self.packages.${system}.default ];

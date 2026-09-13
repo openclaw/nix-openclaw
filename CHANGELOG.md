@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Escape Nix string interpolation in generated schema and plugin metadata, including paths containing spaces; reject unknown updater arguments and keep `--check` from creating generated directories.
 - Compatibility: pass runtime environment values and plugin secret-file paths literally, preserving quotes and `$` without shell expansion; resolve home paths in Nix. File loading, matching `NAME=` prefixes, `_FILE` paths, and instance overrides remain supported.
 
 - Provide Node 24 and Bash in the development shell, and run contract tests with the same pinned Node/Bash/Git toolchain on Linux and macOS.
@@ -13,6 +14,7 @@ Older repository history is available in git.
 
 - Update the source-build Node addon headers to `node-addon-api` 8.9.2; retain the existing Node 24 runtime floor.
 - Compatibility: stop advertising the retired Garnix cache (`cache.garnix.io` returns NXDOMAIN); builds use the operator's configured substituters and the default NixOS cache.
+- Compatibility: fix the hello-world plugin example by exporting the host-system function at the top level, locking its inputs, and installing the documented `hello-world` executable (previously emitted as `hello-world-openclaw`).
 
 ## 2026.9.4 - 2026-09-11
 

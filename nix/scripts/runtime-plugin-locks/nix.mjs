@@ -23,9 +23,9 @@ export function createNixTools({ repoRoot, sourceInfoPath, prepareNpmScriptPath 
     ];
     const expr = `
       let
-        flake = builtins.getFlake (toString ${repoRoot});
+        flake = builtins.getFlake ${nixString(repoRoot)};
         pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
-        sourceInfo = import ${sourceInfoPath};
+        sourceInfo = import (/. + ${nixString(sourceInfoPath)});
         sourceFetch = builtins.removeAttrs sourceInfo ${toNix(strippedAttrs)};
       in
         pkgs.fetchFromGitHub sourceFetch
@@ -46,7 +46,7 @@ export function createNixTools({ repoRoot, sourceInfoPath, prepareNpmScriptPath 
     }
     const expr = `
       let
-        flake = builtins.getFlake (toString ${repoRoot});
+        flake = builtins.getFlake ${nixString(repoRoot)};
         pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
       in
         pkgs.prefetch-npm-deps
@@ -94,10 +94,10 @@ export function createNixTools({ repoRoot, sourceInfoPath, prepareNpmScriptPath 
     const safeProbeName = attrNameForId(row.id);
     const expr = `
       let
-        flake = builtins.getFlake (toString ${repoRoot});
+        flake = builtins.getFlake ${nixString(repoRoot)};
         pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
         npmHooksForNode = pkgs.npmHooks.override { nodejs = pkgs.nodejs_24; };
-        prepareNpmScript = ${prepareNpmScriptPath};
+        prepareNpmScript = /. + ${nixString(prepareNpmScriptPath)};
         pluginSrc = pkgs.fetchurl {
           url = ${nixString(artifact.tarballUrl)};
           hash = ${nixString(artifact.nixHash)};

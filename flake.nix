@@ -141,6 +141,9 @@
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = true;
               };
+              example-plugin = pkgs.callPackage ./nix/checks/example-plugin.nix {
+                inherit nixpkgs flake-utils;
+              };
               runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
               runtime-plugin-packages = pkgs.symlinkJoin {
                 name = "openclaw-runtime-plugin-packages";
@@ -204,6 +207,7 @@
                 name = "openclaw-runtime-plugin-host";
                 paths = [
                   runtimePluginChecks.runtime-plugin-locks
+                  runtimePluginChecks.example-plugin
                   pluginChecks.plugin-instance
                   runtimePluginChecks.runtime-plugin-config-validity
                   runtimePluginChecks.runtime-plugin-gateway-smoke

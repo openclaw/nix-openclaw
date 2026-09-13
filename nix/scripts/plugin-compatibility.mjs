@@ -42,8 +42,11 @@ export function satisfiesPluginApiRange(version, range) {
 
 export function satisfiesPeerRange(version, range) {
   if (range == null || range === "") return true;
-  return typeof range === "string" && Boolean(range.trim())
-    && semverMatches(correction.exec(version)?.[1] ?? version, range, false);
+  if (typeof range !== "string" || !range.trim()) return false;
+  if (semverMatches(version, range, false)) return true;
+  const stableAlias = correction.exec(version)?.[1];
+  return Boolean(stableAlias) && semverMatches(version, "*", true)
+    && semverMatches(stableAlias, range, false);
 }
 
 // Host versions order numeric correction releases after stable, unlike npm prereleases.
