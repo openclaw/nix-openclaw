@@ -1,0 +1,1 @@
+exec "$OPENCLAW_ENV_TEST_PRINTENV" -0 "$@"

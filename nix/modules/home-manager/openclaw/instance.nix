@@ -16,6 +16,7 @@ let
     ;
   toJSONWithContext = import ../../../lib/json-with-context.nix { inherit lib; };
   runtimePlugins = import ./runtime-plugins.nix { inherit lib pkgs; };
+  environment = import ./environment.nix { inherit lib pkgs; };
 
   stripNulls =
     value:
@@ -205,30 +206,7 @@ let
           export PATH="${runtimePath}:$PATH"
         fi
 
-        ${lib.concatStringsSep "\n" (
-          map (
-            entry:
-            let
-              isFile = lib.hasSuffix "_FILE" entry.key;
-            in
-            ''
-              if [ -f "${entry.value}" ]; then
-                if ${if isFile then "true" else "false"}; then
-                  export ${entry.key}="${entry.value}"
-                else
-                  rawValue="$("${lib.getExe' pkgs.coreutils "cat"}" "${entry.value}")"
-                  if [ "''${rawValue#${entry.key}=}" != "$rawValue" ]; then
-                    export ${entry.key}="''${rawValue#${entry.key}=}"
-                  else
-                    export ${entry.key}="$rawValue"
-                  fi
-                fi
-              else
-                export ${entry.key}="${entry.value}"
-              fi
-            ''
-          ) runtimeEnvAll
-        )}
+        ${environment.renderExports runtimeEnvAll}
 
         exec "${gatewayRuntimePackage}/bin/openclaw" "$@"
       '';

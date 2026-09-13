@@ -584,7 +584,7 @@ customPlugins = [
     source = "github:example/padel-cli?rev=<commit>&narHash=<narHash>";
     config = {
       env = {
-        PADEL_AUTH_FILE = "~/.secrets/padel-auth";  # where your login token lives
+        PADEL_AUTH_FILE = "/run/agenix/padel-auth";  # where your login token lives
       };
       settings = {
         default_city = "Barcelona";
@@ -805,6 +805,12 @@ programs.openclaw.config.models.providers.groq.apiKey = {
 ```
 
 That keeps nix-openclaw responsible for stable config and service wiring, keeps secrets out of the Nix store, and leaves dynamic secret-manager integration to the host layer that owns credentials and runtime side effects.
+
+Runtime environment values are literal strings: shell variables and command
+substitutions are not expanded. Values naming existing files are read at
+startup, with an optional matching `NAME=` prefix removed; variables ending in
+`_FILE` retain the file path. Use absolute secret paths or resolve home paths in
+Nix with `config.home.homeDirectory`.
 
 ### Minimal config (single instance)
 

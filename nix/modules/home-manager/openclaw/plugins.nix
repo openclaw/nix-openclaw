@@ -191,21 +191,12 @@ let
 
   pluginGuards =
     let
-      renderCheck = entry: ''
-        if [ -z "${entry.value}" ]; then
-          echo "Missing env ${entry.key} for plugin ${entry.plugin} in instance ${entry.instance}." >&2
-          exit 1
-        fi
-        if [ ! -f "${entry.value}" ] || [ ! -s "${entry.value}" ]; then
-          echo "Required file for ${entry.key} not found or empty: ${entry.value} (plugin ${entry.plugin}, instance ${entry.instance})." >&2
-          exit 1
-        fi
-      '';
+      environment = import ./environment.nix { inherit lib pkgs; };
       entriesForInstance =
         instName: map (entry: entry // { instance = instName; }) (pluginEnvFor instName);
       entries = lib.flatten (map entriesForInstance (lib.attrNames enabledInstances));
     in
-    lib.concatStringsSep "\n" (map renderCheck entries);
+    environment.renderGuards entries;
 
 in
 {

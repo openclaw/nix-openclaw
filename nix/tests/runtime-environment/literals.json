@@ -1,0 +1,7 @@
+{
+  "NIX_TEST_LITERAL": "spaces \"quotes\" 'single' $HOME $(touch unexpected-command) ${literal}\nsecond line",
+  "key": "a user value for key",
+  "value": "a user value for value",
+  "rawValue": "a user value for rawValue",
+  "cat_bin": "a user value for cat_bin"
+}
