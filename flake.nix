@@ -1,13 +1,6 @@
 {
   description = "nix-openclaw: declarative OpenClaw packaging";
 
-  nixConfig = {
-    extra-substituters = [ "https://cache.garnix.io" ];
-    extra-trusted-public-keys = [
-      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
-    ];
-  };
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -240,6 +233,8 @@
 
         devShells.default = pkgs.mkShell {
           packages = [
+            pkgs.nodejs_24
+            pkgs.bash
             pkgs.git
             pkgs.nixfmt-tree
             pkgs.nil

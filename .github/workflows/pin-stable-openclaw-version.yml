@@ -28,7 +28,7 @@ jobs:
       app_lag_releases: ${{ steps.select.outputs.app_lag_releases }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -72,10 +72,10 @@ jobs:
       validation_ok: ${{ steps.validation.outputs.validation_ok }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
       - name: Materialize selected release
         id: materialize
@@ -157,17 +157,17 @@ jobs:
   validate-macos:
     needs: select
     if: needs.select.outputs.has_update == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
     outputs:
       materialization_digest: ${{ steps.materialization.outputs.materialization_digest }}
       validation_ok: ${{ steps.validation.outputs.validation_ok }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
       - name: Materialize selected release
         id: materialize
@@ -302,12 +302,12 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31.11.1
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
       - name: Promote selected release
         env:

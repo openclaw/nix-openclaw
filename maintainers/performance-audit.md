@@ -28,6 +28,13 @@ Stable gateway packages use upstream npm/shrinkwrap artifacts. Explicit
 | Gateway forced rebuild | 399.37s then Nix determinism failure | 56.27s success | deterministic npm path | `/usr/bin/time -p nix build --rebuild --no-link <ref>#packages.aarch64-darwin.openclaw-gateway` |
 | Garnix include targets | 10 | 5 | 50.0% fewer | `ruby -e 'require "yaml"; ...'` |
 
+## Cache availability
+
+The historical Garnix measurements below describe PR #100. Its cache endpoint
+now returns NXDOMAIN, so the flake no longer advertises that substituter and
+`garnix.yaml` has been removed. Builds use the operator's configured Nix caches
+and the default NixOS cache.
+
 ## CI Proof Shape
 
 The regular [CI workflow](../.github/workflows/ci.yml) has three validation jobs.
@@ -61,7 +68,7 @@ Deleted surface:
 
 | Proof | Result | Notes |
 | --- | --- | --- |
-| Workflow/Garnix YAML parse | pass | `.github/workflows/ci.yml`, pin workflow, `garnix.yaml` |
+| Workflow/Garnix YAML parse | pass | `.github/workflows/ci.yml`, pin workflow, historical `garnix.yaml` |
 | `git diff --check` | pass | No whitespace errors. |
 | Darwin supported surface, cold local pass | pass, 288s | 42 planned/built derivations; runtime plugin catalog dominated cost. |
 | Darwin supported surface, post-merge warm pass | pass, 28s | 0 planned/built derivations; validates the mergeable head uses the cached supported surface. |
@@ -78,7 +85,7 @@ Deleted surface:
 | `ci` aggregate | Removed | The name hid unrelated proof obligations. Named attrs expose what is proven. |
 | supported-surface CI | Accepted | One platform job per OS builds all supported attrs in one Nix invocation, avoiding matrix/setup duplication. |
 | source override | Render proof retained | `gatewayPath` is dev-only; CI proves module/source-builder wiring without reintroducing a full pnpm source build. |
-| Garnix | Cache publication only | Garnix is sunset risk. GitHub Actions owns proof; Garnix keeps a small package/cache target set. |
+| Garnix | Retired | The endpoint no longer resolves. GitHub Actions owns proof; cache publication configuration was removed. |
 | larger runners / machine images | Excluded | Provider tuning may help cold start, but does not simplify the Nix graph or prove downstream install behavior. |
 | Magic Nix Cache | Rejected | Remote experiment made Linux slower and blocked macOS proof startup. |
 
@@ -86,7 +93,7 @@ Deleted surface:
 
 ```bash
 ruby -e 'require "yaml"; ARGV.each { |p| YAML.load_file(p) }; puts "yaml ok"' \
-  .github/workflows/ci.yml .github/workflows/pin-stable-openclaw-version.yml garnix.yaml
+  .github/workflows/ci.yml .github/workflows/pin-stable-openclaw-version.yml
 git diff --check
 
 nix eval --accept-flake-config --json .#checks.aarch64-darwin --apply 'c: builtins.attrNames c'

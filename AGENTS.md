@@ -52,7 +52,7 @@ Source: https://github.com/orgs/openclaw/people
 - Keep maintainer runbooks in `maintainers/`.
 - Never add internal ExecPlans or agent scratch history to this repo. `.agent/` is ignored for this reason.
 - If a private deployment exposes a public packaging bug, fix the public package here and keep deployment-specific repair elsewhere.
-- OpenClaw plugin loading belongs here: package supported OpenClaw catalog runtime plugin roots as Nix artifacts, expose generated outputs through package/check outputs for Garnix, and let host repos only enable/configure them.
+- OpenClaw plugin loading belongs here: package supported OpenClaw catalog runtime plugin roots as Nix artifacts, expose generated outputs through package/check outputs for CI and consumers, and let host repos only enable/configure them.
 - Do not make host config run package-manager installs at runtime for the batteries-included path. Supported OpenClaw catalog runtime plugin ids use `programs.openclaw.runtimePlugins`; `customPlugins.source = "npm:..."` is not supported.
 
 ## Packaging Defaults
