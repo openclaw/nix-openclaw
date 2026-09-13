@@ -53,7 +53,15 @@ If upstream has not published public macOS app assets, call that out directly, k
 
 ## Runtime plugin lock checks
 
-`node nix/scripts/update-openclaw-runtime-plugin-locks.mjs --check` compares
-regenerated artifacts without creating or changing the generated directory.
+`nix develop --command node nix/scripts/update-openclaw-runtime-plugin-locks.mjs --check`
+compares regenerated artifacts without creating or changing the generated directory.
 Use no argument to write updates. Unknown or repeated flags fail before Nix
 runs; `--help` prints usage without fetching artifacts.
+
+Plugin compatibility checks use the pinned `node-semver` tool from `nix develop`
+(also supplied by `scripts/update-pins.sh` and CI). Peer ranges use npm syntax,
+including wildcards, caret, tilde and OR ranges. Plugin API ranges follow upstream
+OpenClaw: comparator intersections only, bare major.minor as a minimum, and
+release-suffix normalization. Minimum host versions retain numeric correction
+ordering after stable releases; legacy bare minimums remain accepted. Missing
+tooling aborts generation before processing artifacts.

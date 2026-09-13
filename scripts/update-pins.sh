@@ -115,7 +115,7 @@ refresh_npm_wrapper_locks() {
 
 refresh_runtime_plugin_locks() {
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 nixpkgs#unzip -c \
+    nixpkgs#nodejs_24 nixpkgs#unzip "$repo_root#node-semver" -c \
     node "$repo_root/nix/scripts/update-openclaw-runtime-plugin-locks.mjs"
   track_new_runtime_plugin_locks
 }
@@ -145,7 +145,7 @@ validate_runtime_plugin_locks() {
     OPENCLAW_SOURCE_INFO_PATH="$source_file" \
     OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1 \
     nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 nixpkgs#unzip -c \
+    nixpkgs#nodejs_24 nixpkgs#unzip "$repo_root#node-semver" -c \
     node "$repo_root/nix/scripts/check-openclaw-runtime-plugin-locks.mjs"; then
     rm -f "$locks_json"
     return 1

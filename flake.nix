@@ -240,6 +240,7 @@
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.nodejs_24
+            packageSetStable.node-semver
             pkgs.bash
             pkgs.git
             pkgs.nixfmt-tree

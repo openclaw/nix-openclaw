@@ -1,3 +1,4 @@
+import { satisfiesMinHostVersion, satisfiesPluginApiRange, satisfiesPeerRange, verifyCompatibilityTool } from "../plugin-compatibility.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -5,7 +6,7 @@ import { defaultCatalogVersion } from "../openclaw-runtime-plugin-version.mjs";
 import { briefError, pickDefined, run, sortedObject } from "./io.mjs";
 import {
   attrNameForId, isExactVersion, parseClawHubSpec, parseNpmSpec,
-  satisfiesVersionRange, skip, supportedReport,
+  skip, supportedReport,
 } from "./catalog.mjs";
 import {
   collectPackageRoots, declaredDependencyRoots, resolveRuntimeEntries, validateTarMembers,
@@ -15,6 +16,8 @@ import { resolveClawHubArtifact, resolveNpmArtifact } from "./artifacts.mjs";
 export function createLockBuilder({
   releaseVersion, packageLocks, prepareLockedPackage, computeNpmDepsHash, probeLockMaterialization,
 }) {
+  verifyCompatibilityTool();
+
   function dependencyModeForArtifact(
     row,
     artifact,
@@ -146,12 +149,12 @@ export function createLockBuilder({
       const openclawCompat = packageJson.openclaw?.compat?.pluginApi ?? "";
       const peerOpenClaw = packageJson.peerDependencies?.openclaw ?? "";
       const compatibilityRanges = [
-        ["catalog minHostVersion", row.install?.minHostVersion ?? ""],
-        ["openclaw.compat.pluginApi", openclawCompat],
-        ["peerDependencies.openclaw", peerOpenClaw],
+        ["catalog minHostVersion", row.install?.minHostVersion ?? "", satisfiesMinHostVersion],
+        ["openclaw.compat.pluginApi", openclawCompat, satisfiesPluginApiRange],
+        ["peerDependencies.openclaw", peerOpenClaw, satisfiesPeerRange],
       ];
-      for (const [name, range] of compatibilityRanges) {
-        if (range && !satisfiesVersionRange(releaseVersion, range)) {
+      for (const [name, range, satisfies] of compatibilityRanges) {
+        if (!satisfies(releaseVersion, range)) {
           return {
             skipped: skip(row, "host-compatibility-mismatch", `${name} ${range} does not include OpenClaw ${releaseVersion}`),
           };

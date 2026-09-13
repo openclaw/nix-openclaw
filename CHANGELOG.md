@@ -10,6 +10,7 @@ Older repository history is available in git.
 - Compatibility: pass runtime environment values and plugin secret-file paths literally, preserving quotes and `$` without shell expansion; resolve home paths in Nix. File loading, matching `NAME=` prefixes, `_FILE` paths, and instance overrides remain supported.
 
 - Provide Node 24 and Bash in the development shell, and run contract tests with the same pinned Node/Bash/Git toolchain on Linux and macOS.
+- Accept valid npm peer ranges in runtime plugin catalog checks and align plugin API/minimum-host comparisons with OpenClaw, including numeric correction releases; report packaging constraints after compatibility succeeds.
 
 - Update the source-build Node addon headers to `node-addon-api` 8.9.2; retain the existing Node 24 runtime floor.
 - Compatibility: stop advertising the retired Garnix cache (`cache.garnix.io` returns NXDOMAIN); builds use the operator's configured substituters and the default NixOS cache.

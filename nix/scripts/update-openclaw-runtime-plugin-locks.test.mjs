@@ -26,6 +26,11 @@ function fixture(t) {
   }
   const bin = path.join(root, "bin");
   fs.mkdirSync(bin);
+  fs.symlinkSync(process.execPath, path.join(bin, "node"));
+  const semver = (process.env.PATH ?? "").split(path.delimiter)
+    .map((directory) => path.join(directory, "node-semver"))
+    .find((candidate) => fs.existsSync(candidate));
+  if (semver) fs.symlinkSync(semver, path.join(bin, "node-semver"));
   const marker = path.join(root, "nix-invoked");
   fs.writeFileSync(path.join(bin, "nix"), '#!/bin/sh\nprintf invoked > "$MARKER"\nprintf "%s\\n" "$SOURCE"\n', { mode: 0o755 });
   const generated = path.join(root, "nix/generated/openclaw-runtime-plugins");

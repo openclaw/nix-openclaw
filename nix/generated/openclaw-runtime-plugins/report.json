@@ -1479,8 +1479,8 @@
       "npmSpec": "@tencent-connect/openclaw-qqbot@2.0.3",
       "expectedIntegrity": "sha512-yngu/2cPeZjJfIfHWCXWB2/6KlDHrb9vpOUjKLdQxePLSp6wCn3CFOALcBIVq/9o6jlYz9WTU9idW6nfX1xpFA==",
       "status": "skipped",
-      "reason": "host-compatibility-mismatch",
-      "detail": "peerDependencies.openclaw * does not include OpenClaw 2026.9.4"
+      "reason": "runtime-dependencies-without-shrinkwrap",
+      "detail": "package has runtime dependencies but no npm-shrinkwrap.json, bundled node_modules, or upstream npm package-lock evidence"
     },
     {
       "id": "openclaw-weixin",

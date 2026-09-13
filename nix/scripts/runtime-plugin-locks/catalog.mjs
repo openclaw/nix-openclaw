@@ -8,52 +8,6 @@ export const catalogFiles = [
   "official-external-provider-catalog.json",
 ];
 
-function parseVersion(value) {
-  const match = optionalString(value)?.match(/^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
-  if (!match) {
-    return null;
-  }
-  return match.slice(1).map((part) => Number.parseInt(part, 10));
-}
-
-function compareVersions(left, right) {
-  const a = parseVersion(left);
-  const b = parseVersion(right);
-  if (!a || !b) {
-    return null;
-  }
-  for (let index = 0; index < 3; index += 1) {
-    if (a[index] !== b[index]) {
-      return a[index] < b[index] ? -1 : 1;
-    }
-  }
-  return 0;
-}
-
-function satisfiesVersionRange(version, range) {
-  const parts = optionalString(range)?.split(/\s+/).filter(Boolean) ?? [];
-  if (parts.length === 0) {
-    return true;
-  }
-  for (const part of parts) {
-    const match = part.match(/^(>=|>|<=|<|=)?(.+)$/);
-    if (!match) {
-      return false;
-    }
-    const operator = match[1] ?? "=";
-    const comparison = compareVersions(version, match[2]);
-    if (comparison === null) {
-      return false;
-    }
-    if (operator === ">=" && comparison < 0) return false;
-    if (operator === ">" && comparison <= 0) return false;
-    if (operator === "<=" && comparison > 0) return false;
-    if (operator === "<" && comparison >= 0) return false;
-    if (operator === "=" && comparison !== 0) return false;
-  }
-  return true;
-}
-
 function parseCatalogEntries(raw) {
   if (Array.isArray(raw)) {
     return raw.filter(isRecord);
@@ -251,4 +205,4 @@ function readCatalogRows(openclawSourcePath) {
   return rows;
 }
 
-export { satisfiesVersionRange, parseNpmSpec, parseClawHubSpec, npmRegistryUrl, clawHubArtifactUrl, isExactVersion, attrNameForId, skip, supportedReport, readCatalogRows };
+export { parseNpmSpec, parseClawHubSpec, npmRegistryUrl, clawHubArtifactUrl, isExactVersion, attrNameForId, skip, supportedReport, readCatalogRows };
