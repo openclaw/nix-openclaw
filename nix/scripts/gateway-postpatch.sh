@@ -4,11 +4,6 @@ if [ -f package.json ]; then
   "$REMOVE_PACKAGE_MANAGER_FIELD_SH" package.json
 fi
 
-if [ -n "${PATCH_BUNDLED_RUNTIME_DEPS_SCRIPT:-}" ] && [ -f scripts/stage-bundled-plugin-runtime-deps.mjs ]; then
-  cp "$PATCH_BUNDLED_RUNTIME_DEPS_SCRIPT" scripts/stage-bundled-plugin-runtime-deps.mjs
-  chmod u+w scripts/stage-bundled-plugin-runtime-deps.mjs
-fi
-
 if [ -n "${PATCH_PUBLIC_SURFACE_HARDLINKS:-}" ]; then
   patch -p1 < "$PATCH_PUBLIC_SURFACE_HARDLINKS"
 fi

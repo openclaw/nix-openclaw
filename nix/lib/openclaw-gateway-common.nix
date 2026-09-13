@@ -89,12 +89,13 @@ let
     pnpm = selectedPnpm;
     hash = if pnpmDepsHash != null then pnpmDepsHash else lib.fakeHash;
     fetcherVersion = if pnpmNeedsVerifiedStore then 4 else 3;
+    prePnpmInstall = ". ${../scripts/pnpm-fetch-config.sh}";
     preFixup = lib.optionalString pnpmNeedsVerifiedStore ''
       expectedIntegrities="$(mktemp)"
       actualIntegrities="$(mktemp)"
       missingIntegrities="$(mktemp)"
       expectedPackages="$(mktemp)"
-      yq -r '.packages | to_entries[] | select(.value.resolution.integrity) | [.key, .value.resolution.integrity] | @tsv' pnpm-lock.yaml > "$expectedPackages"
+      ${../scripts/list-pnpm-workspace-integrities.sh} pnpm-lock.yaml > "$expectedPackages"
       cut -f2 "$expectedPackages" | sort -u > "$expectedIntegrities"
       ${nodejs_24}/bin/node --no-warnings ${../scripts/list-pnpm-store-integrities.js} "$storePath" | sort -u > "$actualIntegrities"
       comm -23 "$expectedIntegrities" "$actualIntegrities" > "$missingIntegrities"
@@ -135,9 +136,9 @@ let
     NODE_PATH = "${nodeAddonApi}/lib/node_modules:${node-gyp}/lib/node_modules";
     PNPM_DEPS = pnpmDeps;
     OPENCLAW_BUILD_ROOT_SH = "${../scripts/build-root.sh}";
+    OPENCLAW_BUILD_LOG_SH = "${../scripts/build-log.sh}";
     NODE_GYP_WRAPPER_SH = "${../scripts/node-gyp-wrapper.sh}";
     GATEWAY_PREBUILD_SH = "${../scripts/gateway-prebuild.sh}";
-    PATCH_BUNDLED_RUNTIME_DEPS_SCRIPT = "${../patches/stage-bundled-plugin-runtime-deps.mjs}";
     PATCH_PUBLIC_SURFACE_HARDLINKS =
       if sourceInfo.applyPublicSurfaceHardlinksPatch or true then
         "${publicSurfaceHardlinksPatch}"
@@ -153,9 +154,22 @@ let
         "${../patches/allow-nix-store-plugin-ownership.patch}"
       else
         "";
+    OPENCLAW_RUNTIME_LAYOUT_SH = "${../scripts/openclaw-stage-runtime.sh}";
+    PNPM_BUILD_ENV_SH = "${../scripts/pnpm-build-env.sh}";
+    RESTORE_PNPM_STORE_SCRIPT = "${../scripts/restore-pnpm-store.mjs}";
     PROMOTE_PNPM_INTEGRITY_SH = "${../scripts/promote-pnpm-integrity.sh}";
     REMOVE_PACKAGE_MANAGER_FIELD_SH = "${../scripts/remove-package-manager-field.sh}";
     STDENV_SETUP = "${stdenv}/setup";
+  }
+  //
+    lib.optionalAttrs
+      (gatewaySrc == null && src == null && builtins.match "[0-9a-fA-F]{40}" sourceInfo.rev != null)
+      {
+        GIT_COMMIT = sourceInfo.rev;
+      }
+  // lib.optionalAttrs pnpmNeedsVerifiedStore {
+    # fetchPnpmDeps already verified supply-chain policy for this fixed-output lock.
+    PNPM_CONFIG_TRUST_LOCKFILE = "true";
   }
   // lib.optionalAttrs (fsSafeSource != null) {
     OPENCLAW_FS_SAFE_SOURCE = fsSafeSource;

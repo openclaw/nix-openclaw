@@ -6,6 +6,11 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Restore source gateway builds through upstream build and production-deployment entry points, with verified offline pnpm stores and complete workspace dependencies.
+- Make source-build provenance reproducible with `SOURCE_DATE_EPOCH` and record the known pinned Git commit.
+- Fix source-build commands failing when Nix timing output is disabled.
+- Compatibility: retire `OPENCLAW_NIX_TSC_MAX_OLD_SPACE_MB` because upstream no longer builds SDK declarations in a separate tsc stage; use upstream build controls or `NODE_OPTIONS`. `OPENCLAW_NIX_TSDOWN_MAX_OLD_SPACE_MB` forwards to upstream's corresponding setting.
+
 - Escape Nix string interpolation in generated schema and plugin metadata, including paths containing spaces; reject unknown updater arguments and keep `--check` from creating generated directories.
 - Compatibility: pass runtime environment values and plugin secret-file paths literally, preserving quotes and `$` without shell expansion; resolve home paths in Nix. File loading, matching `NAME=` prefixes, `_FILE` paths, and instance overrides remain supported.
 

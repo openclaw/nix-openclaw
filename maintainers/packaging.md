@@ -49,3 +49,36 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - Legacy OpenClaw QMD integration defaults to direct `qmd` CLI execution. Retired schemas do not support a QMD backend, even when the standalone CLI is installed.
 - Package `mcporter` in `nix-openclaw-tools` as an optional tool when needed, but do not add it to the default `openclaw` runtime PATH just because QMD is bundled.
 - On a legacy schema accepting `memory.qmd.mcporter.enabled = true`, nix-openclaw should make `mcporter` visible to that instance and require the matching mcporter server config for `qmd mcp`.
+
+## Source overrides
+
+Source builds fetch the locked workspace before building offline. An empty
+`NIX_NPM_REGISTRY` defaults to `https://registry.npmjs.org/`; a non-empty operator
+override is preserved. pnpm 11+ stores toolchain and workspace locks in separate
+YAML documents. Completeness checks read the final workspace document, including
+any actual workspace dependency named `pnpm`; Nix supplies the package manager.
+The build restores fetcher-v4 SQLite indexes and reuses the fixed-output fetch's
+supply-chain verification. Installs stay frozen and all package-manager commands
+use the verified offline store.
+
+The build invokes upstream's `build:package` script. Older source checkouts with
+separate public `build` and `ui:build` scripts use those entry points. Upstream
+owns compiler grouping, runtime staging, SDK declarations, and package assets.
+Native rebuilds select the gateway's workspace dependency closure, including the
+root, so unrelated extension installers cannot download dependencies during the
+build.
+
+Production deployment uses pnpm's package-file and workspace-dependency rules.
+It preserves declared launchers and runtime helpers while excluding development
+files, and package symlinks must remain valid after the build store is removed.
+Both package routes share the Nix runtime layout: extension manifests, a canonical
+`dist-runtime` alias, and the pinned ACPX bundle. The source wrapper invokes the
+manifest's `openclaw` executable in Nix mode.
+
+Build timestamps come from `SOURCE_DATE_EPOCH`. For the pinned source archive,
+provenance records its full Git SHA; arbitrary source overrides are not stamped
+with the default pin's identity.
+
+Use upstream build resource controls or `NODE_OPTIONS`. The Nix TSDOWN override
+forwards to `OPENCLAW_TSDOWN_MAX_OLD_SPACE_MB`; the separate Nix TSC override is
+retired because the current upstream build has no independent tsc stage.

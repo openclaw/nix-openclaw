@@ -19,10 +19,18 @@
   zstd,
   sourceInfo,
   gatewaySrc ? null,
+  bundledAcpx ? null,
   pnpmDepsHash ? (sourceInfo.pnpmDepsHash or null),
 }:
 
 assert gatewaySrc == null || pnpmDepsHash != null;
+assert lib.assertMsg (
+  bundledAcpx == null
+  || (
+    (bundledAcpx.openclawRuntimePlugin.id or null) == "acpx"
+    && (bundledAcpx.openclawRuntimePlugin.version or null) == sourceInfo.runtimePluginVersion
+  )
+) "bundledAcpx must match the pinned ACPX runtime plugin";
 
 let
   common =
@@ -80,6 +88,7 @@ stdenv.mkDerivation (finalAttrs: {
   env = common.env // {
     # Nix doesn't automatically substitute finalAttrs into env.
     PNPM_DEPS = finalAttrs.pnpmDeps;
+    OPENCLAW_BUNDLED_ACPX = if bundledAcpx == null then "" else toString bundledAcpx;
   };
 
   passthru = common.passthru;

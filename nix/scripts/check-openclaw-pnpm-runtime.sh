@@ -43,3 +43,5 @@ JSON
   )
   echo "pnpm $version: offline install, execution, and frozen-lockfile rejection passed"
 done
+
+node --test "$SOURCE_BUILD_TESTS_DIR"/*.test.mjs
