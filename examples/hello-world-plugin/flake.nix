@@ -23,21 +23,24 @@
           version = "0.1.0";
           src = ./.;
           vendorHash = null;
+          postInstall = "${./install.sh}";
+          meta.mainProgram = "hello-world";
         };
 
         apps.default = flake-utils.lib.mkApp {
           drv = self.packages.${system}.default;
         };
-
-        openclawPlugin = {
-          name = "hello-world";
-          skills = [ ./skills/hello-world ];
-          packages = [ self.packages.${system}.default ];
-          needs = {
-            stateDirs = [ ];
-            requiredEnv = [ ];
-          };
-        };
       }
-    );
+    )
+    // {
+      openclawPlugin = system: {
+        name = "hello-world";
+        skills = [ ./skills/hello-world ];
+        packages = [ self.packages.${system}.default ];
+        needs = {
+          stateDirs = [ ];
+          requiredEnv = [ ];
+        };
+      };
+    };
 }
