@@ -21,8 +21,10 @@ const correction = /^v?(\d+\.\d+\.\d+)-(\d+)(?:\+[^\s]+)?$/;
 const releaseSuffix = /^v?(\d{4}\.[1-9]\d?\.[1-9]\d*)-(?:alpha|beta|rc)\.\d+$/i;
 const core = /^v?(\d+\.\d+\.\d+)/;
 function apiVersion(version, target) {
+  // Build metadata may contain hyphens without making the target a prerelease.
+  const prereleaseFloor = target.split("+", 1)[0].includes("-") && semverMatches(target, "*", true);
   return correction.exec(version)?.[1]
-    ?? (target.includes("-") ? version : releaseSuffix.exec(version)?.[1] ?? version);
+    ?? (prereleaseFloor ? version : releaseSuffix.exec(version)?.[1] ?? version);
 }
 
 // Match OpenClaw's plugin API rules: bare major.minor is a floor; OR is unsupported.

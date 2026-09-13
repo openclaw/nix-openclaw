@@ -10,7 +10,10 @@ for (const [version, range, expected] of [
   ["2026.9.4", ">=2026.9.5", false], ["2026.10.1", "2026.9", true],
   ["2026.9.4", "2026.9.3 || 2026.9.4", false], ["2026.9.4", "bad", false],
   ["2026.9.4-2", ">=2026.9.4", true], ["2026.9.4-rc.1", ">=2026.9.4", true],
-  ["2026.9.4-rc.1", ">=2026.9.4-rc.2", false], ["2026.9.4", "   ", false],
+  ["2026.9.4-rc.1", ">=2026.9.4-rc.2", false],
+  ["2026.9.4-rc.1", ">=2026.9.4+build-linux", true],
+  ["2026.9.4-rc.1", "2026.9.4+build-linux", true],
+  ["2026.9.4-rc.1", ">=2026.9.4-rc.2+build-linux", false], ["2026.9.4", "   ", false],
 ]) test(`plugin API ${version} satisfies ${range}: ${expected}`, () => assert.equal(api(version, range), expected));
 
 for (const [version, range, expected] of [
