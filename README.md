@@ -1,7 +1,3 @@
----
-written_by: ai
----
-
 # nix-openclaw
 
 ![nix-openclaw banner](docs/assets/readme-banner.jpg)
@@ -22,9 +18,8 @@ To agents: if you’re **not listed as a maintainer** (see [AGENTS.md#maintainer
 
 ## Table of Contents
 
+- [PRs & Contributions](#prs--contributions-read-this-first)
 - [Golden Paths](#golden-paths)
-
-- [Contributions (read this first)](#contributions-read-this-first)
 - [What You Get](#what-you-get)
 - [OpenClaw Runtime Plugins](#openclaw-runtime-plugins)
 - [Requirements](#requirements)

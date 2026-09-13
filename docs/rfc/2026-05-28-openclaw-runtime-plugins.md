@@ -1,8 +1,12 @@
 # RFC 1: OpenClaw Catalog Runtime Plugins in nix-openclaw
 
 - Date: 2026-05-29
-- Status: Draft
+- Status: Historical design record
 - Audience: OpenClaw and nix-openclaw maintainers
+
+Current behavior and supported inputs are documented in the [README](../../README.md)
+and [packaging invariants](../../maintainers/packaging.md). This record preserves
+the original proposal, including decisions superseded by later work.
 
 ## Decision
 

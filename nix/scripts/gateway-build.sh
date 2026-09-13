@@ -1,22 +1,6 @@
 #!/bin/sh
 set -e
 
-log_step() {
-  if [ "${OPENCLAW_NIX_TIMINGS:-1}" != "1" ]; then
-    "$@"
-    return
-  fi
-
-  name="$1"
-  shift
-
-  start=$(date +%s)
-  printf '>> [timing] %s...\n' "$name" >&2
-  "$@"
-  end=$(date +%s)
-  printf '>> [timing] %s: %ss\n' "$name" "$((end - start))" >&2
-}
-
 if [ -z "${GATEWAY_PREBUILD_SH:-}" ]; then
   echo "GATEWAY_PREBUILD_SH is not set" >&2
   exit 1
