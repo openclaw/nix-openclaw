@@ -14,7 +14,17 @@ const repoRoot = path.resolve(scriptDir, "../..");
 const sourceInfoPath = path.join(repoRoot, "nix/sources/openclaw-source.nix");
 const outputDir = path.join(repoRoot, "nix/generated/openclaw-runtime-plugins");
 const prepareNpmScriptPath = path.join(scriptDir, "openclaw-runtime-plugin-prepare-npm.mjs");
-const checkMode = process.argv.includes("--check");
+const args = process.argv.slice(2);
+const usage = "usage: update-openclaw-runtime-plugin-locks.mjs [--check]";
+if (args.length === 1 && ["--help", "-h"].includes(args[0])) {
+  console.log(usage);
+  process.exit(0);
+}
+if (args.length > 1 || (args.length === 1 && args[0] !== "--check")) {
+  console.error(usage);
+  process.exit(2);
+}
+const checkMode = args[0] === "--check";
 const { resolveOpenClawSourcePath, prepareLockedPackage, computeNpmDepsHash, probeLockMaterialization } =
   createNixTools({ repoRoot, sourceInfoPath, prepareNpmScriptPath });
 
@@ -88,8 +98,6 @@ skipped.sort((a, b) =>
   ),
 );
 
-fs.mkdirSync(outputDir, { recursive: true });
-
 const report = {
   openclawVersion: releaseVersion,
   runtimePluginVersion,
@@ -109,6 +117,8 @@ if (checkMode) {
   );
   process.exit(0);
 }
+
+fs.mkdirSync(outputDir, { recursive: true });
 
 for (const file of existingGeneratedFiles()) {
   if (!desiredFiles.has(file)) {

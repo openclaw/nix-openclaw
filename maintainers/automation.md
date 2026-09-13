@@ -50,3 +50,10 @@ Do not ask for a repair strategy when the desired state is clear.
 If the fix belongs in `nix-openclaw`, edit the repo, self-review the diff until there are no actionable findings, run the relevant targeted checks plus the full gate, commit directly to `main`, push directly to `main`, and verify GitHub Actions on the pushed commit.
 
 If upstream has not published public macOS app assets, call that out directly, keep the app pin on the newest public zip, keep packaging the latest stable gateway, and repair `nix-openclaw` only if it fails to do that.
+
+## Runtime plugin lock checks
+
+`node nix/scripts/update-openclaw-runtime-plugin-locks.mjs --check` compares
+regenerated artifacts without creating or changing the generated directory.
+Use no argument to write updates. Unknown or repeated flags fail before Nix
+runs; `--help` prints usage without fetching artifacts.

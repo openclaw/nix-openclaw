@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { nixString as stringify } from "./nix-string.mjs";
 
 const args = process.argv.slice(2);
 const argValue = (flag: string): string | null => {
@@ -35,11 +36,6 @@ const main = async (): Promise<void> => {
     (schema.definitions as Record<string, unknown>) ||
     (schema.$defs as Record<string, unknown>) ||
     {};
-
-const stringify = (value: string): string => {
-  const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
-  return `"${escaped}"`;
-};
 
 const nixAttr = (key: string): string => {
   if (/^[A-Za-z_][A-Za-z0-9_']*$/.test(key)) return key;
@@ -290,9 +286,6 @@ const objectTypeForSchema = (schema: JsonSchema, indent: string, pathSegments: s
     if (schema.additionalProperties && typeof schema.additionalProperties === "object") {
       const valueType = typeForSchema(schema.additionalProperties as JsonSchema, indent);
       return `t.attrsOf (${valueType})`;
-    }
-    if (schema.additionalProperties === true) {
-      return "t.attrs";
     }
     return "t.attrs";
   }
