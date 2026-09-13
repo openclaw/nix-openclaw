@@ -48,7 +48,10 @@ let
     assert !home.config.submoduleSupport.externalPackageInstall;
     home.activationPackage;
 in
-assert builtins.elem system [ "x86_64-linux" "aarch64-darwin" ];
+assert builtins.elem system [
+  "x86_64-linux"
+  "aarch64-darwin"
+];
 {
   inherit activation;
   cacheConfig = (import "${baseline.outPath}/flake.nix").nixConfig;

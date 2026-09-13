@@ -7,7 +7,9 @@
 let
   scriptsDir = ../scripts;
   generatedLocks = import ../generated/openclaw-runtime-plugins/default.nix;
-  generatedLocksJson = builtins.toFile "openclaw-runtime-plugin-locks.json" (builtins.toJSON generatedLocks);
+  generatedLocksJson = builtins.toFile "openclaw-runtime-plugin-locks.json" (
+    builtins.toJSON generatedLocks
+  );
 in
 stdenvNoCC.mkDerivation {
   pname = "openclaw-runtime-plugin-locks";
@@ -24,8 +26,7 @@ stdenvNoCC.mkDerivation {
     OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON = "${generatedLocksJson}";
     OPENCLAW_SOURCE_INFO_PATH = "${../sources/openclaw-source.nix}";
     # Pure CI evaluation cannot opt into local release-evidence overrides.
-    OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE =
-      builtins.getEnv "OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE";
+    OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE = builtins.getEnv "OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE";
   };
 
   doCheck = true;

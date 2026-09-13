@@ -19,7 +19,8 @@ let
   pnpmNames = [
     "pnpm"
     "pnpm_10"
-  ] ++ privateNames;
+  ]
+  ++ privateNames;
   unchanged =
     name:
     builtins.hasAttr name base == builtins.hasAttr name overlaid

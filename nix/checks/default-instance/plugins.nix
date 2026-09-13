@@ -1,7 +1,18 @@
-{ lib, pkgs, helpers }:
+{
+  lib,
+  pkgs,
+  helpers,
+}:
 
 let
-  inherit (helpers) runtimePluginRootSource moduleEval requireNoAssertionFailures requireAssertionFailure requireEvalFailure generatedConfig;
+  inherit (helpers)
+    runtimePluginRootSource
+    moduleEval
+    requireNoAssertionFailures
+    requireAssertionFailure
+    requireEvalFailure
+    generatedConfig
+    ;
 
   customRuntimePluginRootEval = moduleEval {
     customPlugins = [
@@ -305,5 +316,23 @@ let
 
 in
 {
-  inherit customRuntimePluginRootCheck runtimePluginCheck runtimePluginCatalogGeneratedCheck runtimePluginInstanceCheck runtimePluginDuplicateCheck runtimePluginUnsupportedCheck runtimePluginRawLoadPathCheck runtimePluginInstallRecordCheck runtimePluginDisabledCheck runtimePluginDeniedCheck runtimePluginSourceCheck runtimePluginSourceDuplicateCheck runtimePluginSourceAmbiguousCheck runtimePluginSourceInvalidSpecCheck runtimePluginSourceInvalidUrlCheck runtimePluginSourceRawLoadPathCheck npmRuntimePluginCheck;
+  inherit
+    customRuntimePluginRootCheck
+    runtimePluginCheck
+    runtimePluginCatalogGeneratedCheck
+    runtimePluginInstanceCheck
+    runtimePluginDuplicateCheck
+    runtimePluginUnsupportedCheck
+    runtimePluginRawLoadPathCheck
+    runtimePluginInstallRecordCheck
+    runtimePluginDisabledCheck
+    runtimePluginDeniedCheck
+    runtimePluginSourceCheck
+    runtimePluginSourceDuplicateCheck
+    runtimePluginSourceAmbiguousCheck
+    runtimePluginSourceInvalidSpecCheck
+    runtimePluginSourceInvalidUrlCheck
+    runtimePluginSourceRawLoadPathCheck
+    npmRuntimePluginCheck
+    ;
 }

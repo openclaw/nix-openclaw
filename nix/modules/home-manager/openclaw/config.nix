@@ -80,7 +80,14 @@ let
   };
 
   mkInstanceConfig = import ./instance.nix {
-    inherit lib pkgs openclawLib plugins files skills;
+    inherit
+      lib
+      pkgs
+      openclawLib
+      plugins
+      files
+      skills
+      ;
   };
 
   instanceConfigs = lib.mapAttrsToList mkInstanceConfig enabledInstances;
@@ -201,9 +208,7 @@ in
 
     home.activation.openclawDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${
-        lib.escapeShellArgs (
-          map openclawLib.resolvePath (lib.concatMap (item: item.dirs) instanceConfigs)
-        )
+        lib.escapeShellArgs (map openclawLib.resolvePath (lib.concatMap (item: item.dirs) instanceConfigs))
       }
       ${lib.optionalString (plugins.pluginStateDirsAll != [ ])
         "run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${lib.escapeShellArgs plugins.pluginStateDirsAll}"
@@ -215,9 +220,9 @@ in
     '';
 
     home.activation.openclawSkills = lib.hm.dag.entryAfter [ "openclawDirs" ] ''
-      ${lib.optionalString (skills.roots != [ ])
-        "run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${lib.escapeShellArgs skills.roots}"
-      }
+      ${lib.optionalString (
+        skills.roots != [ ]
+      ) "run --quiet ${lib.getExe' pkgs.coreutils "mkdir"} -p -- ${lib.escapeShellArgs skills.roots}"}
       run --quiet ${../openclaw-materialize-workspace-files.sh} ${lib.escapeShellArg "${homeDir}/.local/state/nix-openclaw/managed-skill-files"} ${skills.materializedManifest} ${skills.rootsManifest}
     '';
 

@@ -1,4 +1,8 @@
-{ lib, pkgs, helpers }:
+{
+  lib,
+  pkgs,
+  helpers,
+}:
 
 let
   inherit (helpers) moduleEval requireNoAssertionFailures generatedConfig;
@@ -6,7 +10,8 @@ let
   homeRelativeConfigEval = moduleEval {
     instances.default.stateDir = "~/openclaw state";
   };
-  homeRelativeConfigCheckFor = eval:
+  homeRelativeConfigCheckFor =
+    eval:
     let
       activation = eval.config.home.activation.openclawConfigFiles.data;
       homeFile = eval.config.home.file;
@@ -32,9 +37,14 @@ let
       throw "home.file still uses an unresolved ~/ config destination."
     else if !(builtins.hasAttr "openclaw state/openclaw.json" homeFile) then
       throw "home.file must materialize the resolved config path, not a literal ~/ destination."
-    else if (((generated.agents or { }).defaults or { }).workspace or null) != "/tmp/openclaw state/workspace" then
+    else if
+      (((generated.agents or { }).defaults or { }).workspace or null) != "/tmp/openclaw state/workspace"
+    then
       throw "Workspace pin must resolve home-relative workspaceDir."
-    else if pkgs.stdenv.hostPlatform.isLinux && ((systemdService.WorkingDirectory or "") != "/tmp/openclaw state") then
+    else if
+      pkgs.stdenv.hostPlatform.isLinux
+      && ((systemdService.WorkingDirectory or "") != "/tmp/openclaw state")
+    then
       throw "Systemd WorkingDirectory must resolve home-relative stateDir."
     else if
       pkgs.stdenv.hostPlatform.isLinux
@@ -48,11 +58,16 @@ let
       ))
     then
       throw "Systemd OPENCLAW_CONFIG_PATH must resolve home-relative configPath."
-    else if pkgs.stdenv.hostPlatform.isDarwin && ((launchdConfig.WorkingDirectory or "") != "/tmp/openclaw state") then
+    else if
+      pkgs.stdenv.hostPlatform.isDarwin
+      && ((launchdConfig.WorkingDirectory or "") != "/tmp/openclaw state")
+    then
       throw "launchd WorkingDirectory must resolve home-relative stateDir."
     else if
       pkgs.stdenv.hostPlatform.isDarwin
-      && (((launchdConfig.EnvironmentVariables or { }).OPENCLAW_STATE_DIR or null) != "/tmp/openclaw state")
+      && (
+        ((launchdConfig.EnvironmentVariables or { }).OPENCLAW_STATE_DIR or null) != "/tmp/openclaw state"
+      )
     then
       throw "launchd OPENCLAW_STATE_DIR must resolve home-relative stateDir."
     else if
@@ -77,9 +92,7 @@ let
   spacedConfigEnvironmentCheck =
     if
       pkgs.stdenv.hostPlatform.isLinux
-      && !(lib.elem "\"OPENCLAW_CONFIG_PATH=/tmp/openclaw state/config 'file'.json\""
-        spacedConfigEval.config.systemd.user.services.openclaw-gateway.Service.Environment
-      )
+      && !(lib.elem "\"OPENCLAW_CONFIG_PATH=/tmp/openclaw state/config 'file'.json\"" spacedConfigEval.config.systemd.user.services.openclaw-gateway.Service.Environment)
     then
       throw "Systemd config environment must preserve paths containing spaces and quotes."
     else
@@ -332,5 +345,15 @@ let
 
 in
 {
-  inherit homeRelativeConfigCheck topLevelHomeRelativeConfigCheck spacedConfigEnvironmentCheck reloadDefaultCheck reloadNamedCheck reloadCustomDefaultCheck secretProviderCheck secretRefPassthroughCheck runtimeProfileCheck;
+  inherit
+    homeRelativeConfigCheck
+    topLevelHomeRelativeConfigCheck
+    spacedConfigEnvironmentCheck
+    reloadDefaultCheck
+    reloadNamedCheck
+    reloadCustomDefaultCheck
+    secretProviderCheck
+    secretRefPassthroughCheck
+    runtimeProfileCheck
+    ;
 }

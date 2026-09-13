@@ -178,9 +178,7 @@ let
                     {
                       name = toRelative (resolvePath ("~/" + dir + "/config.json"));
                       value = {
-                        source = pkgs.writeText "openclaw-plugin-${p.name}-config.json" (
-                          toJSONWithContext cfg
-                        );
+                        source = pkgs.writeText "openclaw-plugin-${p.name}-config.json" (toJSONWithContext cfg);
                       };
                     }
                   ]

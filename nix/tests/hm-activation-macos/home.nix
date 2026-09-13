@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   openclawLib = import ../../modules/home-manager/openclaw/lib.nix {
@@ -72,9 +77,21 @@ in
       config.agents =
         if openclawLib.usesAgentEntries then
           lib.optionalAttrs openclawLib.hasAgentOwnership { ownership = "explicit"; }
-          // { entries = { Writer = { }; research = { }; "_worker--" = { }; "a--" = { }; }; }
+          // {
+            entries = {
+              Writer = { };
+              research = { };
+              "_worker--" = { };
+              "a--" = { };
+            };
+          }
         else
-          { list = [ { id = "writer"; } { id = "research"; } ]; };
+          {
+            list = [
+              { id = "writer"; }
+              { id = "research"; }
+            ];
+          };
     };
   };
 }

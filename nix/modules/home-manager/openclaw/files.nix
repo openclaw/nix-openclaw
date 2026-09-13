@@ -106,9 +106,7 @@ let
     && !(lib.hasInfix "\t" name)
     && !(lib.hasInfix "\n" name)
     && name != ".."
-    && lib.all (segment: segment != "" && segment != "." && segment != "..") (
-      lib.splitString "/" name
-    );
+    && lib.all (segment: segment != "" && segment != "." && segment != "..") (lib.splitString "/" name);
 
   invalidWorkspaceFileNames = lib.filter (name: !(validWorkspaceFileName name)) (
     lib.attrNames extraWorkspaceFiles

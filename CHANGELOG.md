@@ -1,7 +1,3 @@
----
-written_by: ai
----
-
 # Changelog
 
 This changelog starts with the current pre-1.0 nix-openclaw Home Manager module
