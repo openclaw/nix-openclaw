@@ -617,11 +617,11 @@ your-plugin/
 
 ```nix
 {
-  outputs = { self, nixpkgs, ... }:
-    let
-      pkgs = import nixpkgs { system = builtins.currentSystem; };
-    in {
-      openclawPlugin = {
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  outputs = { self, nixpkgs, ... }: {
+    openclawPlugin = system:
+      let pkgs = import nixpkgs { inherit system; };
+      in {
         name = "hello-world";
         skills = [ ./skills/hello-world ];
         packages = [ pkgs.hello ]; # CLI tools to install
@@ -645,7 +645,9 @@ description: Prints hello world.
 Use the `hello` CLI to print a greeting.
 ```
 
-See `examples/hello-world-plugin` for a complete working example.
+Export `openclawPlugin` at the top level, outside `eachDefaultSystem`. Use a function taking `system` when the plugin contains platform-specific packages. Commit `flake.lock` so consumers can evaluate pinned plugin sources without updating inputs.
+
+See `examples/hello-world-plugin` for a complete working example; run it with `nix run ./examples/hello-world-plugin`.
 
 ---
 
@@ -662,7 +664,7 @@ Contract to implement:
    - needs (stateDirs + requiredEnv)
 
 Example:
-openclawPlugin = {
+openclawPlugin = system: {
   name = "my-plugin";
   skills = [ ./skills/my-plugin ];
   packages = [ self.packages.${system}.default ];
