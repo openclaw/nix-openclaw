@@ -22,6 +22,8 @@ Older repository history is available in git.
 - Compatibility: stop advertising the retired Garnix cache (`cache.garnix.io` returns NXDOMAIN); builds use the operator's configured substituters and the default NixOS cache.
 - Compatibility: fix the hello-world plugin example by exporting the host-system function at the top level, locking its inputs, and installing the documented `hello-world` executable (previously emitted as `hello-world-openclaw`).
 
+- Keep the shared macOS app pin on the universal ZIP when upstream also publishes architecture-specific ZIPs; source updates remain independent when the universal app lags.
+
 ## 2026.9.4 - 2026-09-11
 
 **Highlights:** Package OpenClaw 2026.9.4 on Linux and macOS, restore automatic stable updates after runtime plugin removals, preserve Nix-managed skill discovery, and make Home Manager paths and activation consistent. Changes below cover the package state since `v2026.7.1`.

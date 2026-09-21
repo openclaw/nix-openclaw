@@ -84,4 +84,47 @@ assert.deepEqual(none.appLagStableReleases, [
   { tagName: "v2026.5.3", reason: "missing-macos-zip" },
 ]);
 
+const appVersion = "2026.5.3-1";
+const universalAppName = `OpenClaw-${appVersion}.zip`;
+const appAssets = [
+  universalAppName,
+  `OpenClaw-${appVersion}-arm64.zip`,
+  `OpenClaw-${appVersion}-x86_64.zip`,
+  `OpenClaw-${appVersion}.dSYM.zip`,
+].map((name) => ({
+  name,
+  browser_download_url: `https://github.com/openclaw/openclaw/releases/download/v${appVersion}/${name}`,
+}));
+
+function permutations(items) {
+  return items.length === 0
+    ? [[]]
+    : items.flatMap((item, index) =>
+        permutations(items.filter((_, otherIndex) => otherIndex !== index)).map(
+          (rest) => [item, ...rest],
+        ),
+      );
+}
+
+for (const assets of permutations(appAssets)) {
+  const result = selectOpenClawRelease([{ ...releases[0], assets }]);
+  assert.equal(result.latestMacAppStable.appAssetName, universalAppName);
+  assert.equal(result.latestMacAppStable.appUrl, appAssets[0].browser_download_url);
+  assert.equal(result.latestMacAppStable.releaseVersion, appVersion);
+  assert.deepEqual(result.appLagStableReleases, []);
+}
+
+const thinOnlyRelease = { ...releases[0], assets: appAssets.slice(1) };
+const appLag = selectOpenClawRelease([thinOnlyRelease, releases[3]]);
+assert.equal(appLag.latestStableSource.releaseVersion, appVersion);
+assert.deepEqual(appLag.latestMacAppStable, selection.latestMacAppStable);
+assert.deepEqual(appLag.appLagStableReleases, [
+  { tagName: `v${appVersion}`, reason: "missing-macos-zip" },
+]);
+
+const thinOnly = selectOpenClawRelease([thinOnlyRelease]);
+assert.equal(thinOnly.latestStableSource.releaseVersion, appVersion);
+assert.equal(thinOnly.latestMacAppStable, null);
+assert.deepEqual(thinOnly.appLagStableReleases, appLag.appLagStableReleases);
+
 console.log("release selection: ok");

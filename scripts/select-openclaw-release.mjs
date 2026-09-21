@@ -25,15 +25,13 @@ export function selectOpenClawRelease(releases) {
       continue;
     }
 
-    const appAsset = (release.assets ?? []).find((asset) => {
-      const name = asset?.name;
-      return (
-        typeof name === "string" &&
-        /^OpenClaw-.*\.zip$/.test(name) &&
-        !/dSYM/i.test(name) &&
-        Boolean(asset?.browser_download_url)
-      );
-    });
+    // The shared Darwin pin must serve both architectures, even when thin ZIPs
+    // appear before the universal app in the upstream asset list.
+    const universalAppName = `OpenClaw-${tagName.replace(/^v/, "")}.zip`;
+    const appAsset = (release.assets ?? []).find(
+      (asset) =>
+        asset?.name === universalAppName && Boolean(asset?.browser_download_url),
+    );
 
     if (!appAsset) {
       appLagStableReleases.push({
