@@ -20,6 +20,7 @@ Use targeted checks while debugging, then run the full relevant gate before hand
   `source-override-render`, `runtime-smoke`, `platform-activation`,
   `runtime-plugin-packages`, `runtime-plugin-host`, and `qmd-opt-in`
 - `scripts/hm-activation-macos.sh` when a macOS runner is available
+- `scripts/check-macos-app.sh` on macOS: installed app bytes and symlinks match the pinned bundle, its Apple signature verifies, and both arm64/x86_64 slices remain present
 
 Run contract tests inside `nix develop` to select the pinned Node, Bash, and Git.
 CI selects those same packages with `nix shell` on both Linux and macOS.
