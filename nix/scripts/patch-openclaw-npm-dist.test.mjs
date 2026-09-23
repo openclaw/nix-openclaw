@@ -6,9 +6,12 @@ import {
   fixture, patch, load, snapshot, change, envFor, paramsFor, restoreEnv, packageFixture, templateDocs,
 } from "./patch-openclaw-npm-dist.fixtures.mjs";
 
-for (const ext of ["js", "mjs"]) {
-  test(`${ext}: emitted ownership/policy preserve guards and env boundaries`, async (t) => {
-    const f = fixture(t, ext),
+for (const variant of ["js", "mjs", "mjs-optimized-realpath"]) {
+  const ext = variant === "js" ? "js" : "mjs";
+  const optimizedRealpath = variant === "mjs-optimized-realpath";
+  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath });
+  test(`${variant}: emitted ownership/policy preserve guards and env boundaries`, async (t) => {
+    const f = fixtureFor(t),
       result = patch(f);
     assert.equal(result.status, 0, result.stderr);
     const facts = await load(f, f.dependency),
@@ -50,8 +53,8 @@ for (const ext of ["js", "mjs"]) {
     // Existing lexical fallback is retained when realpath fails.
     assert.equal(policy({ ...params, rootDir: "/nix/store/nonexistent" }), false);
   });
-  test(`${ext}: real filesystem escapes, permissions and hardlinks stay independent`, async (t) => {
-    const f = fixture(t, ext);
+  test(`${variant}: real filesystem escapes, permissions and hardlinks stay independent`, async (t) => {
+    const f = fixtureFor(t);
     assert.equal(patch(f).status, 0);
     const dir = path.join(f.root, "plugin"),
       outside = path.join(f.root, "outside");
@@ -75,8 +78,8 @@ for (const ext of ["js", "mjs"]) {
     facts.roots.clear();
     assert.equal(check(params).reason, "path_stat_failed");
   });
-  test(`${ext}: candidate effects and existing diagnostic/recorded-repair limitations`, async (t) => {
-    const f = fixture(t, ext);
+  test(`${variant}: candidate effects and existing diagnostic/recorded-repair limitations`, async (t) => {
+    const f = fixtureFor(t);
     assert.equal(patch(f).status, 0);
     const module = await load(f, f.install),
       cfg = { candidates: [{ id: "candidate-install" }] };
@@ -97,6 +100,11 @@ for (const ext of ["js", "mjs"]) {
     assert.deepEqual(snapshot(f), before);
   });
   const mutations = {
+    ...(optimizedRealpath ? {
+      "unsafe-realpath-helper": ["dependency", "return fs.realpathSync(targetPath);", "return targetPath;"],
+      "renamed-realpath-helper": ["dependency", "function resolveRealpath(", "function otherRealpath("],
+      "unchecked-native-realpath": ["dependency", "fs.realpathSync.native(targetPath) === targetPath", "true"],
+    } : {}),
     "wrong-binding": ["discovery", "{ t as shouldReject", "{ x as shouldReject"],
     "comment-binding": ["discovery", "import { t as shouldReject", "// import { t as shouldReject"],
     "extra-exception": ["policy", "\treturn true;", "\tif (params.extra) return false;\n\treturn true;"],
@@ -111,8 +119,8 @@ for (const ext of ["js", "mjs"]) {
   const missing = ["policy", "discovery", "install"].flatMap((role) => [`missing-${role}`, `duplicate-${role}`]);
   const ownerFaults = [...missing, ...Object.keys(mutations), "co-located"];
   for (const fault of [...ownerFaults, "nested-only", "symlink-only", "directory-only"]) {
-    test(`${ext}: rejects ${fault} before any write`, (t) => {
-      const f = fixture(t, ext);
+    test(`${variant}: rejects ${fault} before any write`, (t) => {
+      const f = fixtureFor(t);
       f.environment = `paths-fixture.${ext}`;
       const file = f[fault.split("-")[1]];
       if (fault.startsWith("missing-")) fs.unlinkSync(path.join(f.dist, file));

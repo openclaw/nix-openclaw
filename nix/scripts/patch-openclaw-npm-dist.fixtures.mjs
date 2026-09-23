@@ -9,7 +9,8 @@ const script = path.join(import.meta.dirname, "patch-openclaw-npm-dist.mjs");
 const checker = path.join(import.meta.dirname, "check-package-contents.sh");
 // Reduced executable boundaries from npm 2026.7.1-2 (0790d9f593ad30c940ed93b5872a8cf6d6f3cf8c)
 // and 2026.9.3 (1391f7cd2d40ab5bbcf2f5f831d3a64f520e72d7). Policy/env bodies are unchanged.
-function fixture(t, ext) {
+// The optional canonical-realpath helper is emitted by npm 2026.9.5 (ec9c1a13db8938e5a3eaa51fca2e981cde2395a9).
+function fixture(t, ext, { optimizedRealpath = false } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-dist-patch-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const dist = path.join(root, "dist");
@@ -50,7 +51,14 @@ function pathFacts(targetPath) {
 \t}
 \treturn facts;
 }
-${
+${optimizedRealpath ? `function resolveRealpath(targetPath) {
+\tconst absolute = path.resolve(targetPath);
+\ttry {
+\t\tif (absolute === targetPath && fs.realpathSync.native(targetPath) === targetPath) return targetPath;
+\t} catch {}
+\treturn fs.realpathSync(targetPath);
+}
+` : ""}${
   old
     ? `function safeRealpathSync(targetPath, cache) {
 \tconst cached = cache?.get(targetPath);
@@ -68,7 +76,7 @@ ${
 \tconst facts = pathFacts(targetPath);
 \tconst key = native ? "nativeRealpath" : "realpath";
 \tif (facts[key] === void 0) try {
-\t\tfacts[key] = native ? fs.realpathSync.native(targetPath) : fs.realpathSync(targetPath);
+\t\tfacts[key] = native ? fs.realpathSync.native(targetPath) : ${optimizedRealpath ? "resolveRealpath" : "fs.realpathSync"}(targetPath);
 \t\tpathFacts(facts[key])[key] = facts[key];
 \t} catch {
 \t\tfacts[key] = null;
