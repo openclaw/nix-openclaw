@@ -12,6 +12,19 @@ try {
   for (const name of ["discovery.ts", "hardlink-policy.ts"]) {
     fs.copyFileSync(path.join(process.env.OPENCLAW_SOURCE, "src/plugins", name), path.join(root, "src/plugins", name));
   }
+  const discoveryPath = path.join(root, "src/plugins/discovery.ts");
+  const originalDiscovery = fs.readFileSync(discoveryPath, "utf8");
+  const availabilityImport = 'import { inspectPluginLoadPath, pluginPathFailureDiagnostic } from "./discovery-availability.js";\n';
+  const beforeAvailabilityImport = originalDiscovery.replace(availabilityImport, "");
+  for (const addedImport of ["", availabilityImport]) {
+    fs.writeFileSync(discoveryPath, beforeAvailabilityImport.replace(
+      'import type { PluginCandidate, PluginDiscoveryResult }',
+      `${addedImport}import type { PluginCandidate, PluginDiscoveryResult }`,
+    ));
+    const probe = spawnSync("patch", ["--dry-run", "--batch", "--fuzz=0", "-p1", "-i", process.env.OWNERSHIP_PATCH], { cwd: root, encoding: "utf8" });
+    assert.equal(probe.status, 0, probe.stdout + probe.stderr);
+  }
+  fs.writeFileSync(discoveryPath, originalDiscovery);
   const patched = spawnSync("patch", ["--batch", "--fuzz=0", "-p1", "-i", process.env.OWNERSHIP_PATCH], { cwd: root, encoding: "utf8" });
   assert.equal(patched.status, 0, patched.stdout + patched.stderr);
   let policy = fs.readFileSync(path.join(root, "src/plugins/hardlink-policy.ts"), "utf8");

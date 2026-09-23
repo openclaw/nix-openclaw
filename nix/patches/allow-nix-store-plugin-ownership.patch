@@ -1,8 +1,6 @@
 --- a/src/plugins/discovery.ts
 +++ b/src/plugins/discovery.ts
-@@ -26,7 +26,10 @@
-   resolvePluginCandidateInstallOwner,
- } from "./candidate-install-owner.js";
+@@ -28,5 +28,8 @@
  import type { PluginCandidate, PluginDiscoveryResult } from "./discovery.types.js";
 -import { shouldRejectHardlinkedPluginFiles } from "./hardlink-policy.js";
 +import {
