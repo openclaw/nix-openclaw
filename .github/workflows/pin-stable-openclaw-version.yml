@@ -214,6 +214,7 @@ jobs:
             .#checks.aarch64-darwin.runtime-plugin-packages \
             .#checks.aarch64-darwin.runtime-plugin-host \
             .#checks.aarch64-darwin.qmd-opt-in
+          scripts/check-macos-app.sh
 
       - name: Run HM activation
         id: hm

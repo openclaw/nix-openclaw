@@ -999,6 +999,8 @@ The gateway tracks the newest upstream stable OpenClaw source release that satis
 
 The macOS app is pinned separately to the newest stable public `OpenClaw-*.zip` artifact. If upstream has not promoted desktop assets for the latest source release yet, `openclaw-app` may lag; that must not block Linux users or macOS gateway users from getting the latest packaged OpenClaw gateway.
 
+The macOS package preserves the signed upstream app bundle without rewriting its contents. CI compares the installed bundle with the pinned archive and verifies its signature and universal executable architectures.
+
 The Nix gate is deliberately package-focused. It does not make the full upstream Vitest suite a hard promotion gate; upstream owns source test health, while `nix-openclaw` verifies the npm-shrinkwrapped gateway package, package contents, smoke startup, module activation, generated config materialization during pin updates, and newest available macOS app artifact.
 
 Outputs:
