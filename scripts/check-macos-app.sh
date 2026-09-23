@@ -17,6 +17,8 @@ nix shell --option flake-registry '' --inputs-from "$repo_root" nixpkgs#diffutil
 /usr/bin/codesign --verify --deep --strict --all-architectures \
   --test-requirement='=anchor apple generic' "$installed_app"
 executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")
-/usr/bin/lipo -verify_arch arm64 x86_64 "$installed_app/Contents/MacOS/$executable"
+for architecture in arm64 x86_64; do
+  /usr/bin/lipo "$installed_app/Contents/MacOS/$executable" -verify_arch "$architecture"
+done
 
 echo "Installed OpenClaw.app preserves the pinned bundle, Apple signature, and arm64/x86_64 slices."
