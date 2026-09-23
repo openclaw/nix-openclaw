@@ -15,7 +15,7 @@ installed_app="$app_out/Applications/OpenClaw.app"
 nix shell --option flake-registry '' --inputs-from "$repo_root" nixpkgs#diffutils \
   --command diff --recursive --brief --no-dereference -- "$upstream_app" "$installed_app"
 /usr/bin/codesign --verify --deep --strict --all-architectures \
-  --test-requirement='anchor apple generic' "$installed_app"
+  --test-requirement='=anchor apple generic' "$installed_app"
 executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")
 /usr/bin/lipo -verify_arch arm64 x86_64 "$installed_app/Contents/MacOS/$executable"
 
