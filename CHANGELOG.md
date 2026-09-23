@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Preserve the upstream macOS app's signed contents by disabling Nix fixups; verify installed bytes, symlinks, signatures, and universal architectures in CI. Thanks @vincentkoc (#160).
 - Refresh Nixpkgs, Home Manager, bundled OpenClaw tools and example-plugin inputs, and update the private pnpm 11 runtime to 11.27.0.
 - Restore source gateway builds through upstream build and production-deployment entry points, with verified offline pnpm stores and complete workspace dependencies.
 - Make source-build provenance reproducible with `SOURCE_DATE_EPOCH` and record the known pinned Git commit.
