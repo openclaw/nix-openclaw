@@ -7,6 +7,7 @@ Older repository history is available in git.
 ## Unreleased
 
 - Refresh Nixpkgs, Home Manager, bundled OpenClaw tools and example-plugin inputs, and update the private pnpm 11 runtime to 11.27.0.
+- Refresh Nix inputs and the example plugin lock, and update private source-build pnpm runtimes to 11.27.1 and 12.6.0.
 - Restore source gateway builds through upstream build and production-deployment entry points, with verified offline pnpm stores and complete workspace dependencies.
 - Make source-build provenance reproducible with `SOURCE_DATE_EPOCH` and record the known pinned Git commit.
 - Fix source-build commands failing when Nix timing output is disabled.
