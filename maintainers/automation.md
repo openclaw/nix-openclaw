@@ -29,6 +29,9 @@ To prove stable-pin repairs before landing, dispatch `Pin Stable OpenClaw
 Version` on a maintainer branch. It runs the Linux/macOS package gates and
 verifies a local promotion commit, including added and removed generated files.
 Only `main` pushes the resulting pin update and dispatches publication CI.
+Branch validation has a separate concurrency group per ref, so hourly main
+promotion cannot replace a queued validation. Main keeps its existing serialized
+promotion group, including any run already in flight.
 
 If the desired state is not true, keep working until it is true or until the exact blocker is proven.
 

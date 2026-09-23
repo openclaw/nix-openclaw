@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: pin-stable-openclaw-version
+  group: ${{ github.ref == 'refs/heads/main' && 'pin-stable-openclaw-version' || format('pin-stable-openclaw-version-{0}', github.ref) }}
   cancel-in-progress: false
 
 permissions:
