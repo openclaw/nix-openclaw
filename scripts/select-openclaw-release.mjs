@@ -1,13 +1,28 @@
 #!/usr/bin/env node
 import { pathToFileURL } from "node:url";
 
+function versionParts(release) {
+  const tag = release?.tag_name ?? release?.tagName;
+  const match = typeof tag === "string" && /^v?(\d+)\.(\d+)\.(\d+)(?:-([1-9]\d*))?$/.exec(tag);
+  return match ? match.slice(1).map((part) => BigInt(part ?? "0")) : null;
+}
+
 export function selectOpenClawRelease(releases) {
   if (!Array.isArray(releases)) {
     throw new Error("Expected a GitHub releases JSON array");
   }
 
-  const stableReleases = releases.filter((release) => {
-    return release && release.draft !== true && release.prerelease !== true;
+  // Publication order can put a backport first. Numeric corrections follow their
+  // base release, unlike SemVer prereleases, on both source and app tracks.
+  const stableReleases = releases.filter((release) =>
+    release && release.draft !== true && release.prerelease !== true && versionParts(release),
+  ).sort((left, right) => {
+    const a = versionParts(left);
+    const b = versionParts(right);
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return a[i] > b[i] ? -1 : 1;
+    }
+    return 0;
   });
   const latestStable = stableReleases[0] ?? null;
   const latestStableSource = latestStable
@@ -17,14 +32,6 @@ export function selectOpenClawRelease(releases) {
 
   for (const release of stableReleases) {
     const tagName = release.tag_name ?? release.tagName;
-    if (!tagName) {
-      appLagStableReleases.push({
-        tagName: null,
-        reason: "missing-tag",
-      });
-      continue;
-    }
-
     // The shared Darwin pin must serve both architectures, even when thin ZIPs
     // appear before the universal app in the upstream asset list.
     const universalAppName = `OpenClaw-${tagName.replace(/^v/, "")}.zip`;

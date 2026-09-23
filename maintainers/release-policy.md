@@ -7,6 +7,7 @@
 - `openclaw-gateway` tracks the newest stable upstream OpenClaw source release that satisfies the Nix package contract.
 - `openclaw-app` tracks the newest stable upstream release that has a published public `OpenClaw-*.zip` app artifact.
 - These tracks are independent. Source and app versions may differ.
+- Select each track by the highest stable version, not GitHub publication order: later-published backports must not downgrade either track. Numeric correction suffixes sort after their base release.
 
 ## Non-Negotiables
 
