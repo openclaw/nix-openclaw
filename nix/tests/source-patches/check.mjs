@@ -10,7 +10,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-source-patch-"));
 try {
   fs.mkdirSync(path.join(root, "src/plugins"), { recursive: true });
   for (const name of ["discovery.ts", "hardlink-policy.ts"]) {
-    fs.copyFileSync(path.join(process.env.OPENCLAW_SOURCE, "src/plugins", name), path.join(root, "src/plugins", name));
+    fs.writeFileSync(path.join(root, "src/plugins", name), fs.readFileSync(path.join(process.env.OPENCLAW_SOURCE, "src/plugins", name)));
   }
   const discoveryPath = path.join(root, "src/plugins/discovery.ts");
   const originalDiscovery = fs.readFileSync(discoveryPath, "utf8");
