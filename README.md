@@ -70,6 +70,10 @@ You talk to Telegram, your machine does things.
 
 ## OpenClaw Runtime Plugins
 
+Plugin Control UI assets and manifest reloads support Nix-store hardlinks when
+running in Nix mode, including stores optimized with `auto-optimise-store`.
+Mutable plugin roots retain the upstream hardlink restrictions.
+
 OpenClaw runtime plugins are JavaScript plugin roots loaded by the OpenClaw
 Gateway. They are the plugins described in the upstream
 [OpenClaw plugin docs](https://docs.openclaw.ai/tools/plugin): Discord, Slack,

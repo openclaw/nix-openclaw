@@ -17,6 +17,7 @@ stdenv.mkDerivation {
     OPENCLAW_GATEWAY = openclawGateway;
     OPENCLAW_MCP_OAUTH_CHECK = "${../tests/mcp-oauth/check.mjs}";
     OPENCLAW_MCP_OAUTH_FLOW_CHECK = "${../tests/mcp-oauth/flow.mjs}";
+    OPENCLAW_CONTROL_UI_CHECK = "${../tests/control-ui-assets/check.mjs}";
   };
 
   doCheck = true;

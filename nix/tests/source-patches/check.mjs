@@ -8,9 +8,10 @@ import vm from "node:vm";
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-source-patch-"));
 try {
-  fs.mkdirSync(path.join(root, "src/plugins"), { recursive: true });
-  for (const name of ["discovery.ts", "hardlink-policy.ts"]) {
-    fs.writeFileSync(path.join(root, "src/plugins", name), fs.readFileSync(path.join(process.env.OPENCLAW_SOURCE, "src/plugins", name)));
+  for (const name of ["plugins/discovery.ts", "plugins/hardlink-policy.ts", "plugins/control-ui-assets.ts", "gateway/control-ui-plugin-assets.ts"]) {
+    const target = path.join(root, "src", name);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, fs.readFileSync(path.join(process.env.OPENCLAW_SOURCE, "src", name)));
   }
   const discoveryPath = path.join(root, "src/plugins/discovery.ts");
   const originalDiscovery = fs.readFileSync(discoveryPath, "utf8");
@@ -36,9 +37,11 @@ try {
   const code = stripTypeScriptTypes(policy + discovery.slice(start, end));
   let stat = { mode: 0o555, uid: 30001 };
   const realpaths = new Map();
+  const testEnv = {};
+  let assetOptions;
   const context = vm.createContext({
-    path, process: { platform: "linux" },
-    resolveIsNixMode: (env) => env?.OPENCLAW_NIX_MODE === "1",
+    path, Buffer, process: { platform: "linux", env: testEnv },
+    resolveIsNixMode: (env = testEnv) => env.OPENCLAW_NIX_MODE === "1",
     pluginCacheRealpathSync: (file) => realpaths.get(file) ?? file,
     pluginCacheStatSync: () => stat,
     currentUid: (uid) => uid,
@@ -59,6 +62,31 @@ try {
   assert.equal(context.findCandidateBlockIssue(params("/nix/store/plugin", "1")).reason, "path_stat_failed");
   assert.equal(context.shouldRejectHardlinkedPluginFiles(params("/nix/store/plugin", "1")), false);
   assert.equal(context.shouldRejectHardlinkedPluginFiles(params("/tmp/plugin", "1")), true);
+  const assetsSource = fs.readFileSync(path.join(root, "src/plugins/control-ui-assets.ts"), "utf8");
+  context.CONTROL_UI_PLUGIN_MAX_ASSET_BYTES = 4 * 1024 * 1024;
+  context.CONTROL_UI_PLUGIN_MAX_BUILD_BYTES = 8 * 1024 * 1024;
+  context.MAX_CONTROL_UI_ASSETS = 128;
+  context.root = async (rootDir, options) => {
+    assetOptions = options;
+    return { rootReal: rootDir, readBytes: async () => Buffer.from("test") };
+  };
+  context.walkRootDirectory = async function* () { yield { kind: "file", relativePath: "ui/index.js" }; };
+  vm.runInContext(stripTypeScriptTypes(assetsSource.slice(assetsSource.indexOf("export async function")).replace("export async function", "async function")), context);
+  const reloadSource = fs.readFileSync(path.join(root, "src/gateway/control-ui-plugin-assets.ts"), "utf8");
+  const reloadCall = reloadSource.match(/loadPluginManifest\(\n[\s\S]*?\n          \)/)?.[0];
+  assert.ok(reloadCall, "expected patched manifest reload call");
+  context.loadPluginManifest = (_rootDir, rejectHardlinks) => rejectHardlinks;
+  vm.runInContext(stripTypeScriptTypes(`function reload(record: { rootDir: string }) { return ${reloadCall}; }`), context);
+  for (const rootDir of ["/nix/store/plugin", "/tmp/plugin", "/nix/store/escaped"]) {
+    for (const mode of ["1", "0"]) {
+      testEnv.OPENCLAW_NIX_MODE = mode;
+      const allow = rootDir === "/nix/store/plugin" && mode === "1";
+      await context.readPluginControlUiAssets(rootDir, { entry: "ui/index.js" });
+      assert.equal(assetOptions.hardlinks, allow ? "allow" : "reject");
+      assert.equal(assetOptions.symlinks, "reject");
+      assert.equal(context.reload({ rootDir }), !allow);
+    }
+  }
   console.log("pinned source patch application, caller environment, ownership and path guards: PASS");
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
