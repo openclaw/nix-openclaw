@@ -180,10 +180,11 @@ const patchedInstall = install.replaceAll(loop, `if ((params.env ?? process.env)
 
 // SDK issuer binding cannot protect credentials saved before that binding existed.
 // Require reauthorization instead of letting discovery adopt an unbound secret.
-const oauthModules = [...modules].filter(([, source]) => source.includes("function createMcpOAuthClientProvider("));
+const providerFiles = [...modules.keys()].filter((name) => modules.get(name).includes("function createMcpOAuthClientProvider("));
 const oauthPatches = [];
-if (oauthModules.length) {
-  const [name, source] = unique(oauthModules, "MCP OAuth provider");
+if (providerFiles.length) {
+  const name = unique(providerFiles, "MCP OAuth provider");
+  const source = modules.get(name);
   const clientGetter = "return readMcpOAuthStore(storeKey).clientInformation;";
   const tokenGetter = "tokens() {\n\t\t\tif (params.suppressStoredTokens) return;\n\t\t\tconst store = readMcpOAuthStore(storeKey);";
   requireContract(source.split(clientGetter).length === 2, "MCP OAuth client getter");
