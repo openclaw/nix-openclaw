@@ -178,10 +178,28 @@ for (const name of functions) {
 // This adapter does not add an all-effects install gate or propagate caller env.
 const patchedInstall = install.replaceAll(loop, `if ((params.env ?? process.env).OPENCLAW_NIX_MODE !== "1") ${loop}`);
 
+// SDK issuer binding cannot protect credentials saved before that binding existed.
+// Require reauthorization instead of letting discovery adopt an unbound secret.
+const oauthModules = [...modules].filter(([, source]) => source.includes("function createMcpOAuthClientProvider("));
+const oauthPatches = [];
+if (oauthModules.length) {
+  const [name, source] = unique(oauthModules, "MCP OAuth provider");
+  const clientGetter = "return readMcpOAuthStore(storeKey).clientInformation;";
+  const tokenGetter = "tokens() {\n\t\t\tif (params.suppressStoredTokens) return;\n\t\t\tconst store = readMcpOAuthStore(storeKey);";
+  requireContract(source.split(clientGetter).length === 2, "MCP OAuth client getter");
+  requireContract(source.split(tokenGetter).length === 2, "MCP OAuth token getter");
+  oauthPatches.push([name, source
+    .replace(clientGetter, `const client = readMcpOAuthStore(storeKey).clientInformation;
+\t\t\treturn typeof client?.issuer === "string" && client.issuer.length > 0 ? client : void 0;`)
+    .replace(tokenGetter, `${tokenGetter}
+\t\t\tif (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;`)]);
+}
+
 // No contract failure may leave the earlier ownership transform partially written.
 for (const [name, source] of [
   [ownershipName, patchedOwnership],
   [installName, patchedInstall],
+  ...oauthPatches,
 ]) {
   fs.writeFileSync(path.join(distDir, name), source);
 }

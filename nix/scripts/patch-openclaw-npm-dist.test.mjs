@@ -6,6 +6,39 @@ import {
   fixture, patch, load, snapshot, change, envFor, paramsFor, restoreEnv, packageFixture, templateDocs,
 } from "./patch-openclaw-npm-dist.fixtures.mjs";
 
+test("MCP OAuth requires issuer-bound stored credentials", async (t) => {
+  const f = fixture(t, "mjs");
+  const name = "mcp-oauth-fixture.mjs";
+  fs.writeFileSync(path.join(f.root, "dist", name), `
+let store = {};
+export function setStore(value) { store = value; }
+function readMcpOAuthStore() { return store; }
+export function createMcpOAuthClientProvider(params) {
+  const storeKey = "test";
+  return {
+    clientInformation() {
+      return readMcpOAuthStore(storeKey).clientInformation;
+    },
+    tokens() {
+\t\t\tif (params.suppressStoredTokens) return;
+\t\t\tconst store = readMcpOAuthStore(storeKey);
+      return store.tokens;
+    }
+  };
+}
+`);
+  const result = patch(f);
+  assert.equal(result.status, 0, result.stderr);
+  const module = await load(f, name);
+  const provider = module.createMcpOAuthClientProvider({});
+  for (const issuer of [undefined, null, "", 123, "https://auth.example.test"]) {
+    module.setStore({ clientInformation: { issuer }, tokens: { issuer } });
+    assert.equal(Boolean(provider.clientInformation()), typeof issuer === "string" && issuer.length > 0);
+    assert.equal(Boolean(provider.tokens()), typeof issuer === "string" && issuer.length > 0);
+  }
+  assert.equal(module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
+});
+
 for (const variant of ["js", "mjs", "mjs-optimized-realpath"]) {
   const ext = variant === "js" ? "js" : "mjs";
   const optimizedRealpath = variant === "mjs-optimized-realpath";

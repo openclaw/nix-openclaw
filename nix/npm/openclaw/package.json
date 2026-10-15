@@ -4,5 +4,8 @@
   "private": true,
   "dependencies": {
     "openclaw": "2026.9.5"
+  },
+  "overrides": {
+    "@modelcontextprotocol/sdk": "1.31.0"
   }
 }

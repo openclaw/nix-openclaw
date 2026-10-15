@@ -19,6 +19,9 @@ stdenv.mkDerivation {
 
   doCheck = true;
   nativeCheckInputs = [ nodejs_24 ];
-  checkPhase = "${../scripts/check-package-contents.sh}";
+  checkPhase = ''
+    ${../scripts/check-package-contents.sh}
+    OPENCLAW_PACKAGE_ROOT="$OPENCLAW_GATEWAY/lib/openclaw" node ${../tests/mcp-oauth/check.mjs}
+  '';
   installPhase = "${../scripts/empty-install.sh}";
 }

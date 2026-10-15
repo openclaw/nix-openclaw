@@ -6,6 +6,8 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Fix CVE-2026-104850 in the stable npm gateway with MCP SDK 1.31.0 and require login again for saved OAuth credentials without an issuer; thanks @SebTardif (#163).
+
 - Refresh Nixpkgs, Home Manager, bundled OpenClaw tools and example-plugin inputs, and update the private pnpm 11 runtime to 11.27.0.
 - Refresh Nix inputs and the example plugin lock, and update private source-build pnpm runtimes to 11.27.1 and 12.6.0.
 - Prevent newly published backports from downgrading the selected gateway or macOS app; order stable releases and numeric corrections by version.

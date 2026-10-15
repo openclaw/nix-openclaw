@@ -987,6 +987,18 @@ Plugins are keyed by their declared `name`. If two plugins declare the same name
 
 ## Packaging & Updates
 
+### MCP OAuth credentials after upgrading
+
+The stable npm gateway packages MCP SDK 1.31.0 to fix
+[CVE-2026-104850](https://github.com/advisories/GHSA-6qxp-vccf-f47h).
+Saved OAuth clients and tokens must identify their authorization server. Older
+credentials without that issuer are ignored; run `openclaw mcp logout <name>`
+and `openclaw mcp login <name>` for each affected HTTP MCP server. Complete the
+login only for servers you trust. If credentials may already have been exposed,
+revoke the tokens and rotate the client secret at the authorization server.
+Explicit source overrides use their upstream dependency locks and must include
+the corresponding SDK fix themselves.
+
 **Goal:** `nix-openclaw` is a great Nix package. Automation, promotion, and fleet rollout live elsewhere.
 
 ### Stable release mirroring
