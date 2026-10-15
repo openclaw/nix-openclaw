@@ -13,6 +13,11 @@ test("MCP OAuth requires issuer-bound stored credentials", async (t) => {
 let store = {};
 export function setStore(value) { store = value; }
 function readMcpOAuthStore() { return store; }
+export async function resolveMcpOAuthAccessToken(params) {
+  const tokens = readMcpOAuthStore().tokens;
+  if (!tokens?.access_token) throw new Error("requires OAuth authorization");
+  return tokens.access_token;
+}
 export function createMcpOAuthClientProvider(params) {
   const storeKey = "test";
   return {
@@ -32,9 +37,14 @@ export function createMcpOAuthClientProvider(params) {
   const module = await load(f, name);
   const provider = module.createMcpOAuthClientProvider({});
   for (const issuer of [undefined, null, "", 123, "https://auth.example.test"]) {
-    module.setStore({ clientInformation: { issuer }, tokens: { issuer } });
+    module.setStore({ clientInformation: { issuer }, tokens: { issuer, access_token: "stored" } });
     assert.equal(Boolean(provider.clientInformation()), typeof issuer === "string" && issuer.length > 0);
     assert.equal(Boolean(provider.tokens()), typeof issuer === "string" && issuer.length > 0);
+    if (typeof issuer === "string" && issuer.length > 0) {
+      assert.equal(await module.resolveMcpOAuthAccessToken({}), "stored");
+    } else {
+      await assert.rejects(module.resolveMcpOAuthAccessToken({}), /requires OAuth/);
+    }
   }
   assert.equal(module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
 });

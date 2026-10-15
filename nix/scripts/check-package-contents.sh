@@ -138,3 +138,10 @@ if ! find "${root}/skills" -name SKILL.md -type f | grep -q .; then
 fi
 
 echo "openclaw package contents: ok"
+
+if [ -n "${OPENCLAW_MCP_OAUTH_CHECK:-}" ]; then
+  OPENCLAW_PACKAGE_ROOT="$root" node "$OPENCLAW_MCP_OAUTH_CHECK"
+fi
+if [ -n "${OPENCLAW_MCP_OAUTH_FLOW_CHECK:-}" ]; then
+  OPENCLAW_PACKAGE_ROOT="$root" node "$OPENCLAW_MCP_OAUTH_FLOW_CHECK"
+fi

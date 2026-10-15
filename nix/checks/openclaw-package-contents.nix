@@ -15,13 +15,12 @@ stdenv.mkDerivation {
 
   env = {
     OPENCLAW_GATEWAY = openclawGateway;
+    OPENCLAW_MCP_OAUTH_CHECK = "${../tests/mcp-oauth/check.mjs}";
+    OPENCLAW_MCP_OAUTH_FLOW_CHECK = "${../tests/mcp-oauth/flow.mjs}";
   };
 
   doCheck = true;
   nativeCheckInputs = [ nodejs_24 ];
-  checkPhase = ''
-    ${../scripts/check-package-contents.sh}
-    OPENCLAW_PACKAGE_ROOT="$OPENCLAW_GATEWAY/lib/openclaw" node ${../tests/mcp-oauth/check.mjs}
-  '';
+  checkPhase = "${../scripts/check-package-contents.sh}";
   installPhase = "${../scripts/empty-install.sh}";
 }

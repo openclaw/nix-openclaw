@@ -189,11 +189,18 @@ if (providerFiles.length) {
   const tokenGetter = "tokens() {\n\t\t\tif (params.suppressStoredTokens) return;\n\t\t\tconst store = readMcpOAuthStore(storeKey);";
   requireContract(source.split(clientGetter).length === 2, "MCP OAuth client getter");
   requireContract(source.split(tokenGetter).length === 2, "MCP OAuth token getter");
-  oauthPatches.push([name, source
+  let patchedProvider = source
     .replace(clientGetter, `const client = readMcpOAuthStore(storeKey).clientInformation;
 \t\t\treturn typeof client?.issuer === "string" && client.issuer.length > 0 ? client : void 0;`)
     .replace(tokenGetter, `${tokenGetter}
-\t\t\tif (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;`)]);
+\t\t\tif (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;`);
+  if (source.includes("function resolveMcpOAuthAccessToken(")) {
+    const missingToken = "if (!tokens?.access_token)";
+    requireContract(source.split(missingToken).length === 2, "MCP OAuth access token entry point");
+    patchedProvider = patchedProvider.replace(missingToken,
+      'if (!tokens?.access_token || typeof tokens.issuer !== "string" || !tokens.issuer)');
+  }
+  oauthPatches.push([name, patchedProvider]);
 }
 
 // No contract failure may leave the earlier ownership transform partially written.
