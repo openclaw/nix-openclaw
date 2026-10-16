@@ -66,11 +66,11 @@ requireContract(
 }`,
   "Nix environment resolver",
 );
-const realpathSource = importedOwner(policy, realpath, old ? "path" : "plugin-cache-files");
+const realpathSource = importedOwner(policy, realpath, old ? "path" : "(?:plugin-cache-files|package-manifest)");
 const optimizedRealpath = !old && realpathSource.includes("function resolveRealpath(");
 if (optimizedRealpath) {
   requireContract(
-    declaration(realpathSource, "resolveRealpath") ===
+    [
       `function resolveRealpath(targetPath) {
 \tconst absolute = path.resolve(targetPath);
 \ttry {
@@ -78,6 +78,11 @@ if (optimizedRealpath) {
 \t} catch {}
 \treturn fs.realpathSync(targetPath);
 }`,
+      `function resolveRealpath(targetPath) {
+\tif (path.resolve(targetPath) === targetPath && pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
+\treturn fs.realpathSync(targetPath);
+}`,
+    ].includes(declaration(realpathSource, "resolveRealpath")),
     "canonical realpath helper",
   );
 }
@@ -185,14 +190,20 @@ const oauthPatches = [];
 if (providerFiles.length) {
   const name = unique(providerFiles, "MCP OAuth provider");
   const source = modules.get(name);
-  const clientGetter = "return readMcpOAuthStore(storeKey).clientInformation;";
-  const tokenGetter = "tokens() {\n\t\t\tif (params.suppressStoredTokens) return;\n\t\t\tconst store = readMcpOAuthStore(storeKey);";
+  const asyncStore = source.includes("const clientInformation = store.clientInformation;");
+  const clientGetter = asyncStore ? "return clientInformation;" : "return readMcpOAuthStore(storeKey).clientInformation;";
+  const tokenGetter = asyncStore
+    ? "return canReuseStoredTokens(store) ? store.tokens : void 0;"
+    : "tokens() {\n\t\t\tif (params.suppressStoredTokens) return;\n\t\t\tconst store = readMcpOAuthStore(storeKey);";
   requireContract(source.split(clientGetter).length === 2, "MCP OAuth client getter");
   requireContract(source.split(tokenGetter).length === 2, "MCP OAuth token getter");
   let patchedProvider = source
-    .replace(clientGetter, `const client = readMcpOAuthStore(storeKey).clientInformation;
+    .replace(clientGetter, `const client = ${asyncStore ? "clientInformation" : "readMcpOAuthStore(storeKey).clientInformation"};
 \t\t\treturn typeof client?.issuer === "string" && client.issuer.length > 0 ? client : void 0;`)
-    .replace(tokenGetter, `${tokenGetter}
+    .replace(tokenGetter, asyncStore
+      ? `if (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;
+\t\t\t${tokenGetter}`
+      : `${tokenGetter}
 \t\t\tif (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;`);
   if (source.includes("function resolveMcpOAuthAccessToken(")) {
     const missingToken = "if (!tokens?.access_token)";

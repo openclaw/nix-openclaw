@@ -10,7 +10,8 @@ const checker = path.join(import.meta.dirname, "check-package-contents.sh");
 // Reduced executable boundaries from npm 2026.7.1-2 (0790d9f593ad30c940ed93b5872a8cf6d6f3cf8c)
 // and 2026.9.3 (1391f7cd2d40ab5bbcf2f5f831d3a64f520e72d7). Policy/env bodies are unchanged.
 // The optional canonical-realpath helper is emitted by npm 2026.9.5 (ec9c1a13db8938e5a3eaa51fca2e981cde2395a9).
-function fixture(t, ext, { optimizedRealpath = false } = {}) {
+// npm 2026.10.4 moves the cache into package-manifest and caches native realpaths too.
+function fixture(t, ext, { optimizedRealpath = false, cachedNativeRealpath = false } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-dist-patch-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const dist = path.join(root, "dist");
@@ -20,7 +21,7 @@ function fixture(t, ext, { optimizedRealpath = false } = {}) {
   const cacheArg = old ? ", realpathCache" : "";
   const paramsCache = old ? ", params.realpathCache" : "";
   const realpath = old ? "safeRealpathSync" : "pluginCacheRealpathSync";
-  const dependency = `${old ? "path" : "plugin-cache-files"}-fixture.${ext}`;
+  const dependency = `${old ? "path" : cachedNativeRealpath ? "package-manifest" : "plugin-cache-files"}-fixture.${ext}`;
   put(
     `paths-fixture.${ext}`,
     `function resolveIsNixMode(env = process.env) {
@@ -51,7 +52,11 @@ function pathFacts(targetPath) {
 \t}
 \treturn facts;
 }
-${optimizedRealpath ? `function resolveRealpath(targetPath) {
+${cachedNativeRealpath ? `function resolveRealpath(targetPath) {
+\tif (path.resolve(targetPath) === targetPath && pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
+\treturn fs.realpathSync(targetPath);
+}
+` : optimizedRealpath ? `function resolveRealpath(targetPath) {
 \tconst absolute = path.resolve(targetPath);
 \ttry {
 \t\tif (absolute === targetPath && fs.realpathSync.native(targetPath) === targetPath) return targetPath;

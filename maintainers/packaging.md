@@ -22,6 +22,8 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - `nix-openclaw-tools` owns packaging OpenClaw-adjacent CLI tools and plugin metadata. Consume it here; do not duplicate its package definitions here.
 - Downstream system repos should only choose hosts, secrets, accounts, and enabled plugins. If downstream needs bespoke scripts to make a plugin or harness work, prefer fixing this repo or `nix-openclaw-tools`.
 - Nix mode means Nix owns `openclaw.json`.
+- Emitted npm patch contracts validate imported helper bindings and complete realpath decisions, including the native-cache helper in OpenClaw 2026.10.4's `package-manifest` chunk. Chunk relocation alone must not relax path or ownership guards.
+- The OAuth adapter accepts synchronous and asynchronous store readers while requiring issuer-bound saved credentials in both; asynchronous readers retain upstream lease and token-reuse checks.
 - Runtime config mutation belongs upstream in OpenClaw. Downstream patches here must be small, temporary, and removed after the pinned upstream release contains the fix.
 - Generated config options come from the upstream core schema.
 - Plugin-owned extension surfaces, such as `channels.<plugin-id>`, must remain accepted by the Home Manager module even when core does not type every plugin key.

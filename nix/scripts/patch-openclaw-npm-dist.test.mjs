@@ -6,13 +6,15 @@ import {
   fixture, patch, load, snapshot, change, envFor, paramsFor, restoreEnv, packageFixture, templateDocs,
 } from "./patch-openclaw-npm-dist.fixtures.mjs";
 
-test("MCP OAuth requires issuer-bound stored credentials", async (t) => {
+for (const asyncStore of [false, true]) test(`MCP OAuth ${asyncStore ? "async" : "sync"} requires issuer-bound stored credentials`, async (t) => {
   const f = fixture(t, "mjs");
   const name = "mcp-oauth-fixture.mjs";
   fs.writeFileSync(path.join(f.root, "dist", name), `
 let store = {};
 export function setStore(value) { store = value; }
 function readMcpOAuthStore() { return store; }
+async function readStore() { return store; }
+function canReuseStoredTokens() { return true; }
 export async function resolveMcpOAuthAccessToken(params) {
   const tokens = readMcpOAuthStore().tokens;
   if (!tokens?.access_token) throw new Error("requires OAuth authorization");
@@ -21,13 +23,13 @@ export async function resolveMcpOAuthAccessToken(params) {
 export function createMcpOAuthClientProvider(params) {
   const storeKey = "test";
   return {
-    clientInformation() {
-      return readMcpOAuthStore(storeKey).clientInformation;
+    ${asyncStore ? "async " : ""}clientInformation() {
+      ${asyncStore ? "const store = await readStore();\n\t\t\tconst clientInformation = store.clientInformation;\n\t\t\treturn clientInformation;" : "return readMcpOAuthStore(storeKey).clientInformation;"}
     },
-    tokens() {
+    ${asyncStore ? "async " : ""}tokens() {
 \t\t\tif (params.suppressStoredTokens) return;
-\t\t\tconst store = readMcpOAuthStore(storeKey);
-      return store.tokens;
+\t\t\tconst store = ${asyncStore ? "await readStore()" : "readMcpOAuthStore(storeKey)"};
+      ${asyncStore ? "return canReuseStoredTokens(store) ? store.tokens : void 0;" : "return store.tokens;"}
     }
   };
 }
@@ -38,21 +40,22 @@ export function createMcpOAuthClientProvider(params) {
   const provider = module.createMcpOAuthClientProvider({});
   for (const issuer of [undefined, null, "", 123, "https://auth.example.test"]) {
     module.setStore({ clientInformation: { issuer }, tokens: { issuer, access_token: "stored" } });
-    assert.equal(Boolean(provider.clientInformation()), typeof issuer === "string" && issuer.length > 0);
-    assert.equal(Boolean(provider.tokens()), typeof issuer === "string" && issuer.length > 0);
+    assert.equal(Boolean(await provider.clientInformation()), typeof issuer === "string" && issuer.length > 0);
+    assert.equal(Boolean(await provider.tokens()), typeof issuer === "string" && issuer.length > 0);
     if (typeof issuer === "string" && issuer.length > 0) {
       assert.equal(await module.resolveMcpOAuthAccessToken({}), "stored");
     } else {
       await assert.rejects(module.resolveMcpOAuthAccessToken({}), /requires OAuth/);
     }
   }
-  assert.equal(module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
+  assert.equal(await module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
 });
 
-for (const variant of ["js", "mjs", "mjs-optimized-realpath"]) {
+for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native-realpath"]) {
   const ext = variant === "js" ? "js" : "mjs";
-  const optimizedRealpath = variant === "mjs-optimized-realpath";
-  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath });
+  const cachedNativeRealpath = variant === "mjs-cached-native-realpath";
+  const optimizedRealpath = variant === "mjs-optimized-realpath" || cachedNativeRealpath;
+  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath, cachedNativeRealpath });
   test(`${variant}: emitted ownership/policy preserve guards and env boundaries`, async (t) => {
     const f = fixtureFor(t),
       result = patch(f);
@@ -146,7 +149,7 @@ for (const variant of ["js", "mjs", "mjs-optimized-realpath"]) {
     ...(optimizedRealpath ? {
       "unsafe-realpath-helper": ["dependency", "return fs.realpathSync(targetPath);", "return targetPath;"],
       "renamed-realpath-helper": ["dependency", "function resolveRealpath(", "function otherRealpath("],
-      "unchecked-native-realpath": ["dependency", "fs.realpathSync.native(targetPath) === targetPath", "true"],
+      "unchecked-native-realpath": ["dependency", `${cachedNativeRealpath ? "pluginCacheRealpathSync(targetPath, true)" : "fs.realpathSync.native(targetPath)"} === targetPath`, "true"],
     } : {}),
     "wrong-binding": ["discovery", "{ t as shouldReject", "{ x as shouldReject"],
     "comment-binding": ["discovery", "import { t as shouldReject", "// import { t as shouldReject"],
