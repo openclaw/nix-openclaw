@@ -24,6 +24,9 @@ Use targeted checks while debugging, then run the full relevant gate before hand
 Run contract tests inside `nix develop` to select the pinned Node, Bash, and Git.
 CI selects those same packages with `nix shell` on both Linux and macOS.
 
+Gateway smoke checks allow up to 90 seconds for cold startup, including state
+worker initialization, and still require a successful authenticated health probe.
+
 The provenance job also gates maintainer and same-repository authorization; the
 platform jobs depend on it. Linux and macOS 15 retain all supported-surface
 checks. The historical installed-baseline qualification still verifies Node 22

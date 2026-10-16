@@ -157,7 +157,7 @@ try {
   gateway.stdout.on("data", (chunk) => appendLog("stdout", chunk));
   gateway.stderr.on("data", (chunk) => appendLog("stderr", chunk));
 
-  const deadline = Date.now() + (runtimePluginSmokeRoot ? 90000 : 30000);
+  const deadline = Date.now() + 90000;
   let lastError = "";
 
   while (Date.now() < deadline) {
