@@ -5,6 +5,7 @@ import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
 
 async function entryPoints(root, marker) {
@@ -26,7 +27,6 @@ async function child() {
   const stores = await entryPoints(root, "readMcpOAuthStore");
   const transport = await entryPoints(root, "buildMcpHttpFetch");
   const read = stores("readMcpOAuthStore");
-  const update = stores("updateMcpOAuthStore");
   const identity = { storeKey: "synthetic-oauth-flow", serverName: "synthetic", serverUrl: `${base}/mcp` };
   const config = { url: identity.serverUrl, oauth: { redirectUrl: `${base}/callback` }, requestTimeoutMs: 5000 };
   if (action === "login") {
@@ -38,20 +38,11 @@ async function child() {
     assert.equal(await oauth("completeOAuthCallback")(identity, config, {
       code: callback.searchParams.get("code"), state: callback.searchParams.get("state"),
     }), "authorized");
-    update("unrelated-synthetic-row", () => ({ marker: "preserved" }));
-  } else if (action === "legacy") {
-    update(identity.storeKey, (store) => {
-      const clientInformation = { ...store.clientInformation };
-      const tokens = { ...store.tokens };
-      delete clientInformation.issuer;
-      delete tokens.issuer;
-      return { ...store, clientInformation, tokens, tokenExpiresAt: Date.now() + 600000 };
-    });
   } else if (action === "clear") {
     await oauth("clearMcpOAuthCredentials")(identity);
-    assert.equal(read("unrelated-synthetic-row").marker, "preserved");
+    assert.equal((await read("unrelated-synthetic-row")).marker, "preserved");
   } else {
-    const store = read(identity.storeKey);
+    const store = await read(identity.storeKey);
     try {
       await oauth("resolveMcpOAuthAccessToken")({
         identity, config: config.oauth,
@@ -62,15 +53,15 @@ async function child() {
           resourceMetadataUrl: new URL(`${base}/.well-known/oauth-protected-resource?changed=1`),
         } : {}),
       });
-      process.send({ authorized: true, bound: Boolean(read(identity.storeKey).tokens?.issuer) });
+      process.send({ authorized: true, bound: Boolean((await read(identity.storeKey)).tokens?.issuer) });
     } catch (error) {
       assert.match(error.message, /OAuth|authorization|auth server/i);
       process.send({ rejected: true });
     }
-    assert.equal(read("unrelated-synthetic-row").marker, "preserved");
+    assert.equal((await read("unrelated-synthetic-row")).marker, "preserved");
     return;
   }
-  const store = read(identity.storeKey);
+  const store = await read(identity.storeKey);
   process.send({ bound: Boolean(store.tokens?.issuer && store.clientInformation?.issuer) });
 }
 
@@ -79,6 +70,18 @@ async function main() {
   assert.ok(root, "OPENCLAW_PACKAGE_ROOT is required");
   const baseline = process.env.OPENCLAW_BASELINE_PACKAGE_ROOT;
   const stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-oauth-flow-"));
+  // Seed upgrade fixtures only between child processes, with no live state owner.
+  function seedStore(state, key, update) {
+    const database = new DatabaseSync(path.join(stateRoot, state, "state/openclaw.sqlite"));
+    try {
+      const row = database.prepare("SELECT store_json FROM mcp_oauth_stores WHERE store_key = ?").get(key);
+      const value = update(row ? JSON.parse(row.store_json) : {});
+      database.prepare("INSERT INTO mcp_oauth_stores (store_key, format_version, store_json, updated_at) VALUES (?, 1, ?, ?) ON CONFLICT(store_key) DO UPDATE SET store_json = excluded.store_json, updated_at = excluded.updated_at")
+        .run(key, JSON.stringify(value), Date.now());
+    } finally {
+      database.close();
+    }
+  }
   const events = [];
   let active = "trusted";
   let base;
@@ -148,6 +151,7 @@ async function main() {
   try {
     if (baseline) {
       assert.equal((await run(baseline, "baseline", "login")).bound, false);
+      seedStore("baseline", "unrelated-synthetic-row", () => ({ marker: "preserved" }));
       assert.equal((await run(baseline, "baseline", "refresh")).authorized, true);
       active = "foreign";
       const start = events.length;
@@ -157,7 +161,14 @@ async function main() {
       active = "trusted";
     }
     await run(baseline ?? root, "upgrade", "login");
-    if (!baseline) await run(root, "upgrade", "legacy");
+    seedStore("upgrade", "unrelated-synthetic-row", () => ({ marker: "preserved" }));
+    if (!baseline) seedStore("upgrade", "synthetic-oauth-flow", (store) => {
+      const clientInformation = { ...store.clientInformation };
+      const tokens = { ...store.tokens };
+      delete clientInformation.issuer;
+      delete tokens.issuer;
+      return { ...store, clientInformation, tokens, tokenExpiresAt: Date.now() + 600000 };
+    });
     const legacyStart = events.length;
     assert.equal((await run(root, "upgrade", "read")).rejected, true);
     assert.equal((await run(root, "upgrade", "refresh")).rejected, true);

@@ -1,0 +1,105 @@
+--- a/src/plugins/discovery.ts
++++ b/src/plugins/discovery.ts
+@@ -32,7 +32,10 @@
+ } from "./discovery-availability.js";
+ import { addMissingRequiredPluginDiagnostics } from "./discovery-required-plugins.js";
+ import type { PluginCandidate, PluginDiscoveryResult } from "./discovery.types.js";
+-import { shouldRejectHardlinkedPluginFiles } from "./hardlink-policy.js";
++import {
++  isTrustedNixStorePluginRoot,
++  shouldRejectHardlinkedPluginFiles,
++} from "./hardlink-policy.js";
+ import { hashStableJson } from "./installed-plugin-index-hash.js";
+ import type { PluginBundleFormat, PluginDiagnostic, PluginFormat } from "./manifest-types.js";
+ import {
+@@ -116,6 +119,7 @@
+ }
+ 
+ function checkPathStatAndPermissions(params: {
++  env: NodeJS.ProcessEnv;
+   source: string;
+   rootDir: string;
+   origin: PluginOrigin;
+@@ -168,6 +172,7 @@
+     if (
+       params.origin !== "bundled" &&
+       params.uid !== null &&
++      !isTrustedNixStorePluginRoot(params) &&
+       typeof stat.uid === "number" &&
+       stat.uid !== params.uid &&
+       stat.uid !== 0
+@@ -580,6 +585,7 @@
+     const issue =
+       checkSourceEscapesRoot({ source: resolved, rootDir: resolvedRoot }) ??
+       checkPathStatAndPermissions({
++        env,
+         source: resolved,
+         rootDir: resolvedRoot,
+         origin: params.origin,
+--- a/src/plugins/hardlink-policy.ts
++++ b/src/plugins/hardlink-policy.ts
+@@ -23,6 +23,13 @@
+   return rootRealPath === NIX_STORE_ROOT || rootRealPath.startsWith(`${NIX_STORE_ROOT}/`);
+ }
+ 
++export function isTrustedNixStorePluginRoot(params: {
++  rootDir: string;
++  env?: NodeJS.ProcessEnv;
++}): boolean {
++  return resolveIsNixMode(params.env) && isNixStorePluginRoot(params.rootDir);
++}
++
+ /** Decides whether plugin file hardlinks should fail boundary validation for one root. */
+ export function shouldRejectHardlinkedPluginFiles(params: {
+   origin: PluginOrigin;
+@@ -33,7 +40,7 @@
+   if (params.origin === "bundled") {
+     return false;
+   }
+-  if (resolveIsNixMode(params.env) && isNixStorePluginRoot(params.rootDir)) {
++  if (isTrustedNixStorePluginRoot(params)) {
+     return false;
+   }
+   return true;
+--- a/src/plugins/control-ui-assets.ts
++++ b/src/plugins/control-ui-assets.ts
+@@ -1,6 +1,7 @@
+ import path from "node:path";
+ import { root } from "../infra/fs-safe.js";
+ import { walkRootDirectory } from "../infra/root-walk.js";
++import { isTrustedNixStorePluginRoot } from "./hardlink-policy.js";
+ import type { PluginManifestControlUi } from "./manifest-types.js";
+ 
+ export const CONTROL_UI_PLUGIN_MAX_ASSET_BYTES = 4 * 1024 * 1024;
+@@ -21,7 +22,7 @@
+   declaration: PluginManifestControlUi,
+ ) {
+   const pluginRoot = await root(rootDir, {
+-    hardlinks: "reject",
++    hardlinks: isTrustedNixStorePluginRoot({ rootDir }) ? "allow" : "reject",
+     symlinks: "reject",
+     maxBytes: CONTROL_UI_PLUGIN_MAX_ASSET_BYTES,
+   });
+--- a/src/gateway/control-ui-plugin-assets.ts
++++ b/src/gateway/control-ui-plugin-assets.ts
+@@ -11,6 +11,7 @@
+   readPluginControlUiAssets,
+   type PluginControlUiAsset,
+ } from "../plugins/control-ui-assets.js";
++import { isTrustedNixStorePluginRoot } from "../plugins/hardlink-policy.js";
+ import { loadPluginManifest, type PluginManifestControlUi } from "../plugins/manifest.js";
+ import { createPluginCache, withPluginCache } from "../plugins/plugin-cache.js";
+ import { capturePluginLifecycleAuthority } from "../plugins/registry-lifecycle.js";
+@@ -162,7 +163,11 @@
+         // Explicit UI reload owns a fresh metadata read without replacing the
+         // backend's process-stable manifest, imports, or registration authority.
+         const loaded = withPluginCache(createPluginCache(), () =>
+-          loadPluginManifest(record.rootDir!, true, record.rootDir),
++          loadPluginManifest(
++            record.rootDir!,
++            !isTrustedNixStorePluginRoot({ rootDir: record.rootDir! }),
++            record.rootDir,
++          ),
+         );
+         if (!loaded.ok || loaded.manifest.id !== record.id || !loaded.manifest.controlUi) {
+           throw new Error("active plugin browser declaration is missing or invalid");

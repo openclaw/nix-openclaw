@@ -6,7 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
-- Restore stable-pin packaging for OpenClaw 2026.10.4's relocated realpath cache and asynchronous OAuth store, preserving path, ownership, and saved-credential issuer checks.
+- Restore stable-pin packaging for OpenClaw 2026.10.4's relocated realpath cache, direct discovery checks, and asynchronous OAuth store, preserving path, ownership, and saved-credential issuer checks.
 - Fix CVE-2026-104850 in the stable npm gateway with MCP SDK 1.31.0 and require login again for saved OAuth credentials without an issuer; thanks @SebTardif (#163).
 - Load hardlinked Control UI plugin assets and reload their manifests from canonical Nix-store roots in Nix mode, preserving rejection for mutable paths; thanks @paulcam206 (#165).
 

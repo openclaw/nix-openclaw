@@ -65,7 +65,7 @@ const sources = fs.readdirSync(path.join(root, "dist"))
   .map((name) => fs.readFileSync(path.join(root, "dist", name), "utf8"))
   .filter((source) => source.includes("function createMcpOAuthClientProvider("));
 assert.equal(sources.length, 1, "expected one installed MCP OAuth provider");
-const body = sources[0].match(/^function createMcpOAuthClientProvider\([^\n]*\) \{\n[\s\S]*?^\}/m)?.[0];
+const body = sources[0].match(/^(?:async )?function createMcpOAuthClientProvider\([^\n]*\) \{\n[\s\S]*?^\}/m)?.[0];
 assert.ok(body, "unsupported installed MCP OAuth provider");
 let store = {};
 const context = vm.createContext({
@@ -73,11 +73,17 @@ const context = vm.createContext({
   normalizeOptionalString: (value) => value,
   readMcpOAuthStore: () => store,
   updateMcpOAuthStore: (_key, update) => { store = update(store); },
+  mutateMcpOAuthStore: async (_params, mutation) => {
+    store = { ...store, [mutation.kind]: mutation[mutation.kind] };
+    return { store };
+  },
   beginMcpOAuthAuthorization: (value) => ({ ...value }),
   resolveTokenExpiresAt: () => undefined,
 });
+const reuse = sources[0].match(/^function canReuseStoredTokens\([^\n]*\) \{\n[\s\S]*?^\}/m)?.[0];
+if (reuse) vm.runInContext(reuse, context);
 vm.runInContext(body, context);
-const provider = context.createMcpOAuthClientProvider({ identity: { storeKey: "test" } });
+const provider = await context.createMcpOAuthClientProvider({ identity: { storeKey: "test" }, lease: { assertOwned: async () => {} } });
 for (const issuer of [undefined, null, "", 123, realIssuer]) {
   store = {
     clientInformation: { client_id: "test", client_secret: "synthetic-secret", issuer },
@@ -85,11 +91,11 @@ for (const issuer of [undefined, null, "", 123, realIssuer]) {
     discoveryState: { authorizationServerUrl: realIssuer },
     tokensAuthorizationServerUrl: realIssuer,
   };
-  assert.equal(Boolean(provider.clientInformation()), issuer === realIssuer, "unbound client must require login");
-  assert.equal(Boolean(provider.tokens()), issuer === realIssuer, "unbound tokens must require login");
+  assert.equal(Boolean(await provider.clientInformation()), issuer === realIssuer, "unbound client must require login");
+  assert.equal(Boolean(await provider.tokens()), issuer === realIssuer, "unbound tokens must require login");
 }
-provider.saveClientInformation({ client_id: "test", issuer: realIssuer });
-provider.saveTokens({ access_token: "new", token_type: "Bearer", issuer: realIssuer });
+await provider.saveClientInformation({ client_id: "test", issuer: realIssuer });
+await provider.saveTokens({ access_token: "new", token_type: "Bearer", issuer: realIssuer });
 assert.equal(store.clientInformation.issuer, realIssuer);
 assert.equal(store.tokens.issuer, realIssuer);
 console.log("MCP OAuth: foreign issuer rejected, matching issuer refreshed, legacy credentials require login");

@@ -13,7 +13,11 @@ if [ -n "${PATCH_SKIP_PLUGIN_AUTO_ENABLE_NIX_MODE:-}" ]; then
 fi
 
 if [ -n "${PATCH_NIX_STORE_PLUGIN_OWNERSHIP:-}" ]; then
-  patch -p1 < "$PATCH_NIX_STORE_PLUGIN_OWNERSHIP"
+  ownership_patch="$PATCH_NIX_STORE_PLUGIN_OWNERSHIP"
+  if ! grep -q '^function findCandidateBlockIssue(' src/plugins/discovery.ts; then
+    ownership_patch="$PATCH_NIX_STORE_PLUGIN_OWNERSHIP_DIRECT"
+  fi
+  patch --batch --fuzz=0 -p1 < "$ownership_patch"
 fi
 
 if [ -f src/logging/logger.ts ]; then
