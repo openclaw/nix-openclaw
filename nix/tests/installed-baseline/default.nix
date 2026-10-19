@@ -1,7 +1,8 @@
 { system }:
 
 let
-  revision = "5f849be411261d4b5d4e06ca0becc4d23526ffda";
+  # Same v2026.7.1 package, with the maintainer's repaired app artifact hash.
+  revision = "393177115c64d5066f174967cb94eb10aadd6a3e";
   baseline = builtins.getFlake "github:openclaw/nix-openclaw/${revision}";
   pkgs = import baseline.inputs.nixpkgs {
     inherit system;

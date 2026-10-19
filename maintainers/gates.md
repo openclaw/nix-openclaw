@@ -32,6 +32,9 @@ The provenance job also gates maintainer and same-repository authorization; the
 platform jobs depend on it. Linux and macOS 27 (`xcode-27`) retain all supported-surface
 checks. The historical installed-baseline qualification still verifies Node 22
 from its pinned historical package; current packaging contracts use Node 24.
+The baseline pins historical commit `393177115c64d5066f174967cb94eb10aadd6a3e`,
+which repairs the replaced July app artifact's checksum without changing the
+v2026.7.1 source, app version, or flake inputs.
 
 ## CI Verification
 
