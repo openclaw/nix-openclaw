@@ -11,7 +11,8 @@ const checker = path.join(import.meta.dirname, "check-package-contents.sh");
 // and 2026.9.3 (1391f7cd2d40ab5bbcf2f5f831d3a64f520e72d7). Policy/env bodies are unchanged.
 // The optional canonical-realpath helper is emitted by npm 2026.9.5 (ec9c1a13db8938e5a3eaa51fca2e981cde2395a9).
 // npm 2026.10.4 moves the cache into package-manifest and caches native realpaths too.
-function fixture(t, ext, { optimizedRealpath = false, cachedNativeRealpath = false } = {}) {
+// npm 2026.10.5 selects install candidates through a shared context.
+function fixture(t, ext, { optimizedRealpath = false, cachedNativeRealpath = false, contextLoops = false } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-dist-patch-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const dist = path.join(root, "dist");
@@ -172,13 +173,13 @@ ${loop} ids.push(candidate.id);
     : ""
 }async function detectConfiguredPluginInstallHealthIssues(params) {
 \tconst env = params.env ?? process.env, issues = [];
-${loop} issues.push(candidate.id);
+${contextLoops ? '\tconst context = { collectInstallCandidates: () => collectDownloadableInstallCandidates({ cfg: params.cfg, env }) };\n\tconst records = {}, deferredPluginIds = new Set();\n\tfor (const candidate of context.collectInstallCandidates(records, deferredPluginIds))' : loop} issues.push(candidate.id);
 \treturn issues;
 }
 async function ${old ? "repairMissingPluginInstalls" : "repairMissingPluginInstallsWithLease"}(params) {
 \tconst env = params.env ?? process.env;
 \tif (params.recorded) effects.push("recorded-update");
-${loop} effects.push(candidate.id);
+${contextLoops ? '\tconst installContext = { collectInstallCandidates: () => collectDownloadableInstallCandidates({ cfg: params.cfg, env }) };\n\tconst nextRecords = {}, deferredPluginIds = new Set();\n\tfor (const candidate of installContext.collectInstallCandidates(nextRecords, deferredPluginIds))' : loop} effects.push(candidate.id);
 \treturn 'Failed to install missing configured plugin "';
 }
 export { detectConfiguredPluginInstallHealthIssues as health, ${old ? "repairMissingPluginInstalls" : "repairMissingPluginInstallsWithLease"} as repair };

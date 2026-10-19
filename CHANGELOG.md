@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Restore stable-pin packaging for OpenClaw 2026.10.5's shared plugin-install context while preserving Nix-mode candidate install suppression.
 - Move macOS CI and stable-pin validation to the Apple Silicon Xcode 27 image while preserving Nix-owned SDK targets.
 - Preserve the upstream macOS app's signed contents by disabling Nix fixups; verify installed bytes, symlinks, signatures, and universal architectures in CI. Thanks @vincentkoc (#160).
 - Omit the unused upstream npm CLI and its vulnerable private dependencies from the Nix gateway; retain the pinned build-time package managers and declarative plugin installation.

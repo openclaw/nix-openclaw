@@ -162,7 +162,7 @@ const patchedOwnership = ownership.replace(
   ),
 );
 
-const loop = "for (const candidate of collectDownloadableInstallCandidates({";
+const directLoop = "for (const candidate of collectDownloadableInstallCandidates({";
 const [installName, install] = owner(
   'Failed to install missing configured plugin "',
   "missing configured plugin install chunk",
@@ -171,17 +171,29 @@ requireContract(ownershipName !== installName, "distinct transform owners");
 const functions = old
   ? ["collectUpdateDeferredPluginIds", "detectConfiguredPluginInstallHealthIssues", "repairMissingPluginInstalls"]
   : ["detectConfiguredPluginInstallHealthIssues", "repairMissingPluginInstallsWithLease"];
+// OpenClaw 2026.10.5 shares candidate selection through the resolved install context.
+const contextLoops = !old && install.includes("context.collectInstallCandidates(");
+const loops = contextLoops
+  ? [
+      "for (const candidate of context.collectInstallCandidates(records, deferredPluginIds))",
+      "for (const candidate of installContext.collectInstallCandidates(nextRecords, deferredPluginIds))",
+    ]
+  : functions.map(() => directLoop);
 requireContract(
-  installName.endsWith(`.${ext}`) && install.split(loop).length === functions.length + 1,
+  installName.endsWith(`.${ext}`) && install.split("for (const candidate of ").length === functions.length + 1,
   "missing-install loop count",
 );
-for (const name of functions) {
+for (const [index, name] of functions.entries()) {
   const body = declaration(install, name);
+  const loop = loops[index];
   requireContract(body.split(loop).length === 2 && body.includes(`\n\t${loop}`), `${name} candidate loop`);
 }
 // Preserve the existing health/deferred suppression and recorded-update limitations.
 // This adapter does not add an all-effects install gate or propagate caller env.
-const patchedInstall = install.replaceAll(loop, `if ((params.env ?? process.env).OPENCLAW_NIX_MODE !== "1") ${loop}`);
+let patchedInstall = install;
+for (const loop of new Set(loops)) {
+  patchedInstall = patchedInstall.replaceAll(loop, `if ((params.env ?? process.env).OPENCLAW_NIX_MODE !== "1") ${loop}`);
+}
 
 // SDK issuer binding cannot protect credentials saved before that binding existed.
 // Require reauthorization instead of letting discovery adopt an unbound secret.

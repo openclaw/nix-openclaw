@@ -51,11 +51,12 @@ export function createMcpOAuthClientProvider(params) {
   assert.equal(await module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
 });
 
-for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native-realpath"]) {
+for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native-realpath", "mjs-context-loops"]) {
   const ext = variant === "js" ? "js" : "mjs";
-  const cachedNativeRealpath = variant === "mjs-cached-native-realpath";
+  const contextLoops = variant === "mjs-context-loops";
+  const cachedNativeRealpath = variant === "mjs-cached-native-realpath" || contextLoops;
   const optimizedRealpath = variant === "mjs-optimized-realpath" || cachedNativeRealpath;
-  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath, cachedNativeRealpath });
+  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath, cachedNativeRealpath, contextLoops });
   test(`${variant}: emitted ownership/policy preserve guards and env boundaries`, async (t) => {
     const f = fixtureFor(t),
       result = patch(f);
@@ -161,6 +162,10 @@ for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native
     "env-contract": ["environment", '=== "1"', '!== "0"'],
     "late-loop": ["install", "HealthIssues", "UnrecognizedHealth"],
     "mixed-patched": ["install", "\tfor (const candidate", "\tif (true) for (const candidate"],
+    ...(contextLoops ? {
+      "wrong-context": ["install", "installContext.collectInstallCandidates(nextRecords", "context.collectInstallCandidates(nextRecords"],
+      "wrong-records": ["install", "context.collectInstallCandidates(records", "context.collectInstallCandidates(nextRecords"],
+    } : {}),
   };
   const missing = ["policy", "discovery", "install"].flatMap((role) => [`missing-${role}`, `duplicate-${role}`]);
   const ownerFaults = [...missing, ...Object.keys(mutations), "co-located"];
