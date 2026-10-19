@@ -15,6 +15,8 @@ stdenvNoCC.mkDerivation {
   };
 
   dontUnpack = true;
+  # Shebang fixups would invalidate the signed upstream app bundle.
+  dontFixup = true;
 
   installPhase = "${../scripts/openclaw-app-install.sh}";
 

@@ -36,6 +36,12 @@ log_step "copy installed dependency tree"
 # npm hoists dependencies beside openclaw; keep that locked tree and its realpaths.
 cp -R node_modules/. "$modules_root/"
 ln -s node_modules/openclaw "$root"
+# Nix owns package installation; the upstream npm CLI and its private dependency
+# bundle are not a runtime API. Build-time npm comes from the pinned Nix toolchain.
+for dependency_root in "$modules_root" "$root/node_modules"; do
+  rm -rf "$dependency_root/npm"
+  rm -f "$dependency_root/.bin/npm" "$dependency_root/.bin/npx"
+done
 log_step "patch npm dist"
 OPENCLAW_PACKAGE_ROOT="$root" "$NODE_BIN" "$OPENCLAW_PATCH_NPM_DIST_SCRIPT"
 

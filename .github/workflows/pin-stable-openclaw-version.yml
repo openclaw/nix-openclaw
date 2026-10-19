@@ -3,7 +3,13 @@ name: Pin Stable OpenClaw Version
 on:
   schedule:
     - cron: "5 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate current pins without updating or promoting versions
+        type: boolean
+        required: true
+        default: true
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/main' && 'pin-stable-openclaw-version' || format('pin-stable-openclaw-version-{0}', github.ref) }}
@@ -35,10 +41,15 @@ jobs:
       - name: Select release
         id: select
         env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          selection="$(scripts/update-pins.sh select)"
+          if [[ "$DRY_RUN" == true ]]; then
+            selection="$(scripts/select-current-pins.sh)"
+          else
+            selection="$(scripts/update-pins.sh select)"
+          fi
 
           while IFS='=' read -r key value; do
             echo "${key}=${value}" >> "$GITHUB_OUTPUT"
@@ -81,8 +92,13 @@ jobs:
         id: materialize
         continue-on-error: true
         env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [[ "$DRY_RUN" == true ]]; then
+            echo "Dry run: validate committed pins without materializing changes."
+            exit 0
+          fi
           scripts/update-pins.sh apply \
             "${{ needs.select.outputs.source_tag }}" \
             "${{ needs.select.outputs.source_sha }}" \
@@ -157,7 +173,7 @@ jobs:
   validate-macos:
     needs: select
     if: needs.select.outputs.has_update == 'true'
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 60
     outputs:
       materialization_digest: ${{ steps.materialization.outputs.materialization_digest }}
@@ -173,8 +189,13 @@ jobs:
         id: materialize
         continue-on-error: true
         env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [[ "$DRY_RUN" == true ]]; then
+            echo "Dry run: validate committed pins without materializing changes."
+            exit 0
+          fi
           scripts/update-pins.sh apply \
             "${{ needs.select.outputs.source_tag }}" \
             "${{ needs.select.outputs.source_sha }}" \
@@ -214,6 +235,7 @@ jobs:
             .#checks.aarch64-darwin.runtime-plugin-packages \
             .#checks.aarch64-darwin.runtime-plugin-host \
             .#checks.aarch64-darwin.qmd-opt-in
+          scripts/check-macos-app.sh
 
       - name: Run HM activation
         id: hm
@@ -293,7 +315,8 @@ jobs:
       - verify-materialization
     if: >-
       ${{
-        needs.select.outputs.has_update == 'true'
+        needs.select.outputs.has_update == 'true' &&
+        !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 30

@@ -6,6 +6,10 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Move macOS CI and stable-pin validation to the Apple Silicon Xcode 27 image while preserving Nix-owned SDK targets.
+- Preserve the upstream macOS app's signed contents by disabling Nix fixups; verify installed bytes, symlinks, signatures, and universal architectures in CI. Thanks @vincentkoc (#160).
+- Omit the unused upstream npm CLI and its vulnerable private dependencies from the Nix gateway; retain the pinned build-time package managers and declarative plugin installation.
+
 - Restore stable-pin packaging for OpenClaw 2026.10.4's relocated realpath cache, direct discovery checks, and asynchronous OAuth store, preserving path, ownership, and saved-credential issuer checks.
 - Fix CVE-2026-104850 in the stable npm gateway with MCP SDK 1.31.0 and require login again for saved OAuth credentials without an issuer; thanks @SebTardif (#163).
 - Load hardlinked Control UI plugin assets and reload their manifests from canonical Nix-store roots in Nix mode, preserving rejection for mutable paths; thanks @paulcam206 (#165).

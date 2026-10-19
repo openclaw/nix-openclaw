@@ -6,6 +6,25 @@ import {
   fixture, install, resolveFrom, put, dependency, snapshot, legacyNames, acpxAliases, pluginInstaller,
 } from "./openclaw-gateway-npm-install.fixtures.mjs";
 
+for (const layout of ["hoisted", "nested"]) {
+  test(`${layout}: Nix output omits the unused bundled npm CLI and its private dependencies`, (t) => {
+    const f = fixture(t, layout);
+    const modules = layout === "hoisted" ? f.modules : path.join(f.packageRoot, "node_modules");
+    put(modules, "npm/package.json", '{"name":"npm","version":"12.1.0"}');
+    put(modules, "npm/node_modules/http-cache-semantics/index.js", "throw new Error('unused bundled npm dependency');");
+    put(modules, "npm/bin/npm-cli.js", "throw new Error('unused bundled npm CLI');");
+    fs.mkdirSync(path.join(modules, ".bin"), { recursive: true });
+    fs.symlinkSync("../npm/bin/npm-cli.js", path.join(modules, ".bin/npm"));
+    fs.symlinkSync("../npm/bin/npm-cli.js", path.join(modules, ".bin/npx"));
+    install(f);
+    const outputModules = layout === "hoisted" ? path.join(f.out, "lib/node_modules") : path.join(f.root, "node_modules");
+    assert.equal(fs.existsSync(path.join(outputModules, "npm")), false);
+    for (const binary of ["npm", "npx"]) {
+      assert.equal(fs.lstatSync(path.join(outputModules, ".bin", binary), { throwIfNoEntry: false }), undefined);
+    }
+  });
+}
+
 for (const layout of ["mixed", "nested", "hoisted"]) {
   test(`${layout}: output retains ESM and CJS dependency versions after build removal`, (t) => {
     const f = fixture(t, layout);

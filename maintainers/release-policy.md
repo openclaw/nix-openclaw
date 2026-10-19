@@ -31,6 +31,16 @@ If newer stable source releases lack public app assets, report that as an upstre
 
 ## Mirrored Release Tags
 
+Rehearse the current pinned release metadata on `main` with
+`gh workflow run publish-mirrored-release-tag.yml --ref main -f dry_run=true`.
+Manual runs default to this check-only path, which does not create or update
+tags or GitHub Releases. Normal automatic publication retains its existing guards.
+
+For full Linux/macOS validation of committed pins, run
+`gh workflow run pin-stable-openclaw-version.yml --ref main -f dry_run=true`.
+This uses the normal package and activation gates but skips version selection,
+pin materialization, and promotion. Scheduled updates retain their usual behavior.
+
 A `v<OpenClaw version>` tag in `nix-openclaw` is a user-facing install target
 for the complete Nix package state of that upstream OpenClaw version. It points
 at a `nix-openclaw` commit, not at the upstream `openclaw/openclaw` commit.

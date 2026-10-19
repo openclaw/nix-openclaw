@@ -92,7 +92,7 @@ jobs:
     # macOS proves the same supported package/module contracts on Darwin. The
     # launchd step applies the already-built activation package from an explicit
     # out-link so later builds cannot accidentally replace the `result` symlink.
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -121,6 +121,7 @@ jobs:
             .#checks.aarch64-darwin.runtime-plugin-packages \
             .#checks.aarch64-darwin.runtime-plugin-host \
             .#checks.aarch64-darwin.qmd-opt-in
+          scripts/check-macos-app.sh
 
       - name: Run launchd activation
         timeout-minutes: 10
@@ -149,7 +150,7 @@ jobs:
           - system: x86_64-linux
             runner: ubuntu-latest
           - system: aarch64-darwin
-            runner: macos-15
+            runner: xcode-27
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:

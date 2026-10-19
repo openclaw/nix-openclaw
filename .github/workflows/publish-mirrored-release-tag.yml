@@ -8,7 +8,13 @@ on:
       - completed
     branches:
       - main
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Check current release metadata without publishing
+        type: boolean
+        required: true
+        default: true
 
 permissions:
   contents: write
@@ -40,7 +46,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
 
+      - name: Validate mirrored release without publishing
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: scripts/publish-release-tag.sh check
+
       - name: Publish mirrored release tag
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI_RUN_URL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.html_url || '' }}

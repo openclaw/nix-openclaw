@@ -18,6 +18,34 @@ const [promotionScript] = stepScripts("Promote selected release");
 assert.equal(digestScripts.length, 2);
 assert.ok(promotionScript);
 
+test("dry run selects committed pins and skips both platform materializers", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "current-pin-dry-run-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const directory of ["scripts", "nix/sources", "nix/packages"]) {
+    mkdirSync(join(root, directory), { recursive: true });
+  }
+  for (const name of ["select-current-pins.sh", "publish-release-tag.sh"]) {
+    writeFileSync(join(root, "scripts", name), readFileSync(new URL(`./${name}`, import.meta.url)));
+    execFileSync("chmod", ["+x", join(root, "scripts", name)]);
+  }
+  writeFileSync(join(root, "scripts/update-pins.sh"), "#!/bin/sh\necho unexpected-updater >&2\nexit 91\n");
+  execFileSync("chmod", ["+x", join(root, "scripts/update-pins.sh")]);
+  const source = 'releaseTag = "v2026.9.4";\nreleaseVersion = "2026.9.4";\nrev = "current-sha";\n';
+  writeFileSync(join(root, "nix/sources/openclaw-source.nix"), source);
+  writeFileSync(join(root, "nix/packages/openclaw-app.nix"),
+    'version = "2026.9.4";\nurl = "https://github.com/openclaw/openclaw/releases/download/v2026.9.4/OpenClaw-2026.9.4.zip";\n');
+  const output = join(root, "output");
+  for (const shell of [...stepScripts("Select release"), ...stepScripts("Materialize selected release")]) {
+    const result = spawnSync("bash", ["-euc", shell.replace(/\$\{\{[^}]+\}\}/g, "fixture")], {
+      cwd: root, encoding: "utf8", env: { ...process.env, DRY_RUN: "true", GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: join(root, "summary") },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stderr, /unexpected-updater/);
+  }
+  assert.match(readFileSync(output, "utf8"), /source_sha=current-sha/);
+  assert.equal(readFileSync(join(root, "nix/sources/openclaw-source.nix"), "utf8"), source);
+});
+
 function fixture(t, { deletionOnly = false, removePlugin = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "pin-promotion-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));

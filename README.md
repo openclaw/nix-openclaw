@@ -98,6 +98,8 @@ With nix-openclaw, plugin code is installed by Nix:
 programs.openclaw.runtimePlugins = [ "discord" ];
 ```
 
+The Nix gateway omits the unused upstream npm CLI and its private dependency bundle. Build-time package managers come from the pinned Nix toolchain.
+
 OpenClaw runs with `OPENCLAW_NIX_MODE=1`, so `openclaw plugins install`,
 `openclaw plugins update`, `openclaw plugins uninstall`,
 `openclaw plugins enable`, and `openclaw plugins disable` fail instead of
@@ -1014,6 +1016,8 @@ The gateway tracks the newest upstream stable OpenClaw source release that satis
 - gateway starts and answers local health checks
 
 The macOS app is pinned separately to the newest stable public `OpenClaw-*.zip` artifact. If upstream has not promoted desktop assets for the latest source release yet, `openclaw-app` may lag; that must not block Linux users or macOS gateway users from getting the latest packaged OpenClaw gateway.
+
+The macOS package preserves the signed upstream app bundle without rewriting its contents. CI compares installed bytes and symlinks with the pinned archive and verifies the signature and universal executable architectures.
 
 The Nix gate is deliberately package-focused. It does not make the full upstream Vitest suite a hard promotion gate; upstream owns source test health, while `nix-openclaw` verifies the npm-shrinkwrapped gateway package, package contents, smoke startup, module activation, generated config materialization during pin updates, and newest available macOS app artifact.
 

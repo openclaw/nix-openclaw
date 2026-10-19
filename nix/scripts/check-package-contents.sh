@@ -46,6 +46,15 @@ if (packageJson.files.includes("src/agents/templates/")) {
   fs.accessSync(path.join(root, "src/agents/templates/HEARTBEAT.md"));
 }
 const npmModules = path.join(process.env.OPENCLAW_GATEWAY, "lib/node_modules");
+if (fs.existsSync(npmModules)) {
+  for (const directory of [npmModules, path.join(root, "node_modules")]) {
+    for (const relative of ["npm", ".bin/npm", ".bin/npx"]) {
+      if (fs.lstatSync(path.join(directory, relative), { throwIfNoEntry: false })) {
+        throw new Error(`Unused bundled npm runtime remains: ${path.join(directory, relative)}`);
+      }
+    }
+  }
+}
 const modules = fs.existsSync(npmModules) ? npmModules : path.join(root, "node_modules");
 if (fs.existsSync(modules)) {
   for (const file of fs.readdirSync(modules, { recursive: true })) {
