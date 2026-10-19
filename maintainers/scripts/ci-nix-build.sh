@@ -36,7 +36,7 @@ start_epoch=$(date +%s)
 echo "nix-meter: start label=$label log=$log_path"
 
 set +e
-env NIX_SHOW_STATS="${NIX_SHOW_STATS:-0}" nix build "${build_args[@]}" > >(tee "$outputs_path") 2> >(
+env NIX_SHOW_STATS="${NIX_SHOW_STATS:-0}" nix build --print-build-logs "${build_args[@]}" > >(tee "$outputs_path") 2> >(
   perl -MPOSIX=strftime -e '
     my $log_path = shift @ARGV;
     open my $log, ">>", $log_path or die "open $log_path: $!";
