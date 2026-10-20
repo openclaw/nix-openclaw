@@ -77,14 +77,20 @@ try {
   assert.equal(context.shouldRejectHardlinkedPluginFiles(params("/nix/store/plugin", "1")), false);
   assert.equal(context.shouldRejectHardlinkedPluginFiles(params("/tmp/plugin", "1")), true);
   const assetsSource = fs.readFileSync(path.join(root, "src/plugins/control-ui-assets.ts"), "utf8");
-  context.CONTROL_UI_PLUGIN_MAX_ASSET_BYTES = 4 * 1024 * 1024;
-  context.CONTROL_UI_PLUGIN_MAX_BUILD_BYTES = 8 * 1024 * 1024;
-  context.MAX_CONTROL_UI_ASSETS = 128;
+  // Use the pinned module's constants so upstream renames cannot stale the harness.
+  const assetConstants = [...assetsSource.matchAll(/^(?:export )?const [A-Z][A-Z0-9_]* = .+;$/gm)]
+    .map(([declaration]) => declaration.replace("export ", "")).join("\n");
+  assert.ok(assetConstants, "expected source Control UI asset limits");
+  vm.runInContext(stripTypeScriptTypes(assetConstants), context);
   context.root = async (rootDir, options) => {
     assetOptions = options;
     return { rootReal: rootDir, readBytes: async () => Buffer.from("test") };
   };
-  context.walkRootDirectory = async function* () { yield { kind: "file", relativePath: "ui/index.js" }; };
+  context.walkRootDirectory = async function* (_root, _directory, options) {
+    assert.equal(options.maxEntries, 128);
+    assert.equal(options.limitBehavior, "throw");
+    yield { kind: "file", relativePath: "ui/index.js" };
+  };
   const assetPath = assetsSource.match(/^export function isPluginControlUiAssetPath\([\s\S]*?^\}$/m)?.[0];
   if (assetPath) vm.runInContext(stripTypeScriptTypes(assetPath.replace("export function", "function")), context);
   vm.runInContext(stripTypeScriptTypes(assetsSource.slice(assetsSource.indexOf("export async function")).replace("export async function", "async function")), context);
@@ -100,6 +106,7 @@ try {
       await context.readPluginControlUiAssets(rootDir, { entry: "ui/index.js" });
       assert.equal(assetOptions.hardlinks, allow ? "allow" : "reject");
       assert.equal(assetOptions.symlinks, "reject");
+      assert.equal(assetOptions.maxBytes, 4 * 1024 * 1024);
       assert.equal(context.reload({ rootDir }), !allow);
     }
   }
