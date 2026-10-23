@@ -11,5 +11,5 @@
   runtimePluginVersion = "2026.10.5";
   rev = "1b58cb9a1b4f4353e1add63c8506db4d890962e8";
   hash = "sha256-+Bqk2u4hDiyqK1upJ96tc6Zu5dDNjIl/yhKtMB1XUZw=";
-  gatewayNpmDepsHash = "sha256-8JkytvA6Lc6I4PYKhqNHic6biK7N6WoxdTPpd+mPl98=";
+  gatewayNpmDepsHash = "sha256-Kxeutpsn2OVYHsbLsDPCTG0wbdPoNDZ+Eolb1QHS950=";
 }

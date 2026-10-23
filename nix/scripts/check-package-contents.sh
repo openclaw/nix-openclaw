@@ -148,6 +148,9 @@ fi
 
 echo "openclaw package contents: ok"
 
+if [ -n "${OPENCLAW_MCP_REDIRECT_CHECK:-}" ]; then
+  OPENCLAW_PACKAGE_ROOT="$root" node "$OPENCLAW_MCP_REDIRECT_CHECK"
+fi
 if [ -n "${OPENCLAW_MCP_OAUTH_CHECK:-}" ]; then
   OPENCLAW_PACKAGE_ROOT="$root" node "$OPENCLAW_MCP_OAUTH_CHECK"
 fi

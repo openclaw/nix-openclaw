@@ -6,6 +6,6 @@
     "openclaw": "2026.10.5"
   },
   "overrides": {
-    "@modelcontextprotocol/sdk": "1.31.0"
+    "@modelcontextprotocol/sdk": "1.32.0"
   }
 }

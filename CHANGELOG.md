@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Upgrade the stable gateway to MCP SDK 1.32.0 so HTTP MCP and OAuth requests reject cross-origin redirects; retain issuer-bound saved credentials. Thanks @SebTardif (#172).
 - Restore stable-pin validation for OpenClaw 2026.10.5 by loading Control UI asset limits from the pinned source in the patch check, retaining hardlink, symlink, and asset-bound assertions.
 - Restore stable-pin packaging for OpenClaw 2026.10.5's shared plugin-install context while preserving Nix-mode candidate install suppression.
 - Move macOS CI and stable-pin validation to the Apple Silicon Xcode 27 image while preserving Nix-owned SDK targets.

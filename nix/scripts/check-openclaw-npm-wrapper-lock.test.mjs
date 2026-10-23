@@ -127,3 +127,21 @@ test("a wrapper directory without a lock fails before invoking npm", () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /package-lock\.json missing/);
 });
+
+test("the shipped wrapper excludes MCP SDK versions with unsafe redirects", () => {
+  const wrapper = new URL("../npm/openclaw/", import.meta.url);
+  const manifest = JSON.parse(fs.readFileSync(new URL("package.json", wrapper), "utf8"));
+  const lock = JSON.parse(fs.readFileSync(new URL("package-lock.json", wrapper), "utf8"));
+  const sdkName = "@modelcontextprotocol/sdk";
+  const fixed = (version) => {
+    const parts = version.split(".").map(Number);
+    return parts.length === 3 && parts.every(Number.isInteger)
+      && (parts[0] > 1 || (parts[0] === 1 && parts[1] >= 32));
+  };
+  assert.ok(fixed(manifest.overrides[sdkName]), "the override must retain the SDK security fixes");
+  const installed = Object.entries(lock.packages).filter(([name]) => name.endsWith(`node_modules/${sdkName}`));
+  assert.ok(installed.length > 0, "the shipped SDK must be present in the lock");
+  for (const [name, pkg] of installed) {
+    assert.ok(fixed(pkg.version), `${name} must retain the SDK security fixes`);
+  }
+});
