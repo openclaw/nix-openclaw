@@ -48,7 +48,10 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ overlay ];
+          overlays = [
+            overlay
+            (_final: prev: { nodejs_24 = prev.openclawPackages.nodejs_24; })
+          ];
         };
         openclawToolPkgs = openclawToolPkgsFor system;
         qmdPkgs = qmdPkgsFor system;
@@ -89,6 +92,8 @@
           let
             stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
+              node-version = packageSetStable.nodejs_24.tests.version;
+              node-runtime = pkgs.callPackage ./nix/checks/openclaw-node-runtime.nix { };
               overlay = pkgs.callPackage ./nix/checks/openclaw-overlay.nix {
                 inherit nixpkgs system overlay;
               };
@@ -178,6 +183,8 @@
               stableChecks.bin-surface
               stableChecks.package-contents
               stableChecks.pnpm-runtime
+              stableChecks.node-runtime
+              stableChecks.node-version
               stableChecks.source-patches
             ]
             ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [

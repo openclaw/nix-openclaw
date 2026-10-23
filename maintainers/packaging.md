@@ -35,6 +35,8 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 
 ## Build Contract
 
+- OpenClaw uses the private `openclawPackages.nodejs_24` runtime (also `.#nodejs_24` for CI/updaters). It requires Node 24.22.1 or newer in the Node 24 line; consumer Node attributes remain unchanged. Until Nixpkgs catches up, the package uses checksum-pinned official Node 24.22.1 archives, patches the Linux loader and npm interpreter paths for Nix, and retains the headers needed for offline native builds.
+
 - The gateway package must include Control UI assets.
 - No inline scripts or inline file contents in Nix code. Use repo scripts and explicit file paths.
 - Keep runtime tools internal to the `openclaw` wrapper unless they are intentionally part of the public package surface.

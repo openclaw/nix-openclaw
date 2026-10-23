@@ -13,10 +13,14 @@ let
     overlays = [ overlay ];
   };
   privateNames = [
+    "nodejs_24"
     "pnpm_11"
     "pnpm_12"
   ];
-  pnpmNames = [
+  runtimeNames = [
+    "nodejs"
+    "nodejs-slim"
+    "nodejs-slim_24"
     "pnpm"
     "pnpm_10"
   ]
@@ -31,10 +35,10 @@ let
     overlaid.openclawPackages.${name}.drvPath == privatePackages.${name}.drvPath
     && (overlaid.openclawPackages.withTools { }).${name}.drvPath == privatePackages.${name}.drvPath;
 in
-assert lib.assertMsg (lib.all unchanged pnpmNames)
-  "The OpenClaw overlay must not change consumer pnpm attributes.";
+assert lib.assertMsg (lib.all unchanged runtimeNames)
+  "The OpenClaw overlay must not change consumer Node or pnpm attributes.";
 assert lib.assertMsg (lib.all namespaced privateNames)
-  "Private pnpm packages must remain available under openclawPackages and withTools.";
+  "Private Node and pnpm packages must remain available under openclawPackages and withTools.";
 stdenvNoCC.mkDerivation {
   name = "openclaw-overlay";
   dontUnpack = true;

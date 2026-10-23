@@ -32,6 +32,7 @@ let
     };
 in
 (builtins.removeAttrs packages [
+  "nodejs_24"
   "pnpm_11"
   "pnpm_12"
 ])

@@ -105,17 +105,17 @@ refresh_npm_wrapper_locks() {
   # then fails `npm ci` with ENOTCACHED inside the Nix sandbox.
   rm -rf "$gateway_npm_wrapper_dir/node_modules" "$gateway_npm_wrapper_dir/package-lock.json"
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 -c \
+    "$repo_root#nodejs_24" -c \
     bash -euo pipefail -c "cd '$gateway_npm_wrapper_dir' && npm install --package-lock-only --ignore-scripts --omit=dev --legacy-peer-deps"
   OPENCLAW_NPM_WRAPPER_DIR="$gateway_npm_wrapper_dir" \
     nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 -c \
+    "$repo_root#nodejs_24" -c \
     "$repo_root/nix/scripts/check-openclaw-npm-wrapper-lock.sh"
 }
 
 refresh_runtime_plugin_locks() {
   nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 nixpkgs#unzip "$repo_root#node-semver" -c \
+    "$repo_root#nodejs_24" nixpkgs#unzip "$repo_root#node-semver" -c \
     node "$repo_root/nix/scripts/update-openclaw-runtime-plugin-locks.mjs"
   track_new_runtime_plugin_locks
 }
@@ -145,7 +145,7 @@ validate_runtime_plugin_locks() {
     OPENCLAW_SOURCE_INFO_PATH="$source_file" \
     OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1 \
     nix shell --extra-experimental-features "nix-command flakes" --accept-flake-config --inputs-from "$repo_root" \
-    nixpkgs#nodejs_24 nixpkgs#unzip "$repo_root#node-semver" -c \
+    "$repo_root#nodejs_24" nixpkgs#unzip "$repo_root#node-semver" -c \
     node "$repo_root/nix/scripts/check-openclaw-runtime-plugin-locks.mjs"; then
     rm -f "$locks_json"
     return 1
