@@ -4,6 +4,7 @@
   stdenvNoCC,
   fetchurl,
   autoPatchelfHook,
+  bash,
   testers,
   nodejs_24,
 }:
@@ -40,13 +41,13 @@ else
     dontBuild = true;
     dontStrip = true;
     dontPatchShebangs = true;
-    installPhase = "${../scripts/install-node-runtime.sh}";
+    installPhase = "${bash}/bin/bash ${../scripts/install-node-runtime.sh}";
     env = {
       NODE_RUNTIME_CHECK = "${../scripts/check-node-runtime.mjs}";
       STDENV_SETUP = "${stdenvNoCC}/setup";
     };
     doInstallCheck = true;
-    installCheckPhase = "${../scripts/check-installed-node-runtime.sh}";
+    installCheckPhase = "${bash}/bin/bash ${../scripts/check-installed-node-runtime.sh}";
     passthru = {
       inherit (nodejs_24) python;
       npm = finalAttrs.finalPackage;
