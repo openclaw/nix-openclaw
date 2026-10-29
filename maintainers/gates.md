@@ -38,6 +38,12 @@ v2026.7.1 source, app version, or flake inputs.
 
 ## CI Verification
 
+Linux supported-surface builds have a 65-minute shell budget within a 75-minute
+job. A cold dependency build can consume the previous 50-minute budget before
+the Home Manager VM assertions run; retain time for activation and result
+collection without skipping any supported-surface checks. Both CI and stable-pin
+validation use the same bounds.
+
 After pushing maintainer fixes, verify the GitHub Actions run for the pushed commit.
 
 Never say you will keep polling unless a blocking poll is already running. If reporting a poll, name the active run or local polling session.
