@@ -36,6 +36,9 @@ else
       sha256 = platform.hash;
     };
     nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
+    # patchelf 0.19.2 sorting makes the official Node ELF crash before startup.
+    # Preserve its program-header order while replacing the loader and RPATH.
+    patchelfFlags = lib.optionals stdenv.hostPlatform.isLinux [ "--no-sort" ];
     buildInputs = lib.optionals stdenv.hostPlatform.isLinux [ stdenv.cc.cc.lib ];
     dontConfigure = true;
     dontBuild = true;
