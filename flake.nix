@@ -162,6 +162,9 @@
               };
             };
             linuxOnlyChecks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+              battery-node-runtime = pkgs.callPackage ./nix/checks/openclaw-battery-node-runtime.nix {
+                openclawPackage = packageSetStable.openclaw;
+              };
               hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
                 inherit pkgs home-manager;
               };
@@ -185,6 +188,7 @@
               stableChecks.node-runtime
               stableChecks.source-patches
             ]
+            ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ linuxOnlyChecks.battery-node-runtime ]
             ++ pkgs.lib.optionals (packageSetStable ? openclaw-app && packageSetStable.openclaw-app != null) [
               packageSetStable.openclaw-app
             ];

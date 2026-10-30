@@ -98,7 +98,7 @@ With nix-openclaw, plugin code is installed by Nix:
 programs.openclaw.runtimePlugins = [ "discord" ];
 ```
 
-The Nix gateway omits the unused upstream npm CLI and its private dependency bundle. Build-time package managers come from the pinned Nix toolchain.
+The Nix gateway omits the unused upstream npm CLI and its private dependency bundle. Build-time package managers come from the pinned Nix toolchain. The Linux summarize battery and built-in Home Manager plugin share OpenClaw’s private patched Node runtime, including exposed plugin CLI packages. Their pinned CLI versions stay unchanged. Custom plugin sources keep their declared runtimes; the macOS native summarize artifact remains upstream-owned.
 
 OpenClaw runs with `OPENCLAW_NIX_MODE=1`, so `openclaw plugins install`,
 `openclaw plugins update`, `openclaw plugins uninstall`,
