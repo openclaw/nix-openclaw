@@ -8,6 +8,7 @@ Use targeted checks while debugging, then run the full relevant gate before hand
 - `nix fmt -- --ci`
 - JavaScript contracts on the pinned Node 24 runtime: `node --test scripts/*.test.mjs maintainers/scripts/*.test.mjs nix/scripts/*.test.mjs nix/scripts/*.test.js`
 - Private pnpm runtime check (`checks.<system>.pnpm-runtime`, included in `package-artifacts`): offline local-tarball install, package execution, and frozen-lockfile rejection for both supported private pnpm majors
+- Linux battery Node runtime check (`checks.x86_64-linux.battery-node-runtime`, included in `package-artifacts`): actual batteries and exposed built-in summarize executable selection and offline article extraction
 - updater shell syntax
 - workflow YAML parse
 - `nix flake show --accept-flake-config`

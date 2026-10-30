@@ -49,7 +49,20 @@ let
         source = plugin.source;
         inherit name;
         skills = resolvedPlugin.skills or [ ];
-        packages = resolvedPlugin.packages or [ ];
+        packages =
+          let
+            packages = resolvedPlugin.packages or [ ];
+            summarizeWithRuntime = import ../../../lib/summarize-runtime.nix {
+              inherit pkgs;
+              nodejs = (pkgs.openclawPackages or (import ../../../packages { inherit pkgs; })).nodejs_24;
+            };
+          in
+          # Only the immutable bundled source is ours to adapt. Custom plugin
+          # packages retain their declared runtime and ownership.
+          if plugin.source == openclawLib.bundledPluginSources.summarize then
+            map summarizeWithRuntime packages
+          else
+            packages;
         needs = {
           stateDirs = needs.stateDirs or [ ];
           requiredEnv = needs.requiredEnv or [ ];

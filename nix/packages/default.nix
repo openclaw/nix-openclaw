@@ -22,11 +22,20 @@ let
   pnpmMajor = toString (sourceInfo.pnpmMajor or "10");
   pnpmForOpenClaw =
     pnpmByMajor.${pnpmMajor} or (throw "Unsupported OpenClaw pnpm major ${pnpmMajor}");
-  toolPkgs = openclawToolPkgs // {
-    inherit nodejs_24;
-    pnpm = pnpmForOpenClaw;
-    inherit pnpm_11 pnpm_12;
+  summarizeWithRuntime = import ../lib/summarize-runtime.nix {
+    inherit pkgs;
+    nodejs = nodejs_24;
   };
+  toolPkgs =
+    openclawToolPkgs
+    // pkgs.lib.optionalAttrs (openclawToolPkgs ? summarize) {
+      summarize = summarizeWithRuntime openclawToolPkgs.summarize;
+    }
+    // {
+      inherit nodejs_24;
+      pnpm = pnpmForOpenClaw;
+      inherit pnpm_11 pnpm_12;
+    };
   toolSets = import ../tools/extended.nix {
     pkgs = pkgs;
     openclawToolPkgs = toolPkgs;
