@@ -3,6 +3,19 @@
 let
   authoredRosterCases = [
     { entries.writer = { }; }
+    { entries.writer.runtime.type = "embedded"; }
+    { entries.writer.runtime.type = "acp"; }
+    {
+      entries.writer.runtime = {
+        type = "acp";
+        acp = {
+          agent = "opencode";
+          backend = "acpx";
+          mode = "oneshot";
+          cwd = "/tmp/acp-workspace";
+        };
+      };
+    }
     { entries.Writer = { }; }
     { entries."_worker-1" = { }; }
     { entries."${lib.concatStrings (lib.replicate 64 "a")}" = { }; }

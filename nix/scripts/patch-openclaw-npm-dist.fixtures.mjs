@@ -12,7 +12,7 @@ const checker = path.join(import.meta.dirname, "check-package-contents.sh");
 // The optional canonical-realpath helper is emitted by npm 2026.9.5 (ec9c1a13db8938e5a3eaa51fca2e981cde2395a9).
 // npm 2026.10.4 moves the cache into package-manifest and caches native realpaths too.
 // npm 2026.10.5 selects install candidates through a shared context.
-function fixture(t, ext, { optimizedRealpath = false, cachedNativeRealpath = false, contextLoops = false } = {}) {
+function fixture(t, ext, { optimizedRealpath = false, cachedNativeRealpath = false, contextLoops = false, parentRealpath = false } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-dist-patch-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const dist = path.join(root, "dist");
@@ -37,7 +37,7 @@ export { resolveIsNixMode as p };
 import path from "node:path";
 export const realpaths = new Map(), stats = new Map(), roots = new Map();
 const resolve = target => realpaths.has(target) ? realpaths.get(target) : nativeFs.realpathSync(target);
-const fs = { realpathSync: Object.assign(resolve, { native: resolve }) };
+const fs = { realpathSync: Object.assign(resolve, { native: resolve }), lstatSync: nativeFs.lstatSync };
 function getPluginCacheRoot(root) {
 \tif (!roots.has(root)) roots.set(root, { paths: new Map() });
 \treturn roots.get(root);
@@ -53,7 +53,30 @@ function pathFacts(targetPath) {
 \t}
 \treturn facts;
 }
-${cachedNativeRealpath ? `function resolveRealpath(targetPath) {
+${parentRealpath ? `function pluginCacheLstatSync(targetPath) {
+\tconst facts = pathFacts(targetPath);
+\tif (facts.lstat === void 0) try {
+\t\tfacts.lstat = fs.lstatSync(targetPath);
+\t} catch {
+\t\tfacts.lstat = null;
+\t}
+\treturn facts.lstat;
+}
+function resolveRealpath(targetPath) {
+\tif (path.resolve(targetPath) === targetPath) {
+\t\tif (pathFacts(targetPath).nativeRealpath === targetPath) return targetPath;
+\t\tif (process.platform !== "win32") {
+\t\t\tconst parent = path.dirname(targetPath);
+\t\t\tconst stat = pluginCacheLstatSync(targetPath);
+\t\t\tif (parent !== targetPath && stat && !stat.isSymbolicLink()) {
+\t\t\t\tconst realParent = pluginCacheRealpathSync(parent);
+\t\t\t\tif (realParent) return path.join(realParent, path.basename(targetPath));
+\t\t\t}
+\t\t} else if (pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
+\t}
+\treturn fs.realpathSync(targetPath);
+}
+` : cachedNativeRealpath ? `function resolveRealpath(targetPath) {
 \tif (path.resolve(targetPath) === targetPath && pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
 \treturn fs.realpathSync(targetPath);
 }

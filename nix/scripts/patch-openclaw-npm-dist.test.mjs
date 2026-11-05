@@ -51,12 +51,13 @@ export function createMcpOAuthClientProvider(params) {
   assert.equal(await module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
 });
 
-for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native-realpath", "mjs-context-loops"]) {
+for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native-realpath", "mjs-context-loops", "mjs-parent-realpath"]) {
   const ext = variant === "js" ? "js" : "mjs";
-  const contextLoops = variant === "mjs-context-loops";
+  const parentRealpath = variant === "mjs-parent-realpath";
+  const contextLoops = variant === "mjs-context-loops" || parentRealpath;
   const cachedNativeRealpath = variant === "mjs-cached-native-realpath" || contextLoops;
   const optimizedRealpath = variant === "mjs-optimized-realpath" || cachedNativeRealpath;
-  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath, cachedNativeRealpath, contextLoops });
+  const fixtureFor = (t) => fixture(t, ext, { optimizedRealpath, cachedNativeRealpath, contextLoops, parentRealpath });
   test(`${variant}: emitted ownership/policy preserve guards and env boundaries`, async (t) => {
     const f = fixtureFor(t),
       result = patch(f);
@@ -151,6 +152,10 @@ for (const variant of ["js", "mjs", "mjs-optimized-realpath", "mjs-cached-native
       "unsafe-realpath-helper": ["dependency", "return fs.realpathSync(targetPath);", "return targetPath;"],
       "renamed-realpath-helper": ["dependency", "function resolveRealpath(", "function otherRealpath("],
       "unchecked-native-realpath": ["dependency", `${cachedNativeRealpath ? "pluginCacheRealpathSync(targetPath, true)" : "fs.realpathSync.native(targetPath)"} === targetPath`, "true"],
+      ...(parentRealpath ? {
+        "unchecked-symlink": ["dependency", "!stat.isSymbolicLink()", "true"],
+        "unchecked-parent": ["dependency", "parent !== targetPath && ", ""],
+      } : {}),
     } : {}),
     "wrong-binding": ["discovery", "{ t as shouldReject", "{ x as shouldReject"],
     "comment-binding": ["discovery", "import { t as shouldReject", "// import { t as shouldReject"],

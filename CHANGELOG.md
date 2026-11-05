@@ -6,6 +6,9 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Accept ACP agent runtime configuration by generating reachable `type`-discriminated options; preserve embedded runtimes, SecretRefs, and rendered JSON. Thanks @dezren39 (#176).
+- Update the stable gateway's undici to 8.12.2 and Zod to 4.6.6 to fix HTTP client and oversized-collection validation vulnerabilities.
+- Restore stable-pin validation for OpenClaw 2026.10.10's parent-realpath cache and upstream Control UI hardlink policy, preserving lock verification and filesystem guards.
 - Run the Linux summarize battery and built-in Home Manager plugin on the same private patched Node 24 runtime as OpenClaw, including exposed CLI packages. Preserve their pinned CLI versions, consumer Node packages, custom plugin runtimes and macOS native artifacts.
 
 - Use a private Node 24.22.1 runtime for OpenClaw packaging, pin updates, and validation, satisfying OpenClaw 2026.10.6 without replacing consumer Node packages.
