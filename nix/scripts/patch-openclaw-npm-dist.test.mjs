@@ -6,7 +6,9 @@ import {
   fixture, patch, load, snapshot, change, envFor, paramsFor, restoreEnv, packageFixture, templateDocs,
 } from "./patch-openclaw-npm-dist.fixtures.mjs";
 
-for (const asyncStore of [false, true]) test(`MCP OAuth ${asyncStore ? "async" : "sync"} requires issuer-bound stored credentials`, async (t) => {
+for (const mode of ["sync", "async", "read-only"]) test(`MCP OAuth ${mode} requires issuer-bound stored credentials`, async (t) => {
+  const asyncStore = mode !== "sync";
+  const readOnly = mode === "read-only";
   const f = fixture(t, "mjs");
   const name = "mcp-oauth-fixture.mjs";
   fs.writeFileSync(path.join(f.root, "dist", name), `
@@ -15,11 +17,26 @@ export function setStore(value) { store = value; }
 function readMcpOAuthStore() { return store; }
 async function readStore() { return store; }
 function canReuseStoredTokens() { return true; }
-export async function resolveMcpOAuthAccessToken(params) {
+${readOnly ? `const TOKEN_EXPIRY_SKEW_MS = 60000;
+async function readMcpOAuthStoreReadOnly() { return store; }
+function isStoredMcpOAuthAccessTokenUsable(store, params) {
+\tconst tokens = store.tokens;
+\tif (!tokens?.access_token || params.rejectedAccessToken === tokens.access_token) return false;
+\treturn store.tokenExpiresAt !== void 0 && store.tokenExpiresAt > Date.now() + TOKEN_EXPIRY_SKEW_MS || store.tokenExpiresAt === void 0 && (params.acceptUnknownExpiry === true || !tokens.refresh_token);
+}
+export { isStoredMcpOAuthAccessTokenUsable };
+` : ""}
+async function resolveMcpOAuthAccessToken(params) {
+${readOnly ? `  const storeKey = "test";
+  const store = await readMcpOAuthStoreReadOnly(storeKey);
+  if (store.pendingAuthorizationChallenge?.requiresAuthorization !== true && isStoredMcpOAuthAccessTokenUsable(store, params)) return store.tokens?.access_token;
+` : ""}
   const tokens = readMcpOAuthStore().tokens;
   if (!tokens?.access_token) throw new Error("requires OAuth authorization");
+${readOnly ? "  if (isStoredMcpOAuthAccessTokenUsable(store, params)) return tokens.access_token;" : ""}
   return tokens.access_token;
 }
+export { resolveMcpOAuthAccessToken };
 export function createMcpOAuthClientProvider(params) {
   const storeKey = "test";
   return {
@@ -34,12 +51,13 @@ export function createMcpOAuthClientProvider(params) {
   };
 }
 `);
+  const original = fs.readFileSync(path.join(f.root, "dist", name), "utf8");
   const result = patch(f);
   assert.equal(result.status, 0, result.stderr);
   const module = await load(f, name);
   const provider = module.createMcpOAuthClientProvider({});
   for (const issuer of [undefined, null, "", 123, "https://auth.example.test"]) {
-    module.setStore({ clientInformation: { issuer }, tokens: { issuer, access_token: "stored" } });
+    module.setStore({ clientInformation: { issuer }, tokens: { issuer, access_token: "stored" }, tokenExpiresAt: Date.now() + 600000 });
     assert.equal(Boolean(await provider.clientInformation()), typeof issuer === "string" && issuer.length > 0);
     assert.equal(Boolean(await provider.tokens()), typeof issuer === "string" && issuer.length > 0);
     if (typeof issuer === "string" && issuer.length > 0) {
@@ -47,6 +65,23 @@ export function createMcpOAuthClientProvider(params) {
     } else {
       await assert.rejects(module.resolveMcpOAuthAccessToken({}), /requires OAuth/);
     }
+  }
+  if (readOnly) {
+    const usable = module.isStoredMcpOAuthAccessTokenUsable;
+    const tokens = { access_token: "stored", issuer: "https://auth.example.test", refresh_token: "synthetic" };
+    assert.equal(usable({ tokens, tokenExpiresAt: Date.now() + 600000 }, {}), true);
+    assert.equal(usable({ tokens, tokenExpiresAt: Date.now() - 1 }, {}), false);
+    assert.equal(usable({ tokens, tokenExpiresAt: Date.now() + 600000 }, { rejectedAccessToken: "stored" }), false);
+    assert.equal(usable({ tokens }, {}), false);
+    assert.equal(usable({ tokens }, { acceptUnknownExpiry: true }), true);
+    assert.equal(usable({ tokens: { ...tokens, refresh_token: undefined } }, {}), true);
+    const stale = fixture(t, "mjs");
+    fs.writeFileSync(path.join(stale.root, "dist", name), original.replace("params.rejectedAccessToken === tokens.access_token", "false"));
+    const before = snapshot(stale);
+    const rejected = patch(stale);
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stderr, /MCP OAuth read-only access token helper contract is unsupported/);
+    assert.deepEqual(snapshot(stale), before);
   }
   assert.equal(await module.createMcpOAuthClientProvider({ suppressStoredTokens: true }).tokens(), undefined);
 });
