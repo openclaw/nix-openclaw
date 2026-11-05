@@ -11,28 +11,27 @@ in
   };
 
   accessGroups = lib.mkOption {
-    type = t.nullOr (t.attrsOf (t.oneOf [ (t.submodule { options = {
+    type = t.nullOr (t.attrsOf (t.submodule { options = {
+    type = lib.mkOption {
+      type = t.enum [ "discord.channelAudience" "message.senders" ];
+    };
     channelId = lib.mkOption {
-      type = t.str;
+      type = t.nullOr (t.str);
+      default = null;
     };
     guildId = lib.mkOption {
-      type = t.str;
+      type = t.nullOr (t.str);
+      default = null;
+    };
+    members = lib.mkOption {
+      type = t.nullOr (t.attrsOf (t.listOf (t.str)));
+      default = null;
     };
     membership = lib.mkOption {
       type = t.nullOr (t.enum [ "canViewChannel" ]);
       default = null;
     };
-    type = lib.mkOption {
-      type = t.enum [ "discord.channelAudience" ];
-    };
-  }; }) (t.submodule { options = {
-    members = lib.mkOption {
-      type = t.attrsOf (t.listOf (t.str));
-    };
-    type = lib.mkOption {
-      type = t.enum [ "message.senders" ];
-    };
-  }; }) ]));
+  }; }));
     default = null;
   };
 
@@ -1566,11 +1565,10 @@ in
         default = null;
       };
       runtime = lib.mkOption {
-        type = t.nullOr (t.oneOf [ (t.submodule { options = {
+        type = t.nullOr (t.submodule { options = {
         type = lib.mkOption {
-          type = t.enum [ "embedded" ];
+          type = t.enum [ "embedded" "acp" ];
         };
-      }; }) (t.submodule { options = {
         acp = lib.mkOption {
           type = t.nullOr (t.submodule { options = {
           agent = lib.mkOption {
@@ -1592,10 +1590,7 @@ in
         }; });
           default = null;
         };
-        type = lib.mkOption {
-          type = t.enum [ "acp" ];
-        };
-      }; }) ]);
+      }; });
         default = null;
       };
       sandbox = lib.mkOption {

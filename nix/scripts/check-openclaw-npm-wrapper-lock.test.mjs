@@ -145,3 +145,25 @@ test("the shipped wrapper excludes MCP SDK versions with unsafe redirects", () =
     assert.ok(fixed(pkg.version), `${name} must retain the SDK security fixes`);
   }
 });
+
+test("the gateway runtime retains patched undici and Zod versions", () => {
+  const wrapper = new URL("../npm/openclaw/", import.meta.url);
+  const manifest = JSON.parse(fs.readFileSync(new URL("package.json", wrapper), "utf8"));
+  const lock = JSON.parse(fs.readFileSync(new URL("package-lock.json", wrapper), "utf8"));
+  const floors = { undici: [8, 12, 2], zod: [4, 6, 6] };
+  const atLeast = (version, floor) => {
+    const parts = version.split(".").map(Number);
+    if (parts.length !== 3 || !parts.every(Number.isInteger)) return false;
+    for (let i = 0; i < floor.length; i++) {
+      if (parts[i] !== floor[i]) return parts[i] > floor[i];
+    }
+    return true;
+  };
+  for (const [name, floor] of Object.entries(floors)) {
+    assert.ok(atLeast(manifest.overrides[name === "undici" ? "undici@^8.0.0" : name], floor));
+    const installed = Object.entries(lock.packages).filter(([key]) =>
+      key.endsWith(`node_modules/${name}`) && !key.startsWith("node_modules/npm/"));
+    assert.ok(installed.length > 0, `${name} must be present`);
+    for (const [key, pkg] of installed) assert.ok(atLeast(pkg.version, floor), `${key}@${pkg.version}`);
+  }
+});

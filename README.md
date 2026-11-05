@@ -945,6 +945,21 @@ This also applies with `workspace.pinAgentDefaults = false`, without setting
 unchanged; explicit ownership with missing or empty entries remains invalid.
 Keyed IDs are validated and lowercased for runtime profile paths.
 
+Agent runtime options support both `type = "embedded"` and `type = "acp"`.
+For an ACP agent, configure its backend and runtime using the upstream shape:
+
+```nix
+programs.openclaw.runtimePlugins = [ "acpx" ];
+programs.openclaw.config.agents.entries.coder.runtime = {
+  type = "acp";
+  acp = {
+    backend = "acpx";
+    agent = "opencode";
+    mode = "oneshot";
+  };
+};
+```
+
 ```nix
 programs.openclaw = {
   workspace = {

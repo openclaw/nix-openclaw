@@ -129,6 +129,20 @@ let
           "ok"
       )
     ) authoredRosterCases
+    ++ [
+      (
+        let
+          rendered = generatedConfig (moduleEval {
+            workspace.pinAgentDefaults = false;
+            config.agents.entries.writer.runtime = null;
+          }) ".openclaw/openclaw.json";
+        in
+        if rendered.agents.entries.writer != { } then
+          throw "Null agent runtime must be omitted from the rendered JSON."
+        else
+          "ok"
+      )
+    ]
   );
 
   # Upstream trims trailing hyphens on its underscore-prefixed fallback,
@@ -208,6 +222,19 @@ let
           ]
         ]
     ++ [
+      (requireEvalFailure "invalid agent runtime discriminator" (
+        generatedConfig (moduleEval {
+          config.agents.entries.writer.runtime.type = "unknown";
+        }) ".openclaw/openclaw.json"
+      ))
+      (requireEvalFailure "invalid ACP runtime mode" (
+        generatedConfig (moduleEval {
+          config.agents.entries.writer.runtime = {
+            type = "acp";
+            acp.mode = "unknown";
+          };
+        }) ".openclaw/openclaw.json"
+      ))
       (requireEvalFailure "malformed roster value" (
         generatedConfig (moduleEval {
           config.agents.entries.writer.workspace = 7;

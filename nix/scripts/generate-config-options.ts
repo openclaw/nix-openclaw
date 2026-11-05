@@ -218,23 +218,30 @@ const baseTypeForSchema = (schemaObj: JsonSchema, indent: string, pathSegments: 
 };
 
 const objectUnionTypeForSchemas = (entries: JsonSchema[], indent: string): string | null => {
-  const discriminator = "source";
   const variants = entries.map((entry) => deref(entry, new Set()));
   const propsByVariant = variants.map((entry) => (entry.properties as Record<string, JsonSchema>) || null);
   if (propsByVariant.some((props) => props === null)) return null;
   const requiredByVariant = variants.map((entry) => new Set((entry.required as string[]) || []));
+  const discriminator = ["source", "type"].find((key) => propsByVariant.every((props, index) => {
+    const value = deref((props as Record<string, JsonSchema>)[key] || {}, new Set());
+    return (key === "source" || requiredByVariant[index].has(key)) && (
+      typeof value.const === "string" ||
+      (Array.isArray(value.enum) && value.enum.length === 1 && typeof value.enum[0] === "string")
+    );
+  }));
+  if (!discriminator) return null;
 
-  const sourceValues = propsByVariant.map((props) => {
-    const source = deref((props as Record<string, JsonSchema>)[discriminator] || {}, new Set());
-    if (typeof source.const === "string") return source.const;
-    if (Array.isArray(source.enum) && source.enum.length === 1 && typeof source.enum[0] === "string") {
-      return source.enum[0] as string;
+  const discriminatorValues = propsByVariant.map((props) => {
+    const value = deref((props as Record<string, JsonSchema>)[discriminator] || {}, new Set());
+    if (typeof value.const === "string") return value.const;
+    if (Array.isArray(value.enum) && value.enum.length === 1 && typeof value.enum[0] === "string") {
+      return value.enum[0] as string;
     }
     return null;
   });
-  if (sourceValues.some((value) => value === null)) return null;
+  if (discriminatorValues.some((value) => value === null)) return null;
 
-  const uniqueSourceValues = Array.from(new Set(sourceValues as string[]));
+  const uniqueDiscriminatorValues = Array.from(new Set(discriminatorValues as string[]));
 
   const merged: Record<string, JsonSchema[]> = {};
   for (const props of propsByVariant as Record<string, JsonSchema>[]) {
@@ -260,7 +267,7 @@ const objectUnionTypeForSchemas = (entries: JsonSchema[], indent: string): strin
   const inner = keys
     .map((key) => {
       if (key === discriminator) {
-        return renderOption(key, { enum: uniqueSourceValues }, true, nextIndent);
+        return renderOption(key, { enum: uniqueDiscriminatorValues }, true, nextIndent);
       }
       const schemas = dedupeSchemas(merged[key]);
       const schema = schemas.length === 1 ? schemas[0] : { anyOf: schemas };

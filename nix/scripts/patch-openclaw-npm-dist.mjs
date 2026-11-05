@@ -82,9 +82,34 @@ if (optimizedRealpath) {
 \tif (path.resolve(targetPath) === targetPath && pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
 \treturn fs.realpathSync(targetPath);
 }`,
+      `function resolveRealpath(targetPath) {
+\tif (path.resolve(targetPath) === targetPath) {
+\t\tif (pathFacts(targetPath).nativeRealpath === targetPath) return targetPath;
+\t\tif (process.platform !== "win32") {
+\t\t\tconst parent = path.dirname(targetPath);
+\t\t\tconst stat = pluginCacheLstatSync(targetPath);
+\t\t\tif (parent !== targetPath && stat && !stat.isSymbolicLink()) {
+\t\t\t\tconst realParent = pluginCacheRealpathSync(parent);
+\t\t\t\tif (realParent) return path.join(realParent, path.basename(targetPath));
+\t\t\t}
+\t\t} else if (pluginCacheRealpathSync(targetPath, true) === targetPath) return targetPath;
+\t}
+\treturn fs.realpathSync(targetPath);
+}`,
     ].includes(declaration(realpathSource, "resolveRealpath")),
     "canonical realpath helper",
   );
+  if (declaration(realpathSource, "resolveRealpath").includes("const stat = pluginCacheLstatSync(targetPath);")) {
+    requireContract(declaration(realpathSource, "pluginCacheLstatSync") === `function pluginCacheLstatSync(targetPath) {
+\tconst facts = pathFacts(targetPath);
+\tif (facts.lstat === void 0) try {
+\t\tfacts.lstat = fs.lstatSync(targetPath);
+\t} catch {
+\t\tfacts.lstat = null;
+\t}
+\treturn facts.lstat;
+}`, "canonical realpath lstat helper");
+  }
 }
 requireContract(
   declaration(realpathSource, realpath) ===
@@ -233,22 +258,44 @@ if (uiFiles.length) {
   const assets = modules.get(assetName);
   const assetRoot = 'const pluginRoot = await root(rootDir, {\n\t\thardlinks: "reject"';
   const reloadCall = "loadPluginManifest(record.rootDir, true, record.rootDir)";
-  const [reloadName, reload] = owner(reloadCall, "Control UI manifest reload");
-  requireContract(assets.split(assetRoot).length === 2, "Control UI asset root");
-  requireContract(reload.split(reloadCall).length === 2, "Control UI manifest reload count");
-  requireContract(assetName !== reloadName, "distinct Control UI transform owners");
-  for (const source of [assets, reload]) {
-    requireContract(!source.includes("shouldRejectHardlinkedPluginFiles"), "Control UI policy import");
+  if (!assets.includes(assetRoot)) {
+    // Newer upstream releases already apply the shared policy at both call sites.
+    requireContract(assets.includes(`async function readPluginControlUiAssets(rootDir, declaration, options = {}) {
+\tconst pluginRoot = await root(rootDir, {
+\t\thardlinks: options.rejectHardlinks === false ? "allow" : "reject",
+\t\tsymlinks: "reject",`), "Control UI upstream asset policy");
+    const [, reload] = owner("loadPluginManifest(rootDir, rejectManifestHardlinks, rootDir)", "Control UI upstream manifest reload");
+    requireContract(reload.split(importLine).length === 2, "Control UI upstream policy import");
+    requireContract(reload.includes(` as readPluginControlUiAssets } from "./${assetName}";`), "Control UI upstream asset import");
+    requireContract(reload.includes(`await readPluginControlUiAssets(record.rootDir, declaration, { rejectHardlinks: shouldRejectHardlinkedPluginFiles({
+\t\torigin: record.origin,
+\t\trootDir: record.rootDir
+\t}) })`), "Control UI upstream asset caller");
+    requireContract(reload.includes(`const rootDir = record.rootDir;
+\t\t\t\tif (!rootDir) throw new Error("plugin is no longer active");
+\t\t\t\tconst rejectManifestHardlinks = shouldRejectHardlinkedPluginFiles({
+\t\t\t\t\torigin: record.origin,
+\t\t\t\t\trootDir
+\t\t\t\t});
+\t\t\t\tconst loaded = withPluginCache(createPluginCache(), () => loadPluginManifest(rootDir, rejectManifestHardlinks, rootDir));`), "Control UI upstream reload policy");
+  } else {
+    const [reloadName, reload] = owner(reloadCall, "Control UI manifest reload");
+    requireContract(assets.split(assetRoot).length === 2, "Control UI asset root");
+    requireContract(reload.split(reloadCall).length === 2, "Control UI manifest reload count");
+    requireContract(assetName !== reloadName, "distinct Control UI transform owners");
+    for (const source of [assets, reload]) {
+      requireContract(!source.includes("shouldRejectHardlinkedPluginFiles"), "Control UI policy import");
+    }
+    // Treat both reads as config-origin roots: only Nix mode and a canonical
+    // store path relax hardlinks; mutable roots and symlinks remain restricted.
+    uiPatches.push([
+      assetName,
+      `${importLine}\n${assets.replace(assetRoot, 'const pluginRoot = await root(rootDir, {\n\t\thardlinks: shouldRejectHardlinkedPluginFiles({ rootDir, origin: "config" }) ? "reject" : "allow"')}`,
+    ], [
+      reloadName,
+      `${importLine}\n${reload.replace(reloadCall, 'loadPluginManifest(record.rootDir, shouldRejectHardlinkedPluginFiles({ rootDir: record.rootDir, origin: "config" }), record.rootDir)')}`,
+    ]);
   }
-  // Treat both reads as config-origin roots: only Nix mode and a canonical
-  // store path relax hardlinks; mutable roots and symlinks remain restricted.
-  uiPatches.push([
-    assetName,
-    `${importLine}\n${assets.replace(assetRoot, 'const pluginRoot = await root(rootDir, {\n\t\thardlinks: shouldRejectHardlinkedPluginFiles({ rootDir, origin: "config" }) ? "reject" : "allow"')}`,
-  ], [
-    reloadName,
-    `${importLine}\n${reload.replace(reloadCall, 'loadPluginManifest(record.rootDir, shouldRejectHardlinkedPluginFiles({ rootDir: record.rootDir, origin: "config" }), record.rootDir)')}`,
-  ]);
 }
 
 // No contract failure may leave the earlier ownership transform partially written.
