@@ -72,3 +72,41 @@ test("the workflow dry run validates eligible metadata without calling GitHub", 
   assert.match(result.stdout, /eligible=true/);
   assert.doesNotMatch(result.stderr, /unexpected GitHub call/);
 });
+
+test("later main CI preserves an existing tagged release without GitHub writes", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "release-existing-tag-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const directory of ["scripts", "nix/sources", "nix/packages", "bin"]) {
+    mkdirSync(join(root, directory), { recursive: true });
+  }
+  writeFileSync(join(root, "scripts/publish-release-tag.sh"), script);
+  writeFileSync(join(root, "nix/sources/openclaw-source.nix"),
+    'releaseTag = "v2026.9.4";\nreleaseVersion = "2026.9.4";\nrev = "source-sha";\n');
+  writeFileSync(join(root, "nix/packages/openclaw-app.nix"),
+    'version = "2026.9.4";\nurl = "https://github.com/openclaw/openclaw/releases/download/v2026.9.4/OpenClaw-2026.9.4.zip";\n');
+  const git = (...args) => {
+    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+  };
+  git("init", "--initial-branch=main");
+  const commit = (message) => git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+    "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", message);
+  commit("tagged state");
+  git("-c", "tag.gpgsign=false", "tag", "v2026.9.4");
+  commit("later package change");
+  git("remote", "add", "origin", root);
+  writeFileSync(join(root, "bin/gh"), `#!/bin/sh
+case "$*" in
+  "release view v2026.9.4 --repo openclaw/openclaw --json isDraft,isPrerelease "*) printf 'false\\tfalse\\n' ;;
+  "release view v2026.9.4 --repo openclaw/openclaw --json assets "*) echo 1 ;;
+  *) echo "unexpected GitHub call: $*" >&2; exit 91 ;;
+esac
+`);
+  chmodSync(join(root, "bin/gh"), 0o755);
+  const result = spawnSync("bash", ["scripts/publish-release-tag.sh", "publish"], {
+    cwd: root, encoding: "utf8", env: { ...process.env, PATH: `${join(root, "bin")}:${process.env.PATH}` },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /already exists.*not moving/);
+  assert.doesNotMatch(result.stderr, /unexpected GitHub call/);
+});

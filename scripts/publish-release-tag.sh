@@ -231,13 +231,14 @@ if git show-ref --verify --quiet "refs/tags/${tag}"; then
   tag_sha=$(git rev-parse "refs/tags/${tag}^{commit}")
   if [[ "$tag_sha" != "$head_sha" ]]; then
     log "Tag $tag already exists at $tag_sha; not moving it to $head_sha"
-    sync_github_release "$tag" "$tag_sha" "$source_version" "$source_rev" ""
+    # Later CI owns a different package state; preserve the tagged release's
+    # notes and proof instead of rewriting them from the current checkout.
     summary "### Mirrored release tag already exists
 
 - Tag: \`$tag\`
 - Existing target: \`$tag_sha\`
 - Current main: \`$head_sha\`
-- Release: synced for existing tag target
+- Release: unchanged; owned by existing tag target
 - Action: no retag; automation treats public tags as immutable
 "
     exit 0
