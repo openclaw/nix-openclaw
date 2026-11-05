@@ -6,6 +6,9 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Preserve cached FFmpeg/GTK dependencies by scoping the patched Node runtime to OpenClaw packages and checks; keep private Node and pnpm pins unchanged.
+- Fix stable-pin source validation for OpenClaw 2026.10.10 by retaining its verified Control UI hardlink policy while applying the remaining Nix ownership patch.
+
 - Accept ACP agent runtime configuration by generating reachable `type`-discriminated options; preserve embedded runtimes, SecretRefs, and rendered JSON. Thanks @dezren39 (#176).
 - Update the stable gateway's undici to 8.12.2 and Zod to 4.6.6 to fix HTTP client and oversized-collection validation vulnerabilities.
 - Restore stable-pin validation for OpenClaw 2026.10.10's parent-realpath cache and upstream Control UI hardlink policy, preserving lock verification and filesystem guards.

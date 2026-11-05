@@ -26,6 +26,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - The OAuth adapter accepts synchronous and asynchronous store readers while requiring issuer-bound saved credentials in both; asynchronous readers retain upstream lease and token-reuse checks.
 - The npm missing-plugin adapter supports direct candidate loops and OpenClaw 2026.10.5's shared install context. Both suppress candidate diagnostics and installs in Nix mode while preserving upstream recorded-repair behavior.
 - OpenClaw 2026.10.10's parent-realpath cache retains its lstat and symlink checks. When upstream supplies Control UI hardlink decisions, validate and retain those call sites instead of applying the legacy patch again.
+- Source ownership patching and its check share one selector. OpenClaw 2026.10.10 supplies the Control UI reader and manifest reload policies; validate both callers and the strict default instead of reapplying the older UI hunks.
 - Source overrides select the ownership patch for the pinned release's discovery layout: the existing candidate wrapper or OpenClaw 2026.10.4's direct permission check. Both forward the caller's environment and preserve path, permission, and hardlink guards.
 - Runtime config mutation belongs upstream in OpenClaw. Downstream patches here must be small, temporary, and removed after the pinned upstream release contains the fix.
 - Generated config options come from the upstream core schema.
@@ -38,6 +39,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 
 - OpenClaw uses the private `openclawPackages.nodejs_24` runtime (also `.#nodejs_24` for CI/updaters). It requires Node 24.22.1 or newer in the Node 24 line; consumer Node attributes remain unchanged. Until Nixpkgs catches up, the package uses checksum-pinned official Node 24.22.1 archives, patches the Linux loader and npm interpreter paths for Nix, and retains the headers needed for offline native builds.
 
+- Supply the private Node runtime through the OpenClaw package/check scope, not a Nixpkgs-wide override. Unrelated FFmpeg, GTK, and documentation dependencies must retain their upstream derivations so binary caches remain usable.
 - The gateway package must include Control UI assets.
 - No inline scripts or inline file contents in Nix code. Use repo scripts and explicit file paths.
 - Keep runtime tools internal to the `openclaw` wrapper unless they are intentionally part of the public package surface.

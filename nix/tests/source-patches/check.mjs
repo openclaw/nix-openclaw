@@ -16,7 +16,7 @@ try {
   const discoveryPath = path.join(root, "src/plugins/discovery.ts");
   const originalDiscovery = fs.readFileSync(discoveryPath, "utf8");
   const legacyDiscovery = originalDiscovery.includes("function findCandidateBlockIssue(");
-  const ownershipPatch = legacyDiscovery ? process.env.OWNERSHIP_PATCH : process.env.OWNERSHIP_DIRECT_PATCH;
+  const patchScript = process.env.PATCH_SOURCE_OWNERSHIP_SCRIPT;
   const availabilityImport = 'import { inspectPluginLoadPath, pluginPathFailureDiagnostic } from "./discovery-availability.js";\n';
   const beforeAvailabilityImport = originalDiscovery.replace(availabilityImport, "");
   const variants = legacyDiscovery ? ["", availabilityImport].map((addedImport) => beforeAvailabilityImport.replace(
@@ -25,11 +25,28 @@ try {
     )) : [originalDiscovery];
   for (const variant of variants) {
     fs.writeFileSync(discoveryPath, variant);
-    const probe = spawnSync("patch", ["--dry-run", "--batch", "--fuzz=0", "-p1", "-i", ownershipPatch], { cwd: root, encoding: "utf8" });
+    const probe = spawnSync(process.execPath, [patchScript, "--dry-run"], { cwd: root, encoding: "utf8" });
     assert.equal(probe.status, 0, probe.stdout + probe.stderr);
   }
   fs.writeFileSync(discoveryPath, originalDiscovery);
-  const patched = spawnSync("patch", ["--batch", "--fuzz=0", "-p1", "-i", ownershipPatch], { cwd: root, encoding: "utf8" });
+  const originalAssets = fs.readFileSync(path.join(root, "src/plugins/control-ui-assets.ts"), "utf8");
+  const reloadPath = path.join(root, "src/gateway/control-ui-plugin-assets.ts");
+  const originalReload = fs.readFileSync(reloadPath, "utf8");
+  if (originalAssets.includes("options.rejectHardlinks")) {
+    // Retaining upstream code must fail closed if either caller loses its policy.
+    for (const broken of [
+      originalReload.replace("rejectHardlinks: shouldRejectHardlinkedPluginFiles", "rejectHardlinks: invalidPolicy"),
+      originalReload.replace("const rejectManifestHardlinks = shouldRejectHardlinkedPluginFiles", "const rejectManifestHardlinks = invalidPolicy"),
+    ]) {
+      assert.notEqual(broken, originalReload);
+      fs.writeFileSync(reloadPath, broken);
+      const rejected = spawnSync(process.execPath, [patchScript], { cwd: root, encoding: "utf8" });
+      assert.notEqual(rejected.status, 0, "broken upstream policy must be rejected");
+      assert.equal(fs.readFileSync(discoveryPath, "utf8"), originalDiscovery, "preflight must not partially patch");
+    }
+    fs.writeFileSync(reloadPath, originalReload);
+  }
+  const patched = spawnSync(process.execPath, [patchScript], { cwd: root, encoding: "utf8" });
   assert.equal(patched.status, 0, patched.stdout + patched.stderr);
   let policy = fs.readFileSync(path.join(root, "src/plugins/hardlink-policy.ts"), "utf8");
   policy = policy.replace(/^import .*;\n/gm, "").replaceAll("export function", "function");
@@ -95,19 +112,33 @@ try {
   if (assetPath) vm.runInContext(stripTypeScriptTypes(assetPath.replace("export function", "function")), context);
   vm.runInContext(stripTypeScriptTypes(assetsSource.slice(assetsSource.indexOf("export async function")).replace("export async function", "async function")), context);
   const reloadSource = fs.readFileSync(path.join(root, "src/gateway/control-ui-plugin-assets.ts"), "utf8");
-  const reloadCall = reloadSource.match(/loadPluginManifest\(\n[\s\S]*?\n          \)/)?.[0];
+  const upstreamPolicy = assetsSource.includes("options.rejectHardlinks");
+  const reloadPolicy = reloadSource.match(/const rejectManifestHardlinks = [\s\S]*?;\n/)?.[0];
+  const actualReloadCall = upstreamPolicy
+    ? reloadSource.match(/loadPluginManifest\(rootDir, rejectManifestHardlinks, rootDir\)/)?.[0]
+    : reloadSource.match(/loadPluginManifest\(\n[\s\S]*?\n          \)/)?.[0];
+  assert.ok(actualReloadCall, "expected manifest reload call");
+  if (upstreamPolicy) assert.ok(reloadPolicy, "expected upstream manifest policy");
+  const reloadCall = `${upstreamPolicy ? reloadPolicy : ""} return ${actualReloadCall};`;
+  if (upstreamPolicy) {
+    const assetCall = reloadSource.match(/await readPluginControlUiAssets\([\s\S]*?\n  \)/)?.[0];
+    assert.ok(assetCall, "expected upstream asset policy caller");
+    vm.runInContext(stripTypeScriptTypes(`async function readAssets(record, declaration) { return ${assetCall}; }`), context);
+  }
   assert.ok(reloadCall, "expected patched manifest reload call");
   context.loadPluginManifest = (_rootDir, rejectHardlinks) => rejectHardlinks;
-  vm.runInContext(stripTypeScriptTypes(`function reload(record: { rootDir: string }) { return ${reloadCall}; }`), context);
+  vm.runInContext(stripTypeScriptTypes(`function reload(record: { rootDir: string; origin: string }) { const rootDir = record.rootDir; ${reloadCall}; }`), context);
   for (const rootDir of ["/nix/store/plugin", "/tmp/plugin", "/nix/store/escaped"]) {
     for (const mode of ["1", "0"]) {
       testEnv.OPENCLAW_NIX_MODE = mode;
       const allow = rootDir === "/nix/store/plugin" && mode === "1";
-      await context.readPluginControlUiAssets(rootDir, { entry: "ui/index.js" });
+      const record = { rootDir, origin: "config" };
+      if (upstreamPolicy) await context.readAssets(record, { entry: "ui/index.js" });
+      else await context.readPluginControlUiAssets(rootDir, { entry: "ui/index.js" });
       assert.equal(assetOptions.hardlinks, allow ? "allow" : "reject");
       assert.equal(assetOptions.symlinks, "reject");
       assert.equal(assetOptions.maxBytes, 4 * 1024 * 1024);
-      assert.equal(context.reload({ rootDir }), !allow);
+      assert.equal(context.reload(record), !allow);
     }
   }
   console.log("pinned source patch application, caller environment, ownership and path guards: PASS");

@@ -10,7 +10,11 @@ let
   nodejs_24 = pkgs.callPackage ./nodejs-24.nix {
     inherit (pkgs) nodejs_24;
   };
-  runtimePkgs = pkgs.extend (_final: _prev: { inherit nodejs_24; });
+  # A package scope supplies Node without changing Nixpkgs' dependency fixpoint.
+  runtimePkgs = pkgs // {
+    inherit nodejs_24;
+    callPackage = pkgs.newScope { inherit nodejs_24; };
+  };
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   pnpm_11 = runtimePkgs.callPackage ./pnpm-11.nix { };
   pnpm_12 = runtimePkgs.callPackage ./pnpm-12.nix { };

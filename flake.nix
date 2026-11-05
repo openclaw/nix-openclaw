@@ -48,10 +48,7 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [
-            overlay
-            (_final: prev: { nodejs_24 = prev.openclawPackages.nodejs_24; })
-          ];
+          overlays = [ overlay ];
         };
         openclawToolPkgs = openclawToolPkgsFor system;
         qmdPkgs = qmdPkgsFor system;
@@ -66,6 +63,9 @@
           openclawToolPkgs = openclawToolPkgs;
           inherit qmdPackage;
         };
+        # Supply the private runtime only to OpenClaw checks. Extending the whole
+        # Nixpkgs fixpoint rebuilds unrelated dependencies (including GTK media support).
+        callPackage = pkgs.newScope { inherit (packageSetStable) nodejs_24; };
         runtimePluginPackageOutputs = pkgs.lib.mapAttrs' (
           id: package: pkgs.lib.nameValuePair "openclaw-runtime-plugin-${id}" package
         ) packageSetStable.openclawRuntimePlugins;
@@ -92,77 +92,78 @@
           let
             stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
-              node-runtime = pkgs.callPackage ./nix/checks/openclaw-node-runtime.nix { };
-              overlay = pkgs.callPackage ./nix/checks/openclaw-overlay.nix {
+              node-runtime = callPackage ./nix/checks/openclaw-node-runtime.nix { };
+              overlay = callPackage ./nix/checks/openclaw-overlay.nix {
                 inherit nixpkgs system overlay;
+                packagingPkgs = pkgs;
               };
-              bin-surface = pkgs.callPackage ./nix/checks/openclaw-bin-surface.nix {
+              bin-surface = callPackage ./nix/checks/openclaw-bin-surface.nix {
                 openclawPackage = packageSetStable.openclaw;
               };
-              package-contents = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
+              package-contents = callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
-              default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+              default-instance = callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = false;
               };
-              source-patches = pkgs.callPackage ./nix/checks/openclaw-source-patches.nix {
+              source-patches = callPackage ./nix/checks/openclaw-source-patches.nix {
                 openclawSource =
-                  (pkgs.callPackage ./nix/packages/openclaw-gateway-source.nix {
+                  (callPackage ./nix/packages/openclaw-gateway-source.nix {
                     sourceInfo = sourceInfoStable;
                     inherit (packageSetStable) pnpm_11 pnpm_12;
                   }).src;
               };
-              source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+              source-override-render = callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeSourceOverrideChecks = true;
               };
-              workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
-              runtime-environment = pkgs.callPackage ./nix/checks/openclaw-runtime-environment.nix { };
-              pnpm-runtime = pkgs.callPackage ./nix/checks/openclaw-pnpm-runtime.nix {
+              workspace-materializer = callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
+              runtime-environment = callPackage ./nix/checks/openclaw-runtime-environment.nix { };
+              pnpm-runtime = callPackage ./nix/checks/openclaw-pnpm-runtime.nix {
                 inherit (packageSetStable) pnpm_11 pnpm_12;
               };
-              config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
+              config-validity = callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = false;
               };
-              gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
+              gateway-smoke = callPackage ./nix/checks/openclaw-gateway-smoke.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = false;
               };
             };
             qmdChecks = {
-              qmd-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+              qmd-instance = callPackage ./nix/checks/openclaw-default-instance.nix {
                 includeQmdChecks = true;
               };
-              qmd-runtime = pkgs.callPackage ./nix/checks/openclaw-qmd-runtime.nix {
+              qmd-runtime = callPackage ./nix/checks/openclaw-qmd-runtime.nix {
                 openclawPackage = packageSetStable.openclaw;
                 inherit qmdPackage;
               };
             };
             pluginChecks = {
-              plugin-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
+              plugin-instance = callPackage ./nix/checks/openclaw-default-instance.nix {
                 includePluginChecks = true;
               };
             };
             runtimePluginChecks = {
-              runtime-plugin-config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
+              runtime-plugin-config-validity = callPackage ./nix/checks/openclaw-config-validity.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = true;
               };
-              runtime-plugin-gateway-smoke = pkgs.callPackage ./nix/checks/openclaw-gateway-smoke.nix {
+              runtime-plugin-gateway-smoke = callPackage ./nix/checks/openclaw-gateway-smoke.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
                 includeRuntimePluginSmoke = true;
               };
-              example-plugin = pkgs.callPackage ./nix/checks/example-plugin.nix {
+              example-plugin = callPackage ./nix/checks/example-plugin.nix {
                 inherit nixpkgs flake-utils;
               };
-              runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
+              runtime-plugin-locks = callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
               runtime-plugin-packages = pkgs.symlinkJoin {
                 name = "openclaw-runtime-plugin-packages";
                 paths = builtins.attrValues packageSetStable.openclawRuntimePlugins;
               };
             };
             linuxOnlyChecks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-              battery-node-runtime = pkgs.callPackage ./nix/checks/openclaw-battery-node-runtime.nix {
+              battery-node-runtime = callPackage ./nix/checks/openclaw-battery-node-runtime.nix {
                 openclawPackage = packageSetStable.openclaw;
               };
               hm-activation = import ./nix/checks/openclaw-hm-activation.nix {
@@ -256,7 +257,7 @@
 
         devShells.default = pkgs.mkShell {
           packages = [
-            pkgs.nodejs_24
+            packageSetStable.nodejs_24
             packageSetStable.node-semver
             pkgs.bash
             pkgs.git

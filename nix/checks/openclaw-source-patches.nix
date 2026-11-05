@@ -13,8 +13,10 @@ stdenvNoCC.mkDerivation {
     patch
   ];
   OPENCLAW_SOURCE = openclawSource;
-  OWNERSHIP_PATCH = ../patches/allow-nix-store-plugin-ownership.patch;
-  OWNERSHIP_DIRECT_PATCH = ../patches/allow-nix-store-plugin-ownership-direct.patch;
+  PATCH_NIX_STORE_PLUGIN_OWNERSHIP = ../patches/allow-nix-store-plugin-ownership.patch;
+  PATCH_NIX_STORE_PLUGIN_OWNERSHIP_DIRECT = ../patches/allow-nix-store-plugin-ownership-direct.patch;
+  PATCH_NIX_STORE_PLUGIN_CONTROL_UI = ../patches/allow-nix-store-plugin-control-ui.patch;
+  PATCH_SOURCE_OWNERSHIP_SCRIPT = ../scripts/patch-openclaw-source-ownership.mjs;
   doCheck = true;
   checkPhase = "node ${../tests/source-patches/check.mjs}";
   installPhase = "${../scripts/empty-install.sh}";

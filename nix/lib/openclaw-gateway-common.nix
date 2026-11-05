@@ -157,6 +157,8 @@ let
     PATCH_NIX_STORE_PLUGIN_OWNERSHIP_DIRECT = "${
       ../patches/allow-nix-store-plugin-ownership-direct.patch
     }";
+    PATCH_NIX_STORE_PLUGIN_CONTROL_UI = "${../patches/allow-nix-store-plugin-control-ui.patch}";
+    PATCH_SOURCE_OWNERSHIP_SCRIPT = "${../scripts/patch-openclaw-source-ownership.mjs}";
     OPENCLAW_RUNTIME_LAYOUT_SH = "${../scripts/openclaw-stage-runtime.sh}";
     PNPM_BUILD_ENV_SH = "${../scripts/pnpm-build-env.sh}";
     RESTORE_PNPM_STORE_SCRIPT = "${../scripts/restore-pnpm-store.mjs}";
