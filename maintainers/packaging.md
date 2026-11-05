@@ -24,6 +24,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - Nix mode means Nix owns `openclaw.json`.
 - Emitted npm patch contracts validate imported helper bindings and complete realpath decisions, including the native-cache helper in OpenClaw 2026.10.4's `package-manifest` chunk. Chunk relocation alone must not relax path or ownership guards.
 - The OAuth adapter accepts synchronous and asynchronous store readers while requiring issuer-bound saved credentials in both; asynchronous readers retain upstream lease and token-reuse checks.
+- OpenClaw 2026.11.1's read-only token fast path and leased resolver both require issuer-bound credentials. Package contracts exercise both paths before the full OAuth/SQLite flow so stale issuer patches fail by name.
 - The npm missing-plugin adapter supports direct candidate loops and OpenClaw 2026.10.5's shared install context. Both suppress candidate diagnostics and installs in Nix mode while preserving upstream recorded-repair behavior.
 - OpenClaw 2026.10.10's parent-realpath cache retains its lstat and symlink checks. When upstream supplies Control UI hardlink decisions, validate and retain those call sites instead of applying the legacy patch again.
 - Source ownership patching and its check share one selector. OpenClaw 2026.10.10 supplies the Control UI reader and manifest reload policies; validate both callers and the strict default instead of reapplying the older UI hunks.

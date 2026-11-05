@@ -170,8 +170,8 @@ async function main() {
       return { ...store, clientInformation, tokens, tokenExpiresAt: Date.now() + 600000 };
     });
     const legacyStart = events.length;
-    assert.equal((await run(root, "upgrade", "read")).rejected, true);
-    assert.equal((await run(root, "upgrade", "refresh")).rejected, true);
+    assert.equal((await run(root, "upgrade", "read")).rejected, true, "MCP OAuth issuer patch: read access must reject legacy unbound credentials");
+    assert.equal((await run(root, "upgrade", "refresh")).rejected, true, "MCP OAuth issuer patch: refresh must reject legacy unbound credentials");
     assert.equal(events.slice(legacyStart).some((event) => event.carriesCredential), false);
     await run(root, "upgrade", "clear");
     assert.equal((await run(root, "upgrade", "login")).bound, true);

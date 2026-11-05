@@ -98,4 +98,32 @@ await provider.saveClientInformation({ client_id: "test", issuer: realIssuer });
 await provider.saveTokens({ access_token: "new", token_type: "Bearer", issuer: realIssuer });
 assert.equal(store.clientInformation.issuer, realIssuer);
 assert.equal(store.tokens.issuer, realIssuer);
+
+// Exercise the packaged resolver too: provider-only tests miss early returns.
+if (sources[0].includes("readMcpOAuthStoreReadOnly(storeKey)")) {
+  const extract = (name) => {
+    const body = sources[0].match(new RegExp(`^(?:async )?function ${name}\\([^\\n]*\\) \\{\\n[\\s\\S]*?^\\}`, "m"))?.[0];
+    assert.ok(body, `MCP OAuth issuer patch: missing ${name}`);
+    return body;
+  };
+  const resolverContext = vm.createContext({
+    TOKEN_EXPIRY_SKEW_MS: 60000,
+    readMcpOAuthStoreReadOnly: async () => store,
+    readMcpOAuthStore: async () => store,
+    withMcpOAuthLease: async (_key, run) => run({ assertOwned: async () => {} }, {}),
+  });
+  vm.runInContext(extract("isStoredMcpOAuthAccessTokenUsable"), resolverContext);
+  vm.runInContext(extract("resolveMcpOAuthAccessToken"), resolverContext);
+  for (const issuer of [undefined, null, "", 123, realIssuer]) {
+    store = { tokens: { access_token: "test", issuer }, tokenExpiresAt: Date.now() + 600000 };
+    for (const authorizationChallenge of [false, true]) {
+      const result = resolverContext.resolveMcpOAuthAccessToken({
+        identity: { storeKey: "test", serverName: "synthetic" }, authorizationChallenge,
+      });
+      const message = `MCP OAuth issuer patch: ${authorizationChallenge ? "leased" : "read-only"} access must reject unbound credentials`;
+      if (issuer === realIssuer) assert.equal(await result, "test", message);
+      else await assert.rejects(result, /requires OAuth authorization/, message);
+    }
+  }
+}
 console.log("MCP OAuth: foreign issuer rejected, matching issuer refreshed, legacy credentials require login");

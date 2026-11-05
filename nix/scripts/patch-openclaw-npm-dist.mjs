@@ -243,6 +243,24 @@ if (providerFiles.length) {
       : `${tokenGetter}
 \t\t\tif (typeof store.tokens?.issuer !== "string" || !store.tokens.issuer) return;`);
   if (source.includes("function resolveMcpOAuthAccessToken(")) {
+    // The read-only fast path must reject unbound credentials before the lease.
+    if (source.includes("readMcpOAuthStoreReadOnly(storeKey)")) {
+      const usable = `function isStoredMcpOAuthAccessTokenUsable(store, params) {
+\tconst tokens = store.tokens;
+\tif (!tokens?.access_token || params.rejectedAccessToken === tokens.access_token) return false;
+\treturn store.tokenExpiresAt !== void 0 && store.tokenExpiresAt > Date.now() + TOKEN_EXPIRY_SKEW_MS || store.tokenExpiresAt === void 0 && (params.acceptUnknownExpiry === true || !tokens.refresh_token);
+}`;
+      requireContract(declaration(source, "isStoredMcpOAuthAccessTokenUsable") === usable,
+        "MCP OAuth read-only access token helper");
+      const resolver = declaration(source, "resolveMcpOAuthAccessToken");
+      requireContract(resolver.includes("if (store.pendingAuthorizationChallenge?.requiresAuthorization !== true && isStoredMcpOAuthAccessTokenUsable(store, params)) return store.tokens?.access_token;") &&
+        resolver.split("isStoredMcpOAuthAccessTokenUsable(store, params)").length === 3,
+      "MCP OAuth read-only access token callers");
+      patchedProvider = patchedProvider.replace(usable, usable.replace(
+        "if (!tokens?.access_token || ",
+        'if (!tokens?.access_token || typeof tokens.issuer !== "string" || !tokens.issuer || ',
+      ));
+    }
     const missingToken = "if (!tokens?.access_token)";
     requireContract(source.split(missingToken).length === 2, "MCP OAuth access token entry point");
     patchedProvider = patchedProvider.replace(missingToken,
