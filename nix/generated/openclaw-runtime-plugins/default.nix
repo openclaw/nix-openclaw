@@ -53,6 +53,7 @@
   mistral = import ./mistral.nix;
   moonshot = import ./moonshot.nix;
   msteams = import ./msteams.nix;
+  muse = import ./muse.nix;
   mxc = import ./mxc.nix;
   nextcloud-talk = import ./nextcloudTalk.nix;
   nostr = import ./nostr.nix;
@@ -61,6 +62,7 @@
   opencode = import ./opencode.nix;
   openshell = import ./openshell.nix;
   parallel = import ./parallel.nix;
+  particle = import ./particle.nix;
   perplexity = import ./perplexity.nix;
   pixverse = import ./pixverse.nix;
   qianfan = import ./qianfan.nix;

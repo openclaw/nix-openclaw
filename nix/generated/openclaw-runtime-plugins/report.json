@@ -1,9 +1,9 @@
 {
-  "openclawVersion": "2026.10.7",
-  "runtimePluginVersion": "2026.10.7",
-  "openclawReleaseTag": "v2026.10.7",
-  "openclawRev": "157d8c2bc3ea2fa183afdc11088e69690bf8e64e",
-  "openclawHash": "sha256-J/jIhSX0fRmUw0cv/2i2YXUOBw4yimIndp9LO6ueq2U=",
+  "openclawVersion": "2026.11.1",
+  "runtimePluginVersion": "2026.11.1",
+  "openclawReleaseTag": "v2026.11.1",
+  "openclawRev": "4ffdd2047d192dd65554de3c8c46c0e0197c6e2a",
+  "openclawHash": "sha256-/iCQNnuOBXp4/LtAlsZZJ5d4Qxwfc61LlCdUcVvuSYA=",
   "catalogFiles": [
     "official-external-channel-catalog.json",
     "official-external-plugin-catalog.json",
@@ -21,10 +21,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/acpx",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "amazon-bedrock",
@@ -37,10 +37,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/amazon-bedrock-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "amazon-bedrock-mantle",
@@ -53,10 +53,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/amazon-bedrock-mantle-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "anthropic-vertex",
@@ -69,10 +69,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/anthropic-vertex-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "arcee",
@@ -85,10 +85,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/arcee-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "baseten",
@@ -101,10 +101,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/baseten-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "brave",
@@ -117,10 +117,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/brave-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "buzz",
@@ -133,10 +133,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/buzz",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "byteplus",
@@ -149,10 +149,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/byteplus-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "cerebras",
@@ -165,10 +165,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/cerebras-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "chutes",
@@ -181,10 +181,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/chutes-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "clickclack",
@@ -197,10 +197,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/clickclack",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "cloudflare-ai-gateway",
@@ -213,10 +213,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/cloudflare-ai-gateway-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "codex",
@@ -229,10 +229,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/codex",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "cohere",
@@ -245,10 +245,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/cohere-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "comfy",
@@ -261,10 +261,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/comfy-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "copilot",
@@ -277,10 +277,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/copilot",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "deepinfra",
@@ -293,10 +293,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/deepinfra-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "deepseek",
@@ -309,10 +309,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/deepseek-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "diagnostics-otel",
@@ -325,10 +325,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/diagnostics-otel",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "diagnostics-prometheus",
@@ -341,10 +341,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/diagnostics-prometheus",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "diffs",
@@ -357,10 +357,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/diffs",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "diffs-language-pack",
@@ -373,10 +373,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/diffs-language-pack",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "discord",
@@ -389,10 +389,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/discord",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "duckduckgo",
@@ -405,10 +405,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/duckduckgo-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "exa",
@@ -421,10 +421,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/exa-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "facetime",
@@ -437,10 +437,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/facetime",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "featherless",
@@ -453,10 +453,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/featherless-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "feishu",
@@ -469,10 +469,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/feishu",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "firecrawl",
@@ -485,10 +485,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/firecrawl-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "fireworks",
@@ -501,10 +501,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/fireworks-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "fish-audio-speech",
@@ -517,10 +517,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/fish-audio-speech",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "gmi",
@@ -533,10 +533,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/gmi-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "google-meet",
@@ -549,10 +549,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/google-meet",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "googlechat",
@@ -565,10 +565,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/googlechat",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "gradium",
@@ -581,10 +581,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/gradium-speech",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "groq",
@@ -597,10 +597,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/groq-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "imessage",
@@ -613,10 +613,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/imessage",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "inworld",
@@ -629,10 +629,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/inworld-speech",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "irc",
@@ -645,10 +645,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/irc",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "kilocode",
@@ -661,10 +661,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/kilocode-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "kimi",
@@ -677,10 +677,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/kimi-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "line",
@@ -693,10 +693,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/line",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "llama-cpp",
@@ -709,10 +709,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/llama-cpp-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "lobster",
@@ -725,10 +725,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/lobster",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "longcat",
@@ -741,10 +741,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/longcat-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "matrix",
@@ -757,10 +757,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/matrix",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "mattermost",
@@ -773,10 +773,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/mattermost",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "memory-lancedb",
@@ -789,10 +789,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/memory-lancedb",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "meta",
@@ -805,10 +805,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/meta-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "mistral",
@@ -821,10 +821,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/mistral-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "moonshot",
@@ -837,10 +837,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/moonshot-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "msteams",
@@ -853,10 +853,26 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/msteams",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
+    },
+    {
+      "id": "muse",
+      "status": "supported",
+      "label": "Muse Code",
+      "kind": "plugin",
+      "source": "official",
+      "catalogFile": "official-external-plugin-catalog.json",
+      "catalogEntryName": "@openclaw/muse",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/muse",
+      "version": "2026.11.1",
+      "dependencyMode": "package-lock",
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "mxc",
@@ -869,10 +885,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/mxc-sandbox",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "nextcloud-talk",
@@ -885,10 +901,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/nextcloud-talk",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "nostr",
@@ -901,10 +917,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/nostr",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "novita",
@@ -917,10 +933,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/novita-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "onnx",
@@ -933,10 +949,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/onnx",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "opencode",
@@ -949,10 +965,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/opencode-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "openshell",
@@ -965,10 +981,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/openshell-sandbox",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "parallel",
@@ -981,10 +997,26 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/parallel-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
+    },
+    {
+      "id": "particle",
+      "status": "supported",
+      "label": "Particle",
+      "kind": "provider",
+      "source": "official",
+      "catalogFile": "official-external-provider-catalog.json",
+      "catalogEntryName": "@openclaw/particle-provider",
+      "catalogDefaultChoice": "npm",
+      "selectedSource": "npm",
+      "packageName": "@openclaw/particle-provider",
+      "version": "2026.11.1",
+      "dependencyMode": "none",
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "perplexity",
@@ -997,10 +1029,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/perplexity-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "pixverse",
@@ -1013,10 +1045,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/pixverse-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "qianfan",
@@ -1029,10 +1061,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/qianfan-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "qwen",
@@ -1045,10 +1077,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/qwen-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "radius",
@@ -1061,10 +1093,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/radius-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "raft",
@@ -1077,10 +1109,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/raft",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "searxng",
@@ -1093,10 +1125,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/searxng-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "signal",
@@ -1109,10 +1141,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/signal",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "slack",
@@ -1125,10 +1157,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/slack",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "slack-huddles",
@@ -1141,10 +1173,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/slack-huddles",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "sms",
@@ -1157,10 +1189,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/sms",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "stepfun",
@@ -1173,10 +1205,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/stepfun-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "synology-chat",
@@ -1189,10 +1221,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/synology-chat",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "synthetic",
@@ -1205,10 +1237,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/synthetic-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "tavily",
@@ -1221,10 +1253,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/tavily-plugin",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "team-reports",
@@ -1237,10 +1269,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/team-reports",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "teams-meetings",
@@ -1253,10 +1285,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/teams-meetings",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "telnyx",
@@ -1285,10 +1317,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/tencent-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "tlon",
@@ -1301,10 +1333,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/tlon",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "tokenjuice",
@@ -1317,10 +1349,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/tokenjuice",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "twitch",
@@ -1333,10 +1365,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/twitch",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "package-lock",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "typesafe",
@@ -1349,10 +1381,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/typesafe",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "venice",
@@ -1365,10 +1397,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/venice-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "vercel-ai-gateway",
@@ -1381,10 +1413,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/vercel-ai-gateway-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "voice-call",
@@ -1397,10 +1429,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/voice-call",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "volcengine",
@@ -1413,10 +1445,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/volcengine-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "voyage",
@@ -1429,10 +1461,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/voyage-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "vydra",
@@ -1445,10 +1477,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/vydra-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "whatsapp",
@@ -1461,10 +1493,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/whatsapp",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "xiaomi",
@@ -1477,10 +1509,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/xiaomi-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "zai",
@@ -1493,10 +1525,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/zai-provider",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "zalo",
@@ -1509,10 +1541,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/zalo",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "zalouser",
@@ -1525,10 +1557,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/zalouser",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "bundled",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     },
     {
       "id": "zoom-meetings",
@@ -1541,10 +1573,10 @@
       "catalogDefaultChoice": "npm",
       "selectedSource": "npm",
       "packageName": "@openclaw/zoom-meetings",
-      "version": "2026.10.7",
+      "version": "2026.11.1",
       "dependencyMode": "none",
-      "openclawCompat": ">=2026.10.7",
-      "peerOpenClaw": ">=2026.10.7"
+      "openclawCompat": ">=2026.11.1",
+      "peerOpenClaw": ">=2026.11.1"
     }
   ],
   "skipped": [
@@ -1656,7 +1688,7 @@
       "minHostVersion": ">=2026.9.6",
       "status": "skipped",
       "reason": "missing-clawhub-artifact",
-      "detail": "@openclaw/cua-computer@2026.10.7 returned HTTP 404"
+      "detail": "@openclaw/cua-computer@2026.11.1 returned HTTP 404"
     },
     {
       "id": "opencode-go",
@@ -1672,7 +1704,7 @@
       "minHostVersion": ">=2026.7.2",
       "status": "skipped",
       "reason": "missing-pinned-artifact",
-      "detail": "@openclaw/opencode-go-provider@2026.10.7 is not published"
+      "detail": "@openclaw/opencode-go-provider@2026.11.1 is not published"
     }
   ]
 }

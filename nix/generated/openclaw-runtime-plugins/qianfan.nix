@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.6.8";
   expectedIntegrity = "";
   packageName = "@openclaw/qianfan-provider";
-  version = "2026.10.7";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/qianfan-provider/-/qianfan-provider-2026.10.7.tgz";
-  npmIntegrity = "sha512-0xUVwjGEZIJronNJx46lIt6XV75gyKhMSyusx/UtEqLDk1ccO4hzgHttSz8Pe/VvkEHiX2pNckEGiAK7TUONtQ==";
-  npmShasum = "bc82a29e914d7128d17499c4759cea7685704f7c";
-  nixHash = "sha256-LkQn0pS+HxSvP9iVOExrLZx+zds9M7GOKpgiJqgU5Ck=";
+  version = "2026.11.1";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/qianfan-provider/-/qianfan-provider-2026.11.1.tgz";
+  npmIntegrity = "sha512-CAW5f0exZqRRgJa2eXoiC3Py5rzaMi514OWUt3rSE1tLOkojnoCEoq6Vxt0nMEwk7l9NKhA90ZJQoOLyfBPccg==";
+  npmShasum = "8c80ce809daa45f9d5c986d769597994bef8ed6d";
+  nixHash = "sha256-TTF8Tms38aDFLnpKtwAqMhQ+8OdmrPXVJeX15ZuF4X4=";
   dependencyMode = "none";
   manifestId = "qianfan";
-  openclawCompat = ">=2026.10.7";
-  peerOpenClaw = ">=2026.10.7";
+  openclawCompat = ">=2026.11.1";
+  peerOpenClaw = ">=2026.11.1";
   runtimeExtensions = [
     "./dist/index.js"
   ];

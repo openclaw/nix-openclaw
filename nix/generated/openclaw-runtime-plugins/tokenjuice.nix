@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.5.28";
   expectedIntegrity = "";
   packageName = "@openclaw/tokenjuice";
-  version = "2026.10.7";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/tokenjuice/-/tokenjuice-2026.10.7.tgz";
-  npmIntegrity = "sha512-TKSNj13zDw0NRgFmQBrHfRTY+jPdry4njzvquAjAQAbtWdnH46j7T+QgOb/gQlbr+4qIV2VTeu+7wSgMkRDu6A==";
-  npmShasum = "f41faa302a2cfe30f7495f8b9e3d7fff0673fe80";
-  nixHash = "sha256-eUqWbcH4QOxqKZMeaPJrWQ5MngemRjfjUfzNI8n8460=";
+  version = "2026.11.1";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/tokenjuice/-/tokenjuice-2026.11.1.tgz";
+  npmIntegrity = "sha512-F6BjecE2qgGqm1XpmMtFR6T15pXSNArMjEmkeciyPiPP5+nVuT/t4f5XMafgukSLonL+RBncPxNGf36hQISHNg==";
+  npmShasum = "a1673aa43321bc9116142d2b016790d74aebbe4b";
+  nixHash = "sha256-i3YHEAdHAtMLwhK/6Fu2L1ldnbnPxiVlXNEMbNkvuBo=";
   dependencyMode = "bundled";
   manifestId = "tokenjuice";
-  openclawCompat = ">=2026.10.7";
-  peerOpenClaw = ">=2026.10.7";
+  openclawCompat = ">=2026.11.1";
+  peerOpenClaw = ">=2026.11.1";
   runtimeExtensions = [
     "./dist/index.js"
   ];

@@ -1,4 +1,4 @@
-# Generated from upstream OpenClaw schema at rev 157d8c2bc3ea2fa183afdc11088e69690bf8e64e. DO NOT EDIT.
+# Generated from upstream OpenClaw schema at rev 4ffdd2047d192dd65554de3c8c46c0e0197c6e2a. DO NOT EDIT.
 # Generator: nix/scripts/generate-config-options.ts
 { lib }:
 let
@@ -1904,6 +1904,10 @@ in
           type = t.nullOr (t.listOf (t.str));
           default = null;
         };
+        delegateToolsTo = lib.mkOption {
+          type = t.nullOr (t.listOf (t.str));
+          default = null;
+        };
         delegationMode = lib.mkOption {
           type = t.nullOr (t.enum [ "suggest" "prefer" ]);
           default = null;
@@ -3246,6 +3250,39 @@ in
     default = null;
   };
 
+  database = lib.mkOption {
+    type = t.nullOr (t.submodule { options = {
+    engine = lib.mkOption {
+      type = t.nullOr (t.enum [ "sqlite" "postgres" ]);
+      default = null;
+    };
+    postgres = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      connection = lib.mkOption {
+        type = t.nullOr (t.oneOf [ (t.str) (t.submodule { options = {
+        source = lib.mkOption {
+          type = t.enum [ "env" "file" "exec" "store" ];
+        };
+        id = lib.mkOption {
+          type = t.str;
+        };
+        provider = lib.mkOption {
+          type = t.str;
+        };
+      }; }) ]);
+        default = null;
+      };
+      schemaPrefix = lib.mkOption {
+        type = t.nullOr (t.str);
+        default = null;
+      };
+    }; });
+      default = null;
+    };
+  }; });
+    default = null;
+  };
+
   desktop = lib.mkOption {
     type = t.nullOr (t.submodule { options = {
     host = lib.mkOption {
@@ -3594,6 +3631,10 @@ in
       };
       experimental = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
+        chatBubbles = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         customPlugins = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
@@ -4864,12 +4905,20 @@ in
     };
     queue = lib.mkOption {
       type = t.nullOr (t.submodule { options = {
+      allowCollaborativeSteering = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
       byChannel = lib.mkOption {
         type = t.nullOr (t.attrsOf (t.oneOf [ (t.enum [ "steer" ]) (t.enum [ "followup" ]) (t.enum [ "collect" ]) (t.enum [ "interrupt" ]) ]));
         default = null;
       };
       cap = lib.mkOption {
         type = t.nullOr (t.int);
+        default = null;
+      };
+      collaborativeSteeringFallback = lib.mkOption {
+        type = t.nullOr (t.enum [ "queue" "reject" ]);
         default = null;
       };
       debounceMsByChannel = lib.mkOption {
@@ -5084,6 +5133,10 @@ in
           };
           codeMode = lib.mkOption {
             type = t.nullOr (t.enum [ "preferred" "capable" ]);
+            default = null;
+          };
+          defaultThinkingLevel = lib.mkOption {
+            type = t.nullOr (t.str);
             default = null;
           };
           maxTokensField = lib.mkOption {
@@ -5453,6 +5506,10 @@ in
           default = null;
         };
         reasoning = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
+        responseModelEquivalent = lib.mkOption {
           type = t.nullOr (t.bool);
           default = null;
         };
@@ -5987,6 +6044,10 @@ in
         type = t.nullOr (t.bool);
         default = null;
       };
+      folders = lib.mkOption {
+        type = t.nullOr (t.listOf (t.str));
+        default = null;
+      };
       isolation = lib.mkOption {
         type = t.nullOr (t.enum [ "none" "container" ]);
         default = null;
@@ -6337,6 +6398,19 @@ in
 
   session = lib.mkOption {
     type = t.nullOr (t.submodule { options = {
+    communication = lib.mkOption {
+      type = t.nullOr (t.submodule { options = {
+      receive = lib.mkOption {
+        type = t.nullOr (t.enum [ "always" "ask" "never" ]);
+        default = null;
+      };
+      send = lib.mkOption {
+        type = t.nullOr (t.enum [ "always" "ask" "never" ]);
+        default = null;
+      };
+    }; });
+      default = null;
+    };
     dmScope = lib.mkOption {
       type = t.nullOr (t.enum [ "main" "per-peer" "per-channel-peer" "per-account-channel-peer" ]);
       default = null;
@@ -6693,6 +6767,10 @@ in
       type = t.nullOr (t.submodule { options = {
       autonomous = lib.mkOption {
         type = t.nullOr (t.submodule { options = {
+        channelNotices = lib.mkOption {
+          type = t.nullOr (t.bool);
+          default = null;
+        };
         mode = lib.mkOption {
           type = t.nullOr (t.oneOf [ (t.enum [ "off" ]) (t.enum [ "auto" ]) ]);
           default = null;
@@ -8899,6 +8977,10 @@ in
     };
     sessions = lib.mkOption {
       type = t.nullOr (t.submodule { options = {
+      allowThreadTargets = lib.mkOption {
+        type = t.nullOr (t.bool);
+        default = null;
+      };
       visibility = lib.mkOption {
         type = t.nullOr (t.enum [ "self" "tree" "agent" "all" ]);
         default = null;
