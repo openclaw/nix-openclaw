@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Preserve existing release notes and proof when later main CI uses the same version; avoid unnecessary release edits from unrelated package changes.
 - Preserve cached FFmpeg/GTK dependencies by scoping the patched Node runtime to OpenClaw packages and checks; keep private Node and pnpm pins unchanged.
 - Fix stable-pin source validation for OpenClaw 2026.10.10 by retaining its verified Control UI hardlink policy while applying the remaining Nix ownership patch.
 

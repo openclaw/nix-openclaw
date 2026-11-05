@@ -76,3 +76,7 @@ decides whether it is still safe to delete/retag immediately or whether to
 publish a corrective follow-up tag instead. If an upstream asset disappears or a
 hash invalidates after a tag is published, repair the package state first; do
 not move the public tag automatically.
+
+When later `main` CI still uses an already-tagged version, leave that tag's
+release notes and CI proof unchanged. A newer checkout must not rewrite an older
+release or require release-write access merely to validate the same version.
