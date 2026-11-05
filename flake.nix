@@ -65,7 +65,10 @@
         };
         # Supply the private runtime only to OpenClaw checks. Extending the whole
         # Nixpkgs fixpoint rebuilds unrelated dependencies (including GTK media support).
-        callPackage = pkgs.newScope { inherit (packageSetStable) nodejs_24; };
+        runtimeScope = pkgs.lib.makeScope pkgs.newScope (_self: {
+          inherit (packageSetStable) nodejs_24;
+        });
+        callPackage = runtimeScope.callPackage;
         runtimePluginPackageOutputs = pkgs.lib.mapAttrs' (
           id: package: pkgs.lib.nameValuePair "openclaw-runtime-plugin-${id}" package
         ) packageSetStable.openclawRuntimePlugins;

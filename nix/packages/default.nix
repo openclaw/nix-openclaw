@@ -11,15 +11,14 @@ let
     inherit (pkgs) nodejs_24;
   };
   # A package scope supplies Node without changing Nixpkgs' dependency fixpoint.
-  runtimePkgs = pkgs // {
+  runtimePkgs = pkgs.lib.makeScope pkgs.newScope (_self: {
     inherit nodejs_24;
-    callPackage = pkgs.newScope { inherit nodejs_24; };
-  };
+  });
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   pnpm_11 = runtimePkgs.callPackage ./pnpm-11.nix { };
   pnpm_12 = runtimePkgs.callPackage ./pnpm-12.nix { };
   pnpmByMajor = {
-    "10" = runtimePkgs.pnpm_10;
+    "10" = pkgs.pnpm_10;
     "11" = pnpm_11;
     "12" = pnpm_12;
   };

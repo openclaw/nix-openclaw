@@ -31,7 +31,10 @@ let
     builtins.hasAttr name base == builtins.hasAttr name overlaid
     && (!(builtins.hasAttr name base) || base.${name}.drvPath == overlaid.${name}.drvPath);
   privatePackages = import ../packages { pkgs = base; };
-  scopedCallPackage = base.newScope { inherit (privatePackages) nodejs_24; };
+  runtimeScope = lib.makeScope base.newScope (_self: {
+    inherit (privatePackages) nodejs_24;
+  });
+  scopedCallPackage = runtimeScope.callPackage;
   scopedVips = scopedCallPackage ({ vips }: vips) { };
   scopedNode = scopedCallPackage ({ nodejs_24 }: nodejs_24) { };
   namespaced =
