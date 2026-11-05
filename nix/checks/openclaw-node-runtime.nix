@@ -1,8 +1,14 @@
 {
+  lib,
   stdenvNoCC,
   nodejs_24,
+  openclawGateway,
 }:
 
+assert lib.assertMsg (
+  builtins.any (input: input.drvPath == nodejs_24.drvPath) openclawGateway.nativeBuildInputs
+  && builtins.any (input: input.drvPath == nodejs_24.drvPath) openclawGateway.buildInputs
+) "The gateway npm builder must use OpenClaw's private Node runtime.";
 stdenvNoCC.mkDerivation {
   name = "openclaw-node-runtime";
   dontUnpack = true;
