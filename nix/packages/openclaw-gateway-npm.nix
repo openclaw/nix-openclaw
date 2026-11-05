@@ -9,9 +9,6 @@
 }:
 
 let
-  buildNpmPackageForOpenClaw = buildNpmPackage.override {
-    nodejs = nodejs_24;
-  };
   wrapperSrc = ../npm/openclaw;
   lock = builtins.fromJSON (builtins.readFile "${wrapperSrc}/package-lock.json");
   lockedVersion = lock.packages."node_modules/openclaw".version or null;
@@ -28,7 +25,9 @@ assert lib.assertMsg
     toString (bundledAcpx.openclawRuntimePlugin.version or null)
   } does not match OpenClaw runtime plugins ${sourceInfo.runtimePluginVersion}";
 
-buildNpmPackageForOpenClaw {
+buildNpmPackage {
+  # This is a derivation argument in Nixpkgs' extensible buildNpmPackage.
+  nodejs = nodejs_24;
   pname = "openclaw-gateway";
   version = sourceInfo.releaseVersion;
 

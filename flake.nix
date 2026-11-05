@@ -92,7 +92,9 @@
           let
             stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
-              node-runtime = callPackage ./nix/checks/openclaw-node-runtime.nix { };
+              node-runtime = callPackage ./nix/checks/openclaw-node-runtime.nix {
+                openclawGateway = packageSetStable.openclaw-gateway;
+              };
               overlay = callPackage ./nix/checks/openclaw-overlay.nix {
                 inherit nixpkgs system overlay;
                 packagingPkgs = pkgs;
