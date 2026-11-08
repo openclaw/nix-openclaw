@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.9.8";
   expectedIntegrity = "";
   packageName = "@openclaw/slack";
-  version = "2026.11.1";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/slack/-/slack-2026.11.1.tgz";
-  npmIntegrity = "sha512-voZhkS1FjwK9BDTHffQcLlU9tuU6huA0Hgaf847xp8VGYCNhAqIxQerK4aS5WhhaoorCmQ66dN2pS2OlJkMf/w==";
-  npmShasum = "41d0cf006a5981b775bbed02da68ed5b605fd255";
-  nixHash = "sha256-MhuMqSK+9lKd5Fs7avYQBlKfe7zgWJ328zECBLn5F64=";
+  version = "2026.11.2";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/slack/-/slack-2026.11.2.tgz";
+  npmIntegrity = "sha512-XUI1pwIv7sPZ8KZnzmnxLxiJa2ITBEYC+IHwAJrg6MB+2HvpdiWaLjYhjtBH3PwC3rJF+6LA+Wn7kw9e+j4dsQ==";
+  npmShasum = "5d30fcc6bab92eacaa2a2d2b51c69a8cb6886d96";
+  nixHash = "sha256-HVAjTKqTbWtHY/rJH4mmdc687lTDKgwBPCB3pGjAvZI=";
   dependencyMode = "bundled";
   manifestId = "slack";
-  openclawCompat = ">=2026.11.1";
-  peerOpenClaw = ">=2026.11.1";
+  openclawCompat = ">=2026.11.2";
+  peerOpenClaw = ">=2026.11.2";
   runtimeExtensions = [
     "./dist/index.js"
   ];
