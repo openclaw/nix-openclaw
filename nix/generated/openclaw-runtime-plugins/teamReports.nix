@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.9.2";
   expectedIntegrity = "";
   packageName = "@openclaw/team-reports";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/team-reports/-/team-reports-2026.11.2.tgz";
-  npmIntegrity = "sha512-EN4QJQVn1FpK2pGdn1Jlp8Cxx01+77DVWFtbMhJGvzu6LU47jv9e6viSKL0GV0lJe0aGwYq8u/yGGBwB1X72uA==";
-  npmShasum = "4716fe027a3a34db52e7ddf3dda3beaad5c4ff10";
-  nixHash = "sha256-3c9u9JEAjTjVnI6sVX4sOmdb2ScWA+5uSWJW8NwhuPY=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/team-reports/-/team-reports-2026.11.3.tgz";
+  npmIntegrity = "sha512-rmRR/pqHd5bCB8jlQ/jhuGtNYBtgeb4+Ff7Tbitza1Pv/t+T71Q3qkf9j8QB+6zn4NM3YMaU+SSgbwgsdMGwoQ==";
+  npmShasum = "a310a17a271f0f0605555dc8bcb22d499ffffb9c";
+  nixHash = "sha256-U7ZzzzeovfxRlLj9/zi03juJ8XNX1QUoy7MxI+rE9DI=";
   dependencyMode = "bundled";
   manifestId = "team-reports";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

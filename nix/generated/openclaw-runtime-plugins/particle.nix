@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.10.8";
   expectedIntegrity = "";
   packageName = "@openclaw/particle-provider";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/particle-provider/-/particle-provider-2026.11.2.tgz";
-  npmIntegrity = "sha512-gwXxcQvAfNImVJqcCAJisiUpdRK1n6i03gurXcJ5rfMcaqg7XY/zBO6NxWU13HyUb5wuUxVybmHrOghHZ9A5lA==";
-  npmShasum = "84dda6fadbbb8cf193869325f7106934fe4ac5b0";
-  nixHash = "sha256-yP/8whJBDr6ylFdGejMtrL/UjDRILKBVpYJWOA+4S2A=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/particle-provider/-/particle-provider-2026.11.3.tgz";
+  npmIntegrity = "sha512-G+EA0pdfoN79cJnouMjR4Rmed/xv6BqbSWtgVkH9LfCXtdyMV4rgtviUtM3NqwZSYjd0Ct3vBZYXsFp9J9lN7g==";
+  npmShasum = "51f73ee0638edd2355b89a9fef9db275c6db602d";
+  nixHash = "sha256-Y9/W5d9c4+gHJUr03PcfyV1FelP4MGNBST6NP1nenAQ=";
   dependencyMode = "none";
   manifestId = "particle";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

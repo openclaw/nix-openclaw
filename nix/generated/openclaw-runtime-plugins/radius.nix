@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.9.4";
   expectedIntegrity = "";
   packageName = "@openclaw/radius-provider";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/radius-provider/-/radius-provider-2026.11.2.tgz";
-  npmIntegrity = "sha512-ZZx/LiuZw68MOXL3tyWlaSSjnlVaEkIVT7Xu4J2njMjrhNwciacNnTcB/CnlSS37r/9M/D7kTEO8TTMlaUuz3A==";
-  npmShasum = "7c6168fad1d97b1ac5fbf47b818addb64507fe72";
-  nixHash = "sha256-vYibE3WZf6ZbM0viCLPEAmUEbDYbJWDXyuH90c4mLMA=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/radius-provider/-/radius-provider-2026.11.3.tgz";
+  npmIntegrity = "sha512-pgJO3sIAzQp/k7QvgwUCnYbBtezcEs2FV4ecktJdyoG87cJ0SP47WQoxw+1yh7MbRfBniSNEDc0xW546EDcQvg==";
+  npmShasum = "ffbb1a1645cbf806b70b61c77d08c01086510301";
+  nixHash = "sha256-70bi5URilWd6grBWY3OQ8FNtlFuoof/6sheWtWsIs28=";
   dependencyMode = "none";
   manifestId = "radius";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

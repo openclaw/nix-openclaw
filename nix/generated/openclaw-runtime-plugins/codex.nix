@@ -13,26 +13,26 @@
   minHostVersion = ">=2026.5.1-beta.1";
   expectedIntegrity = "";
   packageName = "@openclaw/codex";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/codex/-/codex-2026.11.2.tgz";
-  npmIntegrity = "sha512-pBgFgYqnQGfjnEmFbkvxdm3vi5c4/dZ5ik4sXfRVU/bsgeGuvxJctLldkD5+o9AMkqYCWxdLFolWe1m3OB9p1A==";
-  npmShasum = "d2b174a9786e683f7e53771899a2de144bd34b1f";
-  nixHash = "sha256-mJ0PdiIwtV8bPdfqGS1hBcottYiPjVJRbv+2r47b4WI=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/codex/-/codex-2026.11.3.tgz";
+  npmIntegrity = "sha512-qJkGyQdOCJZ3jjxQK5iVVfFuN3RWXGCOvmtLk2W4QQwcvbb0g/fhh3IaGdP3P5zV8gOJGK/yrmyYM8yxB2Mm1w==";
+  npmShasum = "e8e2670a48b3648d5cb250d6f475ddff8119061d";
+  nixHash = "sha256-DX4ZRpSBhJD1XCHslecYInG1hZaWPJ63SQFVW2Sbb+g=";
   dependencyMode = "package-lock";
-  npmDepsHash = "sha256-JIzR67Mtd0quIJf+hbkes5baLRAX3JVs014qR9m26CE=";
+  npmDepsHash = "sha256-vCNYveHDBj6gK8aHbz4RhzF9D+fwUvP40cneHVlvDvg=";
   npmPackageLockFile = "codex.package-lock.json";
-  npmPackageLockSha256 = "70ec833fac0f37c96b6a09f66e768e7900bef587777b845e2f378a44669891c3";
+  npmPackageLockSha256 = "3afa7ad257414cae0eaa747207ab5018981ee782009ec8c004b6293f3a3e652d";
   npmPackageLockEvidence = {
-    assetName = "openclaw-2026.11.2-dependency-evidence.zip";
-    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.2/openclaw-2026.11.2-dependency-evidence.zip";
-    assetNixHash = "sha256-bDUSTolg5u5E7LiGVH+lB4KsQRUgcAng7yGaM8tQlfk=";
+    assetName = "openclaw-2026.11.3-dependency-evidence.zip";
+    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.3/openclaw-2026.11.3-dependency-evidence.zip";
+    assetNixHash = "sha256-NE0pXqsbzq1dTbu1vsR6EbbXik3LojoT/u5cI/1LtYU=";
     source = "release";
-    sourceSha = "b556fdf457b026574bf0f1e7b4914b15f3f179ce";
-    generatedAt = "2026-11-07T15:39:41.824Z";
+    sourceSha = "847611dcaa3bf0e2783335f961dd1fd0580e4d9f";
+    generatedAt = "2026-11-10T11:16:32.705Z";
   };
   manifestId = "codex";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

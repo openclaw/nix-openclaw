@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.6.8";
   expectedIntegrity = "";
   packageName = "@openclaw/inworld-speech";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/inworld-speech/-/inworld-speech-2026.11.2.tgz";
-  npmIntegrity = "sha512-AKVa+jY9/BTt4e541ieN5fCcOAyG6zVuffJOiJzG04R1HYd4gGp3Ud31CUOtDBOSBCbBbWtkkQ656hkINq8MxA==";
-  npmShasum = "1bf8018e7ed37d0eaf6aa8a5e27cbdd6f2118e49";
-  nixHash = "sha256-5TTvgnmc9M2SKjy1XZvB0ViOAPA+Q7Rjz/Y9h+NNWqM=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/inworld-speech/-/inworld-speech-2026.11.3.tgz";
+  npmIntegrity = "sha512-mChzxAO1HGA/yQAH5aZrMe+mnYXu2K9+/zoqL1XkA8sxD4D9hzMASixN7UDiAeCqyuF30CZLQTkSEv/U7pNrZg==";
+  npmShasum = "69f621dc7676379dbc5492b95f5610e54f0bb0c4";
+  nixHash = "sha256-wszcj32+/7kqMLd+mBj/c5gPBlx1xlaW/t3KsqqQ6CE=";
   dependencyMode = "none";
   manifestId = "inworld";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

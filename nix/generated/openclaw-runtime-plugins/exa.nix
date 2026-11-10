@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.6.8";
   expectedIntegrity = "";
   packageName = "@openclaw/exa-plugin";
-  version = "2026.11.2";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/exa-plugin/-/exa-plugin-2026.11.2.tgz";
-  npmIntegrity = "sha512-sPpN7Yh4tM1TTZ0php23J4zxDce3gPG1EjINefbYbAU1bLLsiuh+mPH6e6PpcVK/d7R0JFTFw68LsrQlGwlAzw==";
-  npmShasum = "3dedc6e69afededd638910a881337e252d264b1e";
-  nixHash = "sha256-NKyfXmq5xpc0LCTxBEw9GhrzVWi4MT9BWryqwiPyVKs=";
+  version = "2026.11.3";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/exa-plugin/-/exa-plugin-2026.11.3.tgz";
+  npmIntegrity = "sha512-4xeBqLprcdc9ISd06T8LjlkA+dFvaMRXoAUcLSEw7BXq5MUGzxkdl2LneWXQLZM0jrtnBMOJhyDxeRrS52oLHA==";
+  npmShasum = "2d4767d03d9a2637486581821a7415b26881a57c";
+  nixHash = "sha256-K/CB2a/ttACsWv0ILqMQHUTkHYVkxqNZTEDWaTHwa3c=";
   dependencyMode = "none";
   manifestId = "exa";
-  openclawCompat = ">=2026.11.2";
-  peerOpenClaw = ">=2026.11.2";
+  openclawCompat = ">=2026.11.3";
+  peerOpenClaw = ">=2026.11.3";
   runtimeExtensions = [
     "./dist/index.js"
   ];

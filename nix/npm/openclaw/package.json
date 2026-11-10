@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "openclaw": "2026.11.2"
+    "openclaw": "2026.11.3"
   },
   "overrides": {
     "@modelcontextprotocol/sdk": "1.32.0",
