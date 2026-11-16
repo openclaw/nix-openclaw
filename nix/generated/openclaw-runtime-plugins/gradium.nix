@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.6.8";
   expectedIntegrity = "";
   packageName = "@openclaw/gradium-speech";
-  version = "2026.11.3";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/gradium-speech/-/gradium-speech-2026.11.3.tgz";
-  npmIntegrity = "sha512-k8tS4IJz3SY3uPNMWHSCATc4TCteZ6fQoYiy4DHFD6Z2bUIA+g2ZK3MVwbX1/WjzJ27zM7ki18WcAQQG+FxoGA==";
-  npmShasum = "af4cab02ee58cff9fca8c311b910ee583243e989";
-  nixHash = "sha256-6jakGkYj5m+ajgwd6IBTzt4Oa0ZSp5UbI1Sulgt+FPw=";
+  version = "2026.11.4";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/gradium-speech/-/gradium-speech-2026.11.4.tgz";
+  npmIntegrity = "sha512-m2jH45mcVkQBLqbPZ2FhNwLJPWg2U38flvlDfPmfENR4BfvdgNRB9KqEtxHWVav3/5xL2Op94oJEJhCci2L4wQ==";
+  npmShasum = "1b59f03bacf662eabe049316430c7232f403f075";
+  nixHash = "sha256-b2TZSB/Bsel6gAw+I5C5kD9pfKQEW4xh1OgyFq94lv0=";
   dependencyMode = "none";
   manifestId = "gradium";
-  openclawCompat = ">=2026.11.3";
-  peerOpenClaw = ">=2026.11.3";
+  openclawCompat = ">=2026.11.4";
+  peerOpenClaw = ">=2026.11.4";
   runtimeExtensions = [
     "./dist/index.js"
   ];

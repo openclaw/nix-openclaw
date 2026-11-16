@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.7.2";
   expectedIntegrity = "";
   packageName = "@openclaw/buzz";
-  version = "2026.11.3";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/buzz/-/buzz-2026.11.3.tgz";
-  npmIntegrity = "sha512-kSNP60WgPuJGFryTC0onCkwF8TVR6/bpQ4Y1T31Z6CWT7YChoASYlMCgP5fOmeX2bDGekh30PB+JjdcFC8Segw==";
-  npmShasum = "e51bc92c9cabb9e123f67d1f58eba7bb4f657dbc";
-  nixHash = "sha256-N5xDIzMd/UV+HWistq43I+LT67pnJg7EZubUOa/vV9M=";
+  version = "2026.11.4";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/buzz/-/buzz-2026.11.4.tgz";
+  npmIntegrity = "sha512-/4DxFtUCLaEromfOQliOwvdeNqoR88jsqVKVi9/YqL8oqqyTzbn/YNrQBEB6rNwofuh2t3kFQ/ANcz18GbSO6Q==";
+  npmShasum = "e8e591ff59072a7228a97795e87b84e9b526c511";
+  nixHash = "sha256-cSz4dH7ueH9GIl5xbdQZFGTLtziJKxea5vp3ufmfyRA=";
   dependencyMode = "bundled";
   manifestId = "buzz";
-  openclawCompat = ">=2026.11.3";
-  peerOpenClaw = ">=2026.11.3";
+  openclawCompat = ">=2026.11.4";
+  peerOpenClaw = ">=2026.11.4";
   runtimeExtensions = [
     "./dist/index.js"
   ];
