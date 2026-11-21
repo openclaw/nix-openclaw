@@ -99,7 +99,7 @@ export { loadBundledPluginPublicArtifactModuleSync };
   dependency(path.join(acpx, "node_modules"), "@fixture/acpx-dep", 9);
   for (const name of acpxAliases) {
     put(acpx, `dist/${name}`, 'export { default } from "@fixture/acpx-dep";\n');
-    fs.symlinkSync(`dist/${name}`, path.join(acpx, name));
+    put(acpx, name, `export * from "./dist/${name}";\nexport { default } from "./dist/${name}";\n`);
   }
   put(modules, ".fixture-marker", "retained");
   const bin = put(limit, "bin/marker", "#!/bin/sh\nexit 0\n");

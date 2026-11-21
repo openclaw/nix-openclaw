@@ -44,24 +44,26 @@ const ROOT_FACADE_BASENAMES = [
   "setup-api.js",
 ];
 
-function linkDistRootAlias(pluginRoot, basename) {
+function writeDistRootAlias(pluginRoot, basename) {
   const distPath = path.join(pluginRoot, "dist", basename);
   const rootPath = path.join(pluginRoot, basename);
   if (!fs.existsSync(distPath) || fs.existsSync(rootPath)) {
     return;
   }
-  fs.symlinkSync(path.posix.join("dist", basename), rootPath);
+  // Keep imports relative to dist while making the alias attestable as a file.
+  const specifier = JSON.stringify(`./dist/${basename}`);
+  fs.writeFileSync(rootPath, `export * from ${specifier};\nimport * as entry from ${specifier};\nexport default entry.default;\n`);
 }
 
 function exposeDistRootAliases(pluginRoot, runtimeEntries) {
   for (const runtimeEntry of runtimeEntries) {
     const relPath = safeRelativePath(runtimeEntry, `runtime entry alias`);
     if (path.dirname(relPath) === "dist") {
-      linkDistRootAlias(pluginRoot, path.basename(relPath));
+      writeDistRootAlias(pluginRoot, path.basename(relPath));
     }
   }
   for (const basename of ROOT_FACADE_BASENAMES) {
-    linkDistRootAlias(pluginRoot, basename);
+    writeDistRootAlias(pluginRoot, basename);
   }
 }
 

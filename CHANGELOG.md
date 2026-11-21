@@ -6,6 +6,8 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Preserve bundled ACPX runtime identity by generating regular-file entry-point facades with canonical imports instead of symlinks. Thanks @clement-songis (#183).
+
 - Guard OpenClaw 2026.11.1's read-only MCP OAuth token path against issuer-less credentials; identify stale issuer patches directly in package validation.
 - Preserve existing release notes and proof when later main CI uses the same version; avoid unnecessary release edits from unrelated package changes.
 - Preserve cached FFmpeg/GTK dependencies by scoping the patched Node runtime to OpenClaw packages and checks; keep private Node and pnpm pins unchanged.

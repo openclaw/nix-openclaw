@@ -114,7 +114,14 @@ test("bundled ACPX stays physically contained with its complete built closure", 
     const bundled = fs.realpathSync(path.join(f.root, spelling, "extensions"));
     const acpx = path.join(bundled, "acpx");
     assert.ok(fs.realpathSync(acpx).startsWith(`${bundled}/`), "ACPX package directory escapes bundled root");
-    assert.deepEqual(snapshot(acpx), original);
+    const installed = snapshot(acpx);
+    for (const name of acpxAliases) {
+      assert.equal(fs.lstatSync(path.join(acpx, name)).isFile(), true, `${name} must be an attestable regular file`);
+      delete installed[name];
+    }
+    const expected = { ...original };
+    for (const name of acpxAliases) delete expected[name];
+    assert.deepEqual(installed, expected);
   }
   assert.deepEqual(snapshot(f.acpx), original);
   fs.rmSync(f.acpx, { recursive: true });
