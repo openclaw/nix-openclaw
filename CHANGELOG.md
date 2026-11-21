@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Restore stable-pin materialization for OpenClaw 2026.11.6 by validating its minified runtime graph separately from sealed workers; retain Nix ownership, OAuth issuer, and Control UI checks against the selected MCP client, and wait for configured plugins during gateway readiness checks.
 - Preserve bundled ACPX runtime identity by generating regular-file entry-point facades with canonical imports instead of symlinks. Thanks @clement-songis (#183).
 
 - Guard OpenClaw 2026.11.1's read-only MCP OAuth token path against issuer-less credentials; identify stale issuer patches directly in package validation.

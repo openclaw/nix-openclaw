@@ -8,7 +8,11 @@ import vm from "node:vm";
 const root = process.env.OPENCLAW_PACKAGE_ROOT;
 assert.ok(root, "OPENCLAW_PACKAGE_ROOT is required");
 const require = createRequire(path.join(root, "package.json"));
-const { auth } = await import(pathToFileURL(require.resolve("@modelcontextprotocol/sdk/client/auth.js")));
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const splitClient = Boolean(packageJson.dependencies?.["@modelcontextprotocol/client"]);
+const clientSpec = splitClient
+  ? "@modelcontextprotocol/client" : "@modelcontextprotocol/sdk/client/auth.js";
+const { auth } = await import(pathToFileURL((splitClient ? require.resolve(clientSpec).replace(/\.cjs$/, ".mjs") : require.resolve(clientSpec))));
 const realIssuer = "https://auth.example.test";
 const hostileIssuer = "https://untrusted.example.test";
 const resource = "https://mcp.example.test";
@@ -100,7 +104,7 @@ assert.equal(store.clientInformation.issuer, realIssuer);
 assert.equal(store.tokens.issuer, realIssuer);
 
 // Exercise the packaged resolver too: provider-only tests miss early returns.
-if (sources[0].includes("readMcpOAuthStoreReadOnly(storeKey)")) {
+if (sources[0].includes("readMcpOAuthStoreReadOnly(")) {
   const extract = (name) => {
     const body = sources[0].match(new RegExp(`^(?:async )?function ${name}\\([^\\n]*\\) \\{\\n[\\s\\S]*?^\\}`, "m"))?.[0];
     assert.ok(body, `MCP OAuth issuer patch: missing ${name}`);
@@ -108,6 +112,10 @@ if (sources[0].includes("readMcpOAuthStoreReadOnly(storeKey)")) {
   };
   const resolverContext = vm.createContext({
     TOKEN_EXPIRY_SKEW_MS: 60000,
+    normalizeOptionalString: (value) => value,
+    AbortController,
+    racePromiseWithAbortSignal: (promise) => promise,
+    mcpOAuthAuthorizationRequiredError: () => new Error("requires OAuth authorization"),
     readMcpOAuthStoreReadOnly: async () => store,
     readMcpOAuthStore: async () => store,
     withMcpOAuthLease: async (_key, run) => run({ assertOwned: async () => {} }, {}),

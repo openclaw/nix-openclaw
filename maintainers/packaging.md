@@ -22,6 +22,7 @@ This repo ships a working Nix package for OpenClaw users, not just a pin mirror.
 - `nix-openclaw-tools` owns packaging OpenClaw-adjacent CLI tools and plugin metadata. Consume it here; do not duplicate its package definitions here.
 - Downstream system repos should only choose hosts, secrets, accounts, and enabled plugins. If downstream needs bespoke scripts to make a plugin or harness work, prefer fixing this repo or `nix-openclaw-tools`.
 - Nix mode means Nix owns `openclaw.json`.
+- OpenClaw 2026.11.6 emits minified runtime chunks and separate sealed workers. Validate complete audited chunk fingerprints before applying the Nix and OAuth adapters; reject changed chunks before writing any patch. Package checks keep sealed workers outside the shared runtime graph and exercise the MCP client selected by the pinned gateway.
 - Emitted npm patch contracts validate imported helper bindings and complete realpath decisions, including the native-cache helper in OpenClaw 2026.10.4's `package-manifest` chunk. Chunk relocation alone must not relax path or ownership guards.
 - The OAuth adapter accepts synchronous and asynchronous store readers while requiring issuer-bound saved credentials in both; asynchronous readers retain upstream lease and token-reuse checks.
 - OpenClaw 2026.11.1's read-only token fast path and leased resolver both require issuer-bound credentials. Package contracts exercise both paths before the full OAuth/SQLite flow so stale issuer patches fail by name.

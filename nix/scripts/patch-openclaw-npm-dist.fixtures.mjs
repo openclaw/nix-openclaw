@@ -259,6 +259,8 @@ function packageFixture(t, ext, files = ["src/agents/templates/"]) {
     "dist/target.js",
   ];
   for (const name of required) put(name);
+  put("dist-runtime/extensions/acpx/package.json", JSON.stringify({ openclaw: { runtimeExtensions: ["./dist/index.js"] } }));
+  put("dist-runtime/extensions/acpx/dist/index.js");
   put("package.json", JSON.stringify({ type: "module", files }));
   put("dist/runtime-model-auth.runtime.js", 'export * from "./target.js";\n');
   put(
