@@ -13,26 +13,26 @@
   minHostVersion = ">=2026.4.10";
   expectedIntegrity = "";
   packageName = "@openclaw/tlon";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/tlon/-/tlon-2026.11.4.tgz";
-  npmIntegrity = "sha512-qlpAJDQ9zFG639mLreriX+LKortzUuMhRHXcZ3tmsgBPJZpTDVhzUW1ltEvFTvd4Ry05ha94CTmN+rZGFaqW6A==";
-  npmShasum = "de1ec8db8e974f3738a21a110c292d4fd9af85f8";
-  nixHash = "sha256-yM2eA0PsSszCEFi6J7iOW0qFOB8jv77UohGH42EJ8vw=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/tlon/-/tlon-2026.11.6.tgz";
+  npmIntegrity = "sha512-uizuCIRgEt6IyTIyDcI7ZJFNMvXT5wYT5G+8G2nWyoJgWA+CR2e26Zn6rkeAjc1KQ4h5AVmFsFwWj0gbCwGHhA==";
+  npmShasum = "1b92aaa80e57e406ab470a1ffd18443ff0ae204f";
+  nixHash = "sha256-LaM2ZxeRHMG9ECxe48iKzZFI12SP6ZKn9dxPPjvRI40=";
   dependencyMode = "package-lock";
-  npmDepsHash = "sha256-GNg+YhmFqDyJOKfgrPqhA1pigl2TIu2BNJbpxfER8Mo=";
+  npmDepsHash = "sha256-xcnuaw3/aQWrcyUof/7BuX56kdzuwhQBq0qtXEUFt5c=";
   npmPackageLockFile = "tlon.package-lock.json";
-  npmPackageLockSha256 = "e40491a3e22badec67745892c7c9dad69069f70faa98ae0abeaaa1a42bf8f2f3";
+  npmPackageLockSha256 = "2502eae6c60f8d3b5ada546b204c6e72a777ad3077795713bff6f2d4de341eeb";
   npmPackageLockEvidence = {
-    assetName = "openclaw-2026.11.4-dependency-evidence.zip";
-    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.4/openclaw-2026.11.4-dependency-evidence.zip";
-    assetNixHash = "sha256-LSu6OVS6OcehQfZOhK2m4VIE3D4Sl7/KPaV7PEEll5E=";
+    assetName = "openclaw-2026.11.6-dependency-evidence.zip";
+    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.6/openclaw-2026.11.6-dependency-evidence.zip";
+    assetNixHash = "sha256-74NijsiJTPZADOVj+g4tlTy0XZQBaXglfAcM/cxQIdo=";
     source = "release";
-    sourceSha = "d843d6af39a42cd3c30084edbeabeece732fd93a";
-    generatedAt = "2026-11-15T22:50:00.005Z";
+    sourceSha = "06afb10d3272cc9deaf38ca6a3b7b839d5935638";
+    generatedAt = "2026-11-19T09:20:29.576Z";
   };
   manifestId = "tlon";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -42,11 +42,11 @@
   ];
   contracts = { };
   dependencies = {
-    "@aws-sdk/client-s3" = "3.1146.0";
-    "@aws-sdk/s3-request-presigner" = "3.1146.0";
-    "@tloncorp/tlon-skill" = "0.7.0";
+    "@aws-sdk/client-s3" = "3.1153.0";
+    "@aws-sdk/s3-request-presigner" = "3.1153.0";
+    "@tloncorp/tlon-skill" = "0.8.1";
     "@urbit/aura" = "3.0.0";
-    zod = "4.6.5";
+    zod = "4.6.7";
   };
   optionalDependencies = { };
   bundleDependencies = [ ];

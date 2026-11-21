@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.4.25";
   expectedIntegrity = "";
   packageName = "@openclaw/whatsapp";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/whatsapp/-/whatsapp-2026.11.4.tgz";
-  npmIntegrity = "sha512-9q9YAbuWmiPtDgylJE/spKxtK9v4RuxpLaUVeUF0BHU5GtlreTxjmNg3J55/ty6+NQL/Hx4ZKRY2b3rimhlFag==";
-  npmShasum = "005f8e8ff6d61625fd5c6b97cdc80dc91ca6e87f";
-  nixHash = "sha256-3956FjKk/srkUhx3xAk7QadpmTZKuQisot6T2gDUFKk=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/whatsapp/-/whatsapp-2026.11.6.tgz";
+  npmIntegrity = "sha512-4AI2cY+icHEA/4VBd5ghIG2taLIfWtd2J7cuMtUgdEDLFN676G3DjuhhlQ34CQ0nkxDFJRnM0/cs6XK7VvMLSA==";
+  npmShasum = "725ddfc5d3802634ebfa4781bd10d62fe1d08d84";
+  nixHash = "sha256-o+xDpWmeNBe0KvcJj1mTQP96pOd6TPnlUin3K0fsLqI=";
   dependencyMode = "bundled";
   manifestId = "whatsapp";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -36,17 +36,24 @@
     ];
   };
   dependencies = {
+    "@solidjs/web" = "2.0.0-rc.18";
     audio-decode = "3.12.0";
     baileys = "7.0.0-rc14";
-    typebox = "1.3.35";
+    solid-js = "2.0.0-rc.18";
+    typebox = "1.4.2";
   };
   optionalDependencies = { };
   bundleDependencies = [
+    "@solidjs/web"
     "audio-decode"
     "baileys"
+    "solid-js"
     "typebox"
   ];
   bundledPackageRoots = [
+    "node_modules/@solidjs/web"
+    "node_modules/@solidjs/web/node_modules/seroval"
+    "node_modules/@solidjs/web/node_modules/seroval-plugins"
     "node_modules/audio-decode"
     "node_modules/audio-decode/node_modules/@audio/decode"
     "node_modules/audio-decode/node_modules/@audio/decode-aac"
@@ -135,6 +142,11 @@
     "node_modules/baileys/node_modules/whatsapp-rust-bridge"
     "node_modules/baileys/node_modules/win-guid"
     "node_modules/baileys/node_modules/ws"
+    "node_modules/solid-js"
+    "node_modules/solid-js/node_modules/@solidjs/signals"
+    "node_modules/solid-js/node_modules/csstype"
+    "node_modules/solid-js/node_modules/seroval"
+    "node_modules/solid-js/node_modules/seroval-plugins"
     "node_modules/typebox"
   ];
 }

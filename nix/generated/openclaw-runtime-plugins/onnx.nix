@@ -13,26 +13,26 @@
   minHostVersion = ">=2026.9.6";
   expectedIntegrity = "";
   packageName = "@openclaw/onnx";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/onnx/-/onnx-2026.11.4.tgz";
-  npmIntegrity = "sha512-cfjl4JY+c3S+SasYTvB6qCV6iL/rebJwE9/KHsKcjqaUJPQklUa3Uy9Qs3Dm/s232olGHkTPXwkpQ5JJ9vwGEQ==";
-  npmShasum = "48b8007198b6a5a3113cc9e65684e6a84b3d2aa6";
-  nixHash = "sha256-F6gmrT7ZSC1ov343HFYgDEa7yRMx5iNC5aOiAmjlu9Y=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/onnx/-/onnx-2026.11.6.tgz";
+  npmIntegrity = "sha512-GJuErAKYlUY9UzQKBxHdDFcIuj0aleL3wUagYySqsEF9xei4jEJmX9uNfwUrCZG0hpLa6i0BIrAaKnnaSr3ASQ==";
+  npmShasum = "da1bda7290b7b273390e602d0160a6c472c73c80";
+  nixHash = "sha256-3N7t2O3NaTw9iPd7ZCnjri3pqmx77Kpdl86VQkYwhds=";
   dependencyMode = "package-lock";
-  npmDepsHash = "sha256-wOcav1a7DDb2RzM3Yim5+aFLTj6DHcTFA2kHH0/FLG0=";
+  npmDepsHash = "sha256-ULtJC1pQ5liqC9wam8K+6U3VuWMC16rRcYtrTBBKgd0=";
   npmPackageLockFile = "onnx.package-lock.json";
-  npmPackageLockSha256 = "77f6e42d4b41b794dced4a7ff10168cdba7f7d0cd2f8da9705c460b5d6a6a810";
+  npmPackageLockSha256 = "daacdb18538f828c4e5a8c8d83d52efbd75776e74207bfc1699a903a38870d9f";
   npmPackageLockEvidence = {
-    assetName = "openclaw-2026.11.4-dependency-evidence.zip";
-    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.4/openclaw-2026.11.4-dependency-evidence.zip";
-    assetNixHash = "sha256-LSu6OVS6OcehQfZOhK2m4VIE3D4Sl7/KPaV7PEEll5E=";
+    assetName = "openclaw-2026.11.6-dependency-evidence.zip";
+    assetUrl = "https://github.com/openclaw/openclaw/releases/download/v2026.11.6/openclaw-2026.11.6-dependency-evidence.zip";
+    assetNixHash = "sha256-74NijsiJTPZADOVj+g4tlTy0XZQBaXglfAcM/cxQIdo=";
     source = "release";
-    sourceSha = "d843d6af39a42cd3c30084edbeabeece732fd93a";
-    generatedAt = "2026-11-15T22:50:00.005Z";
+    sourceSha = "06afb10d3272cc9deaf38ca6a3b7b839d5935638";
+    generatedAt = "2026-11-19T09:20:29.576Z";
   };
   manifestId = "onnx";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -45,7 +45,7 @@
   };
   dependencies = {
     "@huggingface/tokenizers" = "0.2.0";
-    typebox = "1.3.35";
+    typebox = "1.4.2";
   };
   optionalDependencies = {
     onnxruntime-node = "1.30.0";

@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.4.25";
   expectedIntegrity = "";
   packageName = "@openclaw/diagnostics-otel";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/diagnostics-otel/-/diagnostics-otel-2026.11.4.tgz";
-  npmIntegrity = "sha512-gGF638ncDBfcHjTz/YULtQ6jIlv16NDXKnh6ncGopUm9e+d4Htv2CGAVwVU15rDIQoOCJW5FmPv/khakI4gt2w==";
-  npmShasum = "3fcc90e824474f5bed91df8ed2e8f14984b4073e";
-  nixHash = "sha256-Rvgh4zsIvu+YSghZrQZzZs/SvTI9w1P3Rw901uapH58=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/diagnostics-otel/-/diagnostics-otel-2026.11.6.tgz";
+  npmIntegrity = "sha512-TmQ7l5gQb1HwT7srtETkfFGOFlXFrhOHOviFlectFdzSJkH5Zh7M3fbxrpP3xIGOk2GaCak5DDMI7u1lbJAZuQ==";
+  npmShasum = "19b38087515052e28723a9c7298e11202173bfb9";
+  nixHash = "sha256-hftlQSH029uGrnB3NaaBesPNXJeyaOXBOFbY8KqWa2Y=";
   dependencyMode = "bundled";
   manifestId = "diagnostics-otel";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -30,18 +30,18 @@
   contracts = { };
   dependencies = {
     "@opentelemetry/api" = "1.9.1";
-    "@opentelemetry/api-logs" = "0.222.0";
-    "@opentelemetry/context-async-hooks" = "2.11.0";
-    "@opentelemetry/core" = "2.11.0";
-    "@opentelemetry/exporter-logs-otlp-proto" = "0.222.0";
-    "@opentelemetry/exporter-metrics-otlp-proto" = "0.222.0";
-    "@opentelemetry/exporter-trace-otlp-proto" = "0.222.0";
-    "@opentelemetry/propagator-b3" = "2.11.0";
-    "@opentelemetry/propagator-jaeger" = "2.11.0";
-    "@opentelemetry/resources" = "2.11.0";
-    "@opentelemetry/sdk-logs" = "0.222.0";
-    "@opentelemetry/sdk-metrics" = "2.11.0";
-    "@opentelemetry/sdk-trace-base" = "2.11.0";
+    "@opentelemetry/api-logs" = "0.223.0";
+    "@opentelemetry/context-async-hooks" = "2.12.0";
+    "@opentelemetry/core" = "2.12.0";
+    "@opentelemetry/exporter-logs-otlp-proto" = "0.223.0";
+    "@opentelemetry/exporter-metrics-otlp-proto" = "0.223.0";
+    "@opentelemetry/exporter-trace-otlp-proto" = "0.223.0";
+    "@opentelemetry/propagator-b3" = "2.12.0";
+    "@opentelemetry/propagator-jaeger" = "2.12.0";
+    "@opentelemetry/resources" = "2.12.0";
+    "@opentelemetry/sdk-logs" = "0.223.0";
+    "@opentelemetry/sdk-metrics" = "2.12.0";
+    "@opentelemetry/sdk-trace-base" = "2.12.0";
     "@opentelemetry/semantic-conventions" = "1.43.0";
   };
   optionalDependencies = { };

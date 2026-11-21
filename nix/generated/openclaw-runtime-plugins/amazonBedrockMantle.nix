@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.5.12-beta.1";
   expectedIntegrity = "";
   packageName = "@openclaw/amazon-bedrock-mantle-provider";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/amazon-bedrock-mantle-provider/-/amazon-bedrock-mantle-provider-2026.11.4.tgz";
-  npmIntegrity = "sha512-J70uCFGWe0QeSE+CXBg215GMsghVCZsERGSzOKme142GO/N21I5cCWP0bQEmt86G4hpgj/fDz56BwSZei2Cl4g==";
-  npmShasum = "311d208180cef46f7993846956e6bbcddf5c4801";
-  nixHash = "sha256-XwMPAir8Jc4APqYqQ08OakxKuIA+UwsauH6DHzJZOG8=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/amazon-bedrock-mantle-provider/-/amazon-bedrock-mantle-provider-2026.11.6.tgz";
+  npmIntegrity = "sha512-WS2AbbkIbL4MpECSBjhHsjfwDGro59Jx1TOFz9xg2XI8fbl+ts5XhF/oZUOSmviSvTFbMFQPBO99rG36/blT0Q==";
+  npmShasum = "6db2e44ec66dcca0919276526189fcd3d3b443d7";
+  nixHash = "sha256-Po1z/8URzAADIt2zZ1iXQeSVmzD5jYbyVxhzG+tctqo=";
   dependencyMode = "bundled";
   manifestId = "amazon-bedrock-mantle";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -29,7 +29,7 @@
   channels = [ ];
   contracts = { };
   dependencies = {
-    "@anthropic-ai/sdk" = "0.131.0";
+    "@anthropic-ai/sdk" = "0.135.0";
     "@aws/bedrock-token-generator" = "1.1.0";
   };
   optionalDependencies = { };
@@ -40,6 +40,7 @@
   bundledPackageRoots = [
     "node_modules/@anthropic-ai/sdk"
     "node_modules/@anthropic-ai/sdk/node_modules/@babel/runtime"
+    "node_modules/@anthropic-ai/sdk/node_modules/@opentelemetry/api"
     "node_modules/@anthropic-ai/sdk/node_modules/@stablelib/base64"
     "node_modules/@anthropic-ai/sdk/node_modules/fast-sha256"
     "node_modules/@anthropic-ai/sdk/node_modules/json-schema-to-ts"
@@ -54,6 +55,15 @@
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-ini"
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-login"
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-env"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-http"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-ini"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-login"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-process"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-sso"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/credential-provider-web-identity"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/nested-clients"
+    "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-node/node_modules/@aws-sdk/token-providers"
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-process"
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-sso"
     "node_modules/@aws/bedrock-token-generator/node_modules/@aws-sdk/credential-provider-web-identity"

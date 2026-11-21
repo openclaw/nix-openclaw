@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.9.8";
   expectedIntegrity = "";
   packageName = "@openclaw/irc";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/irc/-/irc-2026.11.4.tgz";
-  npmIntegrity = "sha512-xMga2aTocBiwJUrKKJV7XwZF/LgvNy3wUoNKMr+Pu5F0lyVqSL2Qb2bFVgbK1sP8vVTVQ+NF0z7EUnZKVytzfg==";
-  npmShasum = "c69545dcf54d68d8c4cf8de43602287400767d80";
-  nixHash = "sha256-3ZOsNJn5Dr1kXLgRI8RcEjbqtlMdafZ7OQ3fiSVvjMA=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/irc/-/irc-2026.11.6.tgz";
+  npmIntegrity = "sha512-hYmv76xNKSbeCVK0pv4L7U3UCRb2gVVhQRBcuPX26dtcSVkRh2C1pozKOJvZdZ7ZMwIzXF6x5h8DwX8emjErdA==";
+  npmShasum = "bc53167638f280b4460c9e1691b365f3570a8161";
+  nixHash = "sha256-tmO4Jlu28vIwmoWOqOFooXv6iFeUTyhwLQbaF7YnNtc=";
   dependencyMode = "bundled";
   manifestId = "irc";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -31,7 +31,7 @@
   ];
   contracts = { };
   dependencies = {
-    zod = "4.6.5";
+    zod = "4.6.7";
   };
   optionalDependencies = { };
   bundleDependencies = [

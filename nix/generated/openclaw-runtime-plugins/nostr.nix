@@ -13,15 +13,15 @@
   minHostVersion = ">=2026.4.10";
   expectedIntegrity = "";
   packageName = "@openclaw/nostr";
-  version = "2026.11.4";
-  tarballUrl = "https://registry.npmjs.org/@openclaw/nostr/-/nostr-2026.11.4.tgz";
-  npmIntegrity = "sha512-2WJ1kg3Abx9GPAtObaHZ8mBWYyRgkKV0fy8zjDJUxRoPRicwyfOQ0jgfsvCPxKCZqvb446P8R3AkTdP9U/t1Ig==";
-  npmShasum = "b7e1a5ffe20594ccfd9f0c7413d4e4b27be0a646";
-  nixHash = "sha256-gjiyqLgWjrRxicSD6tjeelCjMUA3+FizqwcMfLPUk+w=";
+  version = "2026.11.6";
+  tarballUrl = "https://registry.npmjs.org/@openclaw/nostr/-/nostr-2026.11.6.tgz";
+  npmIntegrity = "sha512-yhG0C8QKrsJIeIUU/B/ZkCVFJSaWpiTSGZNfLPAB/DuHktRk8zfhRwrwIr9m7OCjn7WhrztrYX20ovN3ztXMmQ==";
+  npmShasum = "896adf4ea5f92219991811ae78ac9dafeb1071f4";
+  nixHash = "sha256-1ghdhDJ7ViLcKaUwozJvjXMliSeJppXgZz1W673Q7xo=";
   dependencyMode = "bundled";
   manifestId = "nostr";
-  openclawCompat = ">=2026.11.4";
-  peerOpenClaw = ">=2026.11.4";
+  openclawCompat = ">=2026.11.6";
+  peerOpenClaw = ">=2026.11.6";
   runtimeExtensions = [
     "./dist/index.js"
   ];
@@ -31,15 +31,22 @@
   ];
   contracts = { };
   dependencies = {
+    "@solidjs/web" = "2.0.0-rc.18";
     nostr-tools = "2.25.2";
-    zod = "4.6.5";
+    solid-js = "2.0.0-rc.18";
+    zod = "4.6.7";
   };
   optionalDependencies = { };
   bundleDependencies = [
+    "@solidjs/web"
     "nostr-tools"
+    "solid-js"
     "zod"
   ];
   bundledPackageRoots = [
+    "node_modules/@solidjs/web"
+    "node_modules/@solidjs/web/node_modules/seroval"
+    "node_modules/@solidjs/web/node_modules/seroval-plugins"
     "node_modules/nostr-tools"
     "node_modules/nostr-tools/node_modules/@noble/ciphers"
     "node_modules/nostr-tools/node_modules/@noble/curves"
@@ -48,6 +55,11 @@
     "node_modules/nostr-tools/node_modules/@scure/bip32"
     "node_modules/nostr-tools/node_modules/@scure/bip39"
     "node_modules/nostr-tools/node_modules/nostr-wasm"
+    "node_modules/solid-js"
+    "node_modules/solid-js/node_modules/@solidjs/signals"
+    "node_modules/solid-js/node_modules/csstype"
+    "node_modules/solid-js/node_modules/seroval"
+    "node_modules/solid-js/node_modules/seroval-plugins"
     "node_modules/zod"
   ];
 }
