@@ -112,6 +112,7 @@ if (sources[0].includes("readMcpOAuthStoreReadOnly(")) {
   };
   const resolverContext = vm.createContext({
     TOKEN_EXPIRY_SKEW_MS: 60000,
+    normalizeOptionalString: (value) => value,
     AbortController,
     racePromiseWithAbortSignal: (promise) => promise,
     mcpOAuthAuthorizationRequiredError: () => new Error("requires OAuth authorization"),
