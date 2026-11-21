@@ -43,6 +43,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: none
+          dependency-caching: true
           # Keep default security queries, remote threats, and native caching.
 
       - name: Perform CodeQL Analysis
