@@ -3,5 +3,5 @@ set -euo pipefail
 . "$STDENV_SETUP"
 
 runHook preInstallCheck
-"$out/bin/node" "$NODE_RUNTIME_CHECK"
+"$out/bin/node" "$NODE_RUNTIME_CHECK" "$out"
 runHook postInstallCheck

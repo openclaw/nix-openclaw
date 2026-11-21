@@ -1170,6 +1170,13 @@ explicit `home.packages` or NixOS `services.openclaw-gateway.servicePath` use.
 Installing the CLI does not restore OpenClaw backend integration or migrate
 existing memory data.
 
+QMD 2.9.0 converts an existing vector index in place on the first command.
+Before upgrading from 2.8.3, stop QMD processes (including MCP servers) and back
+up the index and QMD configuration. Restart MCP servers with the new package.
+Rolling back a Nix generation does not roll back the index: restore the backup,
+or run `qmd embed -f` with the older package to rebuild its vectors. See the
+[QMD 2.9.0 release notes](https://github.com/tobi/qmd/releases/tag/v2.9.0).
+
 Plugin CLIs are also kept on the OpenClaw runtime PATH by default, not on the user's login shell PATH. Set `programs.openclaw.exposePluginPackages = true` only when you explicitly want plugin CLIs in `home.packages`.
 
 Optional standalone model prewarming remains declarative on both schemas:

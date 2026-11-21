@@ -18,6 +18,6 @@ stdenvNoCC.mkDerivation {
   # The version test outputs a file; keep it out of directory-only symlinkJoin paths.
   env.NODE_VERSION_CHECK = nodejs_24.tests.version;
   doCheck = true;
-  checkPhase = "${nodejs_24}/bin/node ${../scripts/check-node-runtime.mjs}";
+  checkPhase = "${nodejs_24}/bin/node ${../scripts/check-node-runtime.mjs} ${nodejs_24}";
   installPhase = "${../scripts/empty-install.sh}";
 }
