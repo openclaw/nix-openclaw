@@ -78,6 +78,7 @@ fs.writeFileSync(
   JSON.stringify(
     {
       name: "@openclaw/test-runtime-aliases",
+      type: "module",
       version: "1.0.0",
       openclaw: {
         runtimeExtensions: ["./dist/index.js"],
@@ -91,8 +92,9 @@ fs.writeFileSync(
   path.join(aliasPluginRoot, "openclaw.plugin.json"),
   JSON.stringify({ id: "runtime-aliases", name: "Runtime Aliases" }, null, 2),
 );
+fs.writeFileSync(path.join(aliasPluginRoot, "dist", "shared.js"), "export const state = {}; export let count = 0; export function increment() { count += 1; }\n");
 for (const basename of ["index.js", "register.runtime.js", "runtime-api.js", "setup-api.js"]) {
-  fs.writeFileSync(path.join(aliasPluginRoot, "dist", basename), "export default {};\n");
+  fs.writeFileSync(path.join(aliasPluginRoot, "dist", basename), 'export { state as default, state, count, increment } from "./shared.js";\n');
 }
 fs.writeFileSync(aliasRuntimeEntriesFile, "./dist/index.js\n");
 fs.writeFileSync(aliasBundledRootsFile, "");
@@ -120,7 +122,24 @@ for (const basename of ["index.js", "register.runtime.js", "runtime-api.js", "se
   if (!fs.existsSync(aliasPath)) {
     throw new Error(`runtime alias missing: ${basename}`);
   }
-  if (!fs.lstatSync(aliasPath).isSymbolicLink()) {
-    throw new Error(`runtime alias is not a symlink: ${basename}`);
+  if (!fs.lstatSync(aliasPath).isFile()) {
+    throw new Error(`runtime alias is not a regular file: ${basename}`);
   }
 }
+
+// Import the installed files after removing the build tree, as a consumer does.
+fs.rmSync(aliasPluginRoot, { recursive: true });
+const { pathToFileURL } = await import("node:url");
+const canonical = await import(pathToFileURL(path.join(aliasOut, "dist", "index.js")));
+for (const basename of ["index.js", "register.runtime.js", "runtime-api.js", "setup-api.js"]) {
+  const facade = await import(pathToFileURL(path.join(aliasOut, basename)));
+  if (facade.default !== canonical.default || facade.state !== canonical.state) {
+    throw new Error(`runtime alias changed module identity: ${basename}`);
+  }
+  facade.increment();
+  if (facade.count !== canonical.count) {
+    throw new Error(`runtime alias lost a live binding: ${basename}`);
+  }
+}
+fs.rmSync(tempRoot, { recursive: true, force: true });
+fs.rmSync(aliasRoot, { recursive: true, force: true });

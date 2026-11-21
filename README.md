@@ -72,7 +72,7 @@ You talk to Telegram, your machine does things.
 
 Plugin Control UI assets and manifest reloads support Nix-store hardlinks when
 running in Nix mode, including stores optimized with `auto-optimise-store`.
-Mutable plugin roots retain the upstream hardlink restrictions.
+Mutable plugin roots retain the upstream hardlink restrictions. Bundled ACPX entry points use regular-file facades so runtime artifact identity checks can read them while their imports retain the canonical compiled module graph.
 
 OpenClaw runtime plugins are JavaScript plugin roots loaded by the OpenClaw
 Gateway. They are the plugins described in the upstream

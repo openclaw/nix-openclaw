@@ -114,7 +114,14 @@ test("bundled ACPX stays physically contained with its complete built closure", 
     const bundled = fs.realpathSync(path.join(f.root, spelling, "extensions"));
     const acpx = path.join(bundled, "acpx");
     assert.ok(fs.realpathSync(acpx).startsWith(`${bundled}/`), "ACPX package directory escapes bundled root");
-    assert.deepEqual(snapshot(acpx), original);
+    const installed = snapshot(acpx);
+    for (const name of acpxAliases) {
+      assert.equal(fs.lstatSync(path.join(acpx, name)).isFile(), true, `${name} must be an attestable regular file`);
+      delete installed[name];
+    }
+    const expected = { ...original };
+    for (const name of acpxAliases) delete expected[name];
+    assert.deepEqual(installed, expected);
   }
   assert.deepEqual(snapshot(f.acpx), original);
   fs.rmSync(f.acpx, { recursive: true });
@@ -251,4 +258,40 @@ test("runtime plugin peer validation accepts the internal package alias", (t) =>
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.equal(fs.realpathSync(path.join(peerOut, "node_modules/openclaw")), fs.realpathSync(f.root));
+});
+
+for (const [type, extension] of [["commonjs", "js"], [undefined, "js"], ["module", "cjs"]])
+ test(`runtime plugin ${type ?? "implicit CommonJS"}/${extension} aliases preserve exports and relative imports`, (t) => {
+  const f = fixture(t);
+  const plugin = path.join(f.temp, "cjs-plugin");
+  const output = path.join(f.temp, "cjs-out");
+  put(plugin, "package.json", JSON.stringify({ name: "@fixture/cjs", type }));
+  put(plugin, "openclaw.plugin.json", '{"id":"cjs-fixture"}');
+  put(plugin, "dist/shared.cjs", "module.exports = { identity: {} };\n");
+  put(plugin, `dist/index.${extension}`, 'module.exports = require("./shared.cjs");\n');
+  const entries = put(f.temp, "cjs-entries", `dist/index.${extension}\n`);
+  const roots = put(f.temp, "cjs-roots");
+  const result = f.run(process.execPath, [pluginInstaller], {
+    cwd: plugin,
+    env: {
+      ...f.env,
+      out: output,
+      OPENCLAW_RUNTIME_PLUGIN_ID: "cjs-fixture",
+      OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_MODE: "none",
+      OPENCLAW_RUNTIME_PLUGIN_LINK_PEER_OPENCLAW: "0",
+      OPENCLAW_RUNTIME_PLUGIN_RUNTIME_ENTRIES_FILE: entries,
+      OPENCLAW_RUNTIME_PLUGIN_BUNDLED_PACKAGE_ROOTS_FILE: roots,
+    },
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(fs.lstatSync(path.join(output, `index.${extension}`)).isFile(), true);
+  fs.rmSync(plugin, { recursive: true });
+  const loaded = f.node(`
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+const root = process.argv[1];
+const require = createRequire(root + "/package.json");
+assert.strictEqual(require(root + "/index.${extension}"), require(root + "/dist/index.${extension}"));
+`, output);
+  assert.equal(loaded.status, 0, loaded.stderr);
 });

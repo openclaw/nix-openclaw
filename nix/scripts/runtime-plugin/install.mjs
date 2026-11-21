@@ -44,24 +44,29 @@ const ROOT_FACADE_BASENAMES = [
   "setup-api.js",
 ];
 
-function linkDistRootAlias(pluginRoot, basename) {
+function writeDistRootAlias(pluginRoot, basename, packageType) {
   const distPath = path.join(pluginRoot, "dist", basename);
   const rootPath = path.join(pluginRoot, basename);
   if (!fs.existsSync(distPath) || fs.existsSync(rootPath)) {
     return;
   }
-  fs.symlinkSync(path.posix.join("dist", basename), rootPath);
+  // Keep imports relative to dist while making the alias attestable as a file.
+  const specifier = JSON.stringify(`./dist/${basename}`);
+  const commonJS = basename.endsWith(".cjs") || (!basename.endsWith(".mjs") && packageType !== "module");
+  fs.writeFileSync(rootPath, commonJS
+    ? `module.exports = require(${specifier});\n`
+    : `export * from ${specifier};\nimport * as entry from ${specifier};\nexport default entry.default;\n`);
 }
 
-function exposeDistRootAliases(pluginRoot, runtimeEntries) {
+function exposeDistRootAliases(pluginRoot, runtimeEntries, packageType) {
   for (const runtimeEntry of runtimeEntries) {
     const relPath = safeRelativePath(runtimeEntry, `runtime entry alias`);
     if (path.dirname(relPath) === "dist") {
-      linkDistRootAlias(pluginRoot, path.basename(relPath));
+      writeDistRootAlias(pluginRoot, path.basename(relPath), packageType);
     }
   }
   for (const basename of ROOT_FACADE_BASENAMES) {
-    linkDistRootAlias(pluginRoot, basename);
+    writeDistRootAlias(pluginRoot, basename, packageType);
   }
 }
 
@@ -183,7 +188,7 @@ for (const runtimeEntry of runtimeEntries) {
     fail(`runtime entry missing for ${expectedId}: ${runtimeEntry}`);
   }
 }
-exposeDistRootAliases(out, runtimeEntries);
+exposeDistRootAliases(out, runtimeEntries, packageJson.type);
 
 const expectedPackageRoots = new Set(
   fs
