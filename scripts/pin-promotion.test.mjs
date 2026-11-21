@@ -55,6 +55,7 @@ function fixture(t, { deletionOnly = false, removePlugin = true } = {}) {
     GIT_COMMITTER_NAME: "Pin test", GIT_COMMITTER_EMAIL: "pin@example.invalid",
     GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
     GITHUB_ACTIONS: "true", GITHUB_OUTPUT: join(root, "output"),
+    GITHUB_REPOSITORY: "openclaw/nix-openclaw",
     PROMOTE_REF: "refs/heads/test-promotion",
   };
   const git = (...args) => execFileSync("git", args, { cwd: root, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -81,6 +82,7 @@ printf '%s\\n' nix/sources/openclaw-source.nix
   git("add", ".");
   git("commit", "--quiet", "-m", "fixture");
   const baseline = git("rev-parse", "HEAD");
+  env.SOURCE_BASE = baseline;
   if (removePlugin) rmSync(join(root, "nix/generated/openclaw-runtime-plugins/qqbot.nix"));
   if (!deletionOnly) {
     write("nix/sources/openclaw-source.nix", "new pin\n");
@@ -90,7 +92,7 @@ printf '%s\\n' nix/sources/openclaw-source.nix
   const shell = (script, extraEnv = {}) => spawnSync("bash", ["-e", "-c", script.replace(/\$\{\{[^}]+\}\}/g, "fixture")], {
     cwd: root, env: { ...env, ...extraEnv }, encoding: "utf8",
   });
-  return { root, git, shell, baseline };
+  return { root, git, shell, baseline, env, write };
 }
 function checked(result) {
   assert.equal(result.status, 0, result.stderr + result.stdout);
@@ -111,7 +113,7 @@ for (const deletionOnly of [false, true]) {
     assert.notEqual(validators[0], createHash("sha256").update("").digest("hex"));
     const f = fixture(t, { deletionOnly });
     const output = checked(f.shell(promotionScript, { VALIDATED_MATERIALIZATION_DIGEST: validators[0] }));
-    assert.match(output, /Validated promotion commit.*skipping main push/);
+    assert.match(output, /Validated promotion commit.*skipping publication/);
     assert.notEqual(f.git("rev-parse", "HEAD"), f.baseline);
     const changes = f.git("diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD");
     assert.match(changes, /D\s+nix\/generated\/openclaw-runtime-plugins\/qqbot.nix/);
@@ -139,3 +141,90 @@ test("unchanged pins do not create a promotion commit", (t) => {
   assert.match(checked(f.shell(promotionScript)), /No pin changes detected/);
   assert.equal(f.git("rev-parse", "HEAD"), f.baseline);
 });
+
+for (const mode of ["success", "reuse-branch", "stale-base", "create-failure", "ambiguous-create", "blocked-merge", "ambiguous-merge", "wrong-head", "wrong-tree", "dispatch-failure"]) {
+  test(`main publication: ${mode}`, (t) => {
+    const validator = fixture(t);
+    const expected = digest(validator, digestScripts[0]);
+    const f = fixture(t);
+    const remote = mkdtempSync(join(tmpdir(), "pin-remote-"));
+    t.after(() => rmSync(remote, { recursive: true, force: true }));
+    f.git("init", "--bare", remote);
+    f.git("remote", "add", "origin", remote);
+    f.git("push", "origin", `${f.baseline}:refs/heads/main`);
+    let previousHead;
+    const branch = `automation/stable-pins-${f.baseline.slice(0, 12)}-${expected.slice(0, 12)}`;
+    if (mode === "reuse-branch") {
+      // An earlier attempt has identical content but different commit metadata.
+      f.git("add", "--all", "nix");
+      previousHead = f.git("commit-tree", f.git("write-tree"), "-p", f.baseline, "-m", "earlier attempt");
+      f.git("push", "origin", `${previousHead}:refs/heads/${branch}`);
+      f.git("reset", "--mixed", f.baseline);
+    }
+    f.write("bin/gh", `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >> "$CALL_LOG"
+case "$1 $2" in
+  'api repos/openclaw/nix-openclaw/git/ref/heads/main')
+    if [[ $MODE == stale-base ]]; then echo changed; else git ls-remote origin refs/heads/main | cut -f1; fi
+    ;;
+  'pr list')
+    [[ ! -f "$PR_CREATED" ]] || echo 7
+    ;;
+  'pr create')
+    [[ $MODE != create-failure ]]
+    touch "$PR_CREATED"
+    [[ $MODE != ambiguous-create ]]
+    ;;
+  'pr merge')
+    [[ $MODE != blocked-merge ]]
+    candidate=$(git ls-remote origin 'refs/heads/automation/stable-pins-*' | cut -f1)
+    [[ "$*" == *"--squash --match-head-commit $candidate" ]]
+    git checkout --detach "$SOURCE_BASE" >&2
+    git merge --squash "$candidate" >&2
+    [[ $MODE != wrong-tree ]] || printf 'wrong\\n' > nix/sources/openclaw-source.nix
+    git add nix
+    git commit -m 'squash publication' >&2
+    git push origin HEAD:refs/heads/main >&2
+    [[ $MODE != ambiguous-merge ]]
+    ;;
+  'api repos/openclaw/nix-openclaw/pulls/7')
+    head=$(git ls-remote origin 'refs/heads/automation/stable-pins-*' | cut -f1)
+    [[ $MODE != wrong-head ]] || head=wrong
+    printf 'true\\t%s\\t%s\\n' "$head" "$(git rev-parse HEAD)"
+    ;;
+  'workflow run')
+    [[ $MODE != dispatch-failure ]]
+    ;;
+  'run list')
+    [[ "$*" == *'--event workflow_dispatch'* && "$*" == *"--commit $(git rev-parse HEAD)"* ]]
+    echo 8
+    ;;
+  *) echo "Unexpected gh request: $*" >&2; exit 2 ;;
+esac
+`);
+    execFileSync("chmod", ["+x", join(f.root, "bin/gh")]);
+    const result = f.shell(promotionScript, {
+      PATH: `${join(f.root, "bin")}:${process.env.PATH}`,
+      MODE: mode,
+      CALL_LOG: join(f.root, "calls"),
+      PR_CREATED: join(f.root, "pr-created"),
+      PROMOTE_REF: "refs/heads/main",
+      VALIDATED_MATERIALIZATION_DIGEST: expected,
+    });
+    const succeeds = mode === "success" || mode === "reuse-branch";
+    assert.equal(result.status === 0, succeeds, result.stderr + result.stdout);
+    const calls = readFileSync(join(f.root, "calls"), "utf8");
+    assert.equal(calls.includes("workflow run"), succeeds || mode === "dispatch-failure", calls);
+    if (mode !== "stale-base") {
+      assert.ok(f.git("ls-remote", "origin", `refs/heads/${branch}`), "publication retains its proposed branch");
+    }
+    if (succeeds) {
+      assert.match(result.stdout, /Published https:\/\/github.com\/openclaw\/nix-openclaw\/pull\/7/);
+      const branchHead = f.git("ls-remote", "origin", "refs/heads/automation/stable-pins-*").split(/\s/)[0];
+      assert.notEqual(branchHead, f.git("rev-parse", "HEAD"));
+      assert.equal(f.git("diff", branchHead, "HEAD", "--", "nix"), "");
+      if (previousHead) assert.equal(branchHead, previousHead, "existing branch must not be force-updated");
+    }
+  });
+}
