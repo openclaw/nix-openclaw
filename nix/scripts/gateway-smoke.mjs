@@ -199,9 +199,10 @@ try {
         if (runtimePluginSmokeRoot) {
           const loadedPlugins = parsed.plugins?.loaded ?? [];
           if (!loadedPlugins.includes(runtimePluginSmokeId)) {
-            throw new Error(
-              `gateway health did not report Nix-managed ${runtimePluginSmokeId} loaded: ${JSON.stringify(parsed.plugins ?? {})}`,
-            );
+            // The health RPC can answer before startup finishes loading plugins.
+            lastError = `gateway health did not report Nix-managed ${runtimePluginSmokeId} loaded: ${JSON.stringify(parsed.plugins ?? {})}`;
+            await sleep(500);
+            continue;
           }
         }
         console.log(`openclaw gateway smoke: ok (${version.stdout.trim()})`);
