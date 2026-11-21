@@ -24,7 +24,6 @@ require_path "${root}/dist-runtime/extensions/memory-core/openclaw.plugin.json"
 require_path "${root}/dist-runtime/extensions/acpx/openclaw.plugin.json"
 require_path "${root}/dist-runtime/extensions/acpx/package.json"
 require_path "${root}/dist-runtime/extensions/acpx/index.js"
-require_path "${root}/dist-runtime/extensions/acpx/register.runtime.js"
 require_path "${root}/dist-runtime/extensions/acpx/runtime-api.js"
 require_path "${root}/dist-runtime/extensions/acpx/setup-api.js"
 require_path "${root}/dist-runtime/extensions/acpx/skills/acp-router/SKILL.md"
@@ -41,6 +40,15 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const root = path.join(process.env.OPENCLAW_GATEWAY, "lib/openclaw");
+const acpxRoot = path.join(root, "dist-runtime/extensions/acpx");
+const acpx = JSON.parse(fs.readFileSync(path.join(acpxRoot, "package.json"), "utf8"));
+const acpxEntries = [...(acpx.openclaw?.runtimeExtensions ?? []), acpx.openclaw?.runtimeSetupEntry].filter(Boolean);
+if (acpxEntries.length === 0) throw new Error("Bundled ACPX has no declared runtime entry");
+for (const entry of acpxEntries) {
+  const file = path.resolve(acpxRoot, entry);
+  if (!file.startsWith(`${acpxRoot}${path.sep}`)) throw new Error("Bundled ACPX runtime entry escapes package");
+  fs.accessSync(file);
+}
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 if (packageJson.files.includes("src/agents/templates/")) {
   fs.accessSync(path.join(root, "src/agents/templates/HEARTBEAT.md"));
@@ -67,6 +75,7 @@ if (fs.existsSync(modules)) {
 const dist = path.join(root, "dist");
 const loaders = fs.readdirSync(dist, { withFileTypes: true })
   .filter((entry) => entry.isFile() && /\.m?js$/.test(entry.name))
+  .filter((entry) => !["managed-handoff-runtime.mjs", "package-update-activation-recovery.mjs"].includes(entry.name))
   .map((entry) => path.join(dist, entry.name))
   .filter((file) => fs.readFileSync(file, "utf8").includes("function loadBundledPluginPublicArtifactModuleSync"));
 if (loaders.length !== 1) {

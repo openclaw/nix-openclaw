@@ -17,6 +17,7 @@ const readAssets = Object.values(module).find((value) => typeof value === "funct
 assert.ok(readAssets, "Control UI asset reader is not exported");
 const policyFiles = fs.readdirSync(dist)
   .filter((name) => /\.m?js$/.test(name))
+  .filter((name) => !["managed-handoff-runtime.mjs", "package-update-activation-recovery.mjs"].includes(name))
   .filter((name) => fs.readFileSync(path.join(dist, name), "utf8").includes("function shouldRejectHardlinkedPluginFiles("));
 assert.equal(policyFiles.length, 1, "expected one installed plugin hardlink policy");
 const policyModule = await import(pathToFileURL(path.join(dist, policyFiles[0])));
@@ -41,7 +42,7 @@ try {
   process.env.OPENCLAW_NIX_MODE = "1";
   // Newer upstream readers default to strict admission; the gateway supplies
   // the owning plugin's policy. Legacy readers apply that same policy inside.
-  if (fs.readFileSync(path.join(dist, files[0]), "utf8").includes("options.rejectHardlinks")) {
+  if (fs.readFileSync(path.join(dist, files[0]), "utf8").includes(".rejectHardlinks === false")) {
     await assert.rejects(readAssets(storeRoot, { entry: "ui/index.js" }), /hardlink/i);
   }
   assert.equal(rejectHardlinks({ rootDir: storeRoot, origin: "config" }), false);

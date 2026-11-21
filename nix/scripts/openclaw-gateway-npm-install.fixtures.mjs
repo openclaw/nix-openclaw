@@ -93,7 +93,7 @@ function loadBundledPluginPublicArtifactModuleSync() { return { fixture: true };
 export { loadBundledPluginPublicArtifactModuleSync };
 `,
   );
-  put(acpx, "package.json", '{"name":"@fixture/acpx","type":"module"}');
+  put(acpx, "package.json", '{"name":"@fixture/acpx","type":"module","openclaw":{"runtimeExtensions":["./dist/index.js"]}}');
   put(acpx, "openclaw.plugin.json", '{"id":"acpx"}');
   put(acpx, "skills/acp-router/SKILL.md", "fixture");
   dependency(path.join(acpx, "node_modules"), "@fixture/acpx-dep", 9);

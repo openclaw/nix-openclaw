@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import http from "node:http";
+import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -7,8 +8,12 @@ import { pathToFileURL } from "node:url";
 const root = process.env.OPENCLAW_PACKAGE_ROOT;
 assert.ok(root, "OPENCLAW_PACKAGE_ROOT is required");
 const require = createRequire(path.join(root, "package.json"));
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const splitClient = Boolean(packageJson.dependencies?.["@modelcontextprotocol/client"]);
+const clientSpec = splitClient
+  ? "@modelcontextprotocol/client" : "@modelcontextprotocol/sdk/client/streamableHttp.js";
 const { StreamableHTTPClientTransport } = await import(pathToFileURL(
-  require.resolve("@modelcontextprotocol/sdk/client/streamableHttp.js"),
+  (splitClient ? require.resolve(clientSpec).replace(/\.cjs$/, ".mjs") : require.resolve(clientSpec)),
 ));
 const received = [];
 const listen = (server) => new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));

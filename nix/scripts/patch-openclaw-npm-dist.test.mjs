@@ -280,3 +280,18 @@ for (const ext of ["js", "mjs"])
         else assert.ok(result.stderr.includes(missing), result.stderr);
       });
     }
+
+for (const ext of ["js", "mjs"]) test(`package checker ${ext}: separate sealed worker graph`, (t) => {
+  const f = packageFixture(t, ext);
+  fs.copyFileSync(f.loader, path.join(path.dirname(f.loader), "managed-handoff-runtime.mjs"));
+  const result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+});
+
+for (const ext of ["js", "mjs"]) test(`package checker ${ext}: ACPX declared runtime entries replace retired facade`, (t) => {
+  const f = packageFixture(t, ext);
+  fs.unlinkSync(path.join(f.root, "dist-runtime/extensions/acpx/register.runtime.js"));
+  assert.equal(f.run().status, 0);
+  fs.unlinkSync(path.join(f.root, "dist-runtime/extensions/acpx/dist/index.js"));
+  assert.notEqual(f.run().status, 0, "a missing declared runtime entry must fail");
+});

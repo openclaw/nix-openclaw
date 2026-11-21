@@ -1010,7 +1010,7 @@ Plugins are keyed by their declared `name`. If two plugins declare the same name
 
 ### MCP OAuth credentials after upgrading
 
-The stable npm gateway packages MCP SDK 1.32.0, including the fix for
+The stable npm gateway packages the patched MCP client selected by its upstream release (MCP SDK 1.32.0 on the current pin), including the fix for
 [CVE-2026-111769](https://github.com/advisories/GHSA-6prh-2h8m-c8cw), which prevents
 cross-origin redirects from forwarding custom headers and OAuth request bodies.
 Configure the final URL for HTTP MCP servers and authorization servers that

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { usesMinifiedNpmContract, patchMinifiedNpmBundle } from "./patch-openclaw-npm-minified.mjs";
 
 function fail(message) {
   console.error(message);
@@ -31,6 +32,16 @@ const modules = new Map(
     .filter((entry) => entry.isFile() && /\.m?js$/.test(entry.name))
     .map((entry) => [entry.name, fs.readFileSync(path.join(distDir, entry.name), "utf8")]),
 );
+if (usesMinifiedNpmContract(modules)) {
+  try {
+    const patches = patchMinifiedNpmBundle(modules);
+    for (const [name, source] of patches) fs.writeFileSync(path.join(distDir, name), source);
+  } catch (error) {
+    fail(error.message);
+  }
+  process.exit(0);
+}
+
 const owner = (marker, label) =>
   unique(
     [...modules].filter(([, source]) => source.includes(marker)),
