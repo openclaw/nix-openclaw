@@ -6,6 +6,7 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Publish validated stable-pin updates through pull requests, preserve the exact Linux/macOS-validated payload, and run main CI before mirrored tags can publish.
 - Refresh Nixpkgs, Home Manager, packaged OpenClaw tools, and standalone QMD 2.9.0; preserve the Node 24 floor and private pnpm pins, and validate npm from the selected runtime when Node uses split outputs. QMD converts existing vector indexes on first use; back up state before upgrading, restart MCP servers, and restore the backup or re-embed after downgrading.
 - Restore stable-pin materialization for OpenClaw 2026.11.6 by validating its minified runtime graph separately from sealed workers; retain Nix ownership, OAuth issuer, and Control UI checks against the selected MCP client, and wait for configured plugins during gateway readiness checks.
 - Preserve bundled ACPX runtime identity by generating regular-file entry-point facades with canonical imports instead of symlinks. Thanks @clement-songis (#183).

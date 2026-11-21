@@ -1065,7 +1065,8 @@ Pins live in:
 3) Newer source releases that lack public macOS app assets are reported as app lag, not skipped.
 4) The stable pin workflow materializes the source pin from the newest source tag ref, updates the app asset pin from the newest public app zip, and regenerates config options from the selected source.
 5) The stable pin workflow validates that source/app pin set on the same Linux + macOS contract as repository `CI`.
-6) Only after both validations pass does the workflow push one release-mirroring commit to `main`.
+6) Only after both validations pass does the workflow open a pull request for that exact pin payload and squash-merge it through the repository rules. A changed source base stops publication and requires fresh validation.
+7) After verifying the merged pin files, it dispatches repository `CI` on that exact `main` commit. Mirrored tags still require successful main CI.
 
 ### Mirrored tags
 

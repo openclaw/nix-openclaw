@@ -323,6 +323,7 @@ jobs:
     permissions:
       actions: write
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -337,10 +338,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATED_MATERIALIZATION_DIGEST: ${{ needs.verify-materialization.outputs.materialization_digest }}
           PROMOTE_REF: ${{ github.ref }}
+          SOURCE_BASE: ${{ github.sha }}
         run: |
           set -euo pipefail
           git config user.name "openclaw-ci"
           git config user.email "ci@openclaw.local"
+          [[ $(git rev-parse HEAD) == "$SOURCE_BASE" ]]
+
+          require_current_base() {
+            if [[ $(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha) != "$SOURCE_BASE" ]]; then
+              echo "Main changed since validation; regenerate and validate from current main." >&2
+              exit 1
+            fi
+          }
+          if [[ "$PROMOTE_REF" == "refs/heads/main" ]]; then
+            require_current_base
+          fi
 
           scripts/update-pins.sh apply \
             "${{ needs.select.outputs.source_tag }}" \
@@ -389,12 +402,56 @@ jobs:
           EOF
 
           if [[ "$PROMOTE_REF" != "refs/heads/main" ]]; then
-            echo "Validated promotion commit on $PROMOTE_REF; skipping main push."
+            echo "Validated promotion commit on $PROMOTE_REF; skipping publication."
             exit 0
           fi
 
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          require_current_base
+          head=$(git rev-parse HEAD)
+          branch="automation/stable-pins-${SOURCE_BASE:0:12}-${promote_digest:0:12}"
+          remote_head=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
+          if [[ -n "$remote_head" ]]; then
+            # Retry the same validated payload without force-updating a branch.
+            git fetch --no-tags origin "$remote_head"
+            [[ $(git rev-parse "$remote_head^{tree}") == $(git rev-parse "$head^{tree}") ]]
+            [[ $(git rev-parse "$remote_head^") == "$SOURCE_BASE" ]]
+            head=$remote_head
+          else
+            git push origin "HEAD:refs/heads/$branch"
+          fi
 
-          gh workflow run ci.yml --ref main
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --state open --json number --jq '.[0].number // empty')
+          if [[ -z "$pr" ]]; then
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+              --title "chore: mirror OpenClaw stable source ${{ needs.select.outputs.source_tag }}" \
+              --body "Publishes the exact pin payload validated on Linux and macOS. Materialization SHA-256: $promote_digest. Source base: $SOURCE_BASE."
+            pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --state open --json number --jq '.[0].number // empty')
+          fi
+          [[ -n "$pr" ]]
+          trap 'echo "Publication incomplete; inspect https://github.com/$GITHUB_REPOSITORY/pull/$pr" >&2' ERR
+          require_current_base
+          gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$head"
+          receipt=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '[.merged,.head.sha,.merge_commit_sha] | @tsv')
+          IFS=$'\t' read -r merged actual merge <<< "$receipt"
+          [[ $merged == true && $actual == "$head" && -n $merge ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main "$merge"
+          git merge-base --is-ancestor "$merge" origin/main
+          git diff --exit-code "$head" "$merge" -- "${pin_files[@]}"
+
+          # Token merges do not start push workflows. Observe the exact merged
+          # head's CI dispatch; the existing main-only tag publisher consumes it.
+          [[ $(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha) == "$merge" ]]
+          started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref main
+          for ((attempt=0; attempt<30; attempt++)); do
+            run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --event workflow_dispatch \
+              --branch main --commit "$merge" --limit 10 --json databaseId,createdAt \
+              --jq "[.[] | select(.createdAt >= \"$started\")][0].databaseId // empty")
+            if [[ -n "$run_id" ]]; then
+              echo "Published https://github.com/$GITHUB_REPOSITORY/pull/$pr at $merge; CI https://github.com/$GITHUB_REPOSITORY/actions/runs/$run_id"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "No CI dispatch receipt for merged head $merge." >&2
+          exit 1

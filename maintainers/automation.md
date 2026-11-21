@@ -28,7 +28,10 @@ If both tracks are current and stable pin automation/CI are healthy, stop with a
 To prove stable-pin repairs before landing, dispatch `Pin Stable OpenClaw
 Version` on a maintainer branch. It runs the Linux/macOS package gates and
 verifies a local promotion commit, including added and removed generated files.
-Only `main` pushes the resulting pin update and dispatches publication CI.
+Only runs from `main` publish the resulting pin update through a pull request
+and dispatch publication CI after verifying the squash merge. Publication
+requires the same source base used for validation; moved bases are regenerated
+and validated by a later run. Automation never force-updates its pin branches.
 Branch validation has a separate concurrency group per ref, so hourly main
 promotion cannot replace a queued validation. Main keeps its existing serialized
 promotion group, including any run already in flight.
@@ -50,7 +53,7 @@ Diagnose across:
 
 Do not ask for a repair strategy when the desired state is clear.
 
-If the fix belongs in `nix-openclaw`, edit the repo, self-review the diff until there are no actionable findings, run the relevant targeted checks plus the full gate, commit directly to `main`, push directly to `main`, and verify GitHub Actions on the pushed commit.
+If the fix belongs in `nix-openclaw`, edit the repo, self-review the diff until there are no actionable findings, run the relevant targeted checks plus the full gate, open a pull request, and verify GitHub Actions before merging.
 
 If upstream has not published public macOS app assets, call that out directly, keep the app pin on the newest public zip, keep packaging the latest stable gateway, and repair `nix-openclaw` only if it fails to do that.
 
