@@ -756,6 +756,29 @@ files within configured workspaces.
 
 That's it. Everything else has sensible defaults.
 
+### Run without the Control UI
+
+The Gateway serves the browser dashboard by default. To turn it off for every
+Home Manager instance, add this setting and run `home-manager switch`:
+
+```nix
+programs.openclaw.config.gateway.controlUi.enabled = false;
+```
+
+To change just one instance, set
+`programs.openclaw.instances.<name>.config.gateway.controlUi.enabled` on that
+instance. An explicit instance value takes precedence over the shared setting.
+
+For the standalone NixOS service, add the following to your system configuration
+and apply it with `nixos-rebuild switch`:
+
+```nix
+services.openclaw-gateway.config.gateway.controlUi.enabled = false;
+```
+
+If you supply `services.openclaw-gateway.configFile`, set the boolean in that
+file. Set it to `true` in the same place to serve the dashboard again.
+
 ### Secrets And OpenClaw Exec SecretRefs
 
 nix-openclaw is part of the OpenClaw org and renders upstream OpenClaw config, including OpenClaw SecretRefs. The supported nix-openclaw secret path is still Nix-shaped: materialize secrets outside the Nix store, then pass them to OpenClaw as env/file-backed runtime config.
